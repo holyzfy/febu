@@ -7,6 +7,23 @@ function Git(rep) {
 }
 
 /**
+ * 克隆仓库
+ * 克隆出来的目录结构是：一级目录是仓库域名，二级目录是由路径+项目名构成（/用_代替）
+ * @return {Promise} 
+ */
+Git.prototype.clone = function() {
+
+}
+
+/**
+ * 进入仓库根目录
+ * @return {Promoise}
+ */
+Git.prototype.enter = function() {
+
+}
+
+/**
  * 拉取远程分支
  * @return {Promise}
  */
