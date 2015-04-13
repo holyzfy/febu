@@ -9,6 +9,7 @@ var async = require('async');
 /**
  * @constructor
  * @param url 仓库地址
+ * @param Object.<[cwd]> options 其他参数，cwd: git根目录
  */
 function Git(url, options) {
 	this.binary = 'git';
