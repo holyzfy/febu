@@ -3,15 +3,73 @@ var url = require('url');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var debug = require('debug')('febu:' + __filename);
-// var async = require('async');
+var config = require('../config.js');
+var async = require('async');
 
 /**
  * @constructor
  * @param url 仓库地址
  */
-function Git(url) {
+function Git(url, options) {
+	this.binary = 'git';
 	this.url = url;
+	options = options || {};
+	this.cwd = options.cwd || process.cwd();
+	delete options.cwd;
+	this.args = Git.optionsToString(options);
 }
+
+/**
+ * git.exec(command [[, options], args ], callback)
+ * see: https://github.com/pvorb/node-git-wrapper
+ */
+Git.prototype.exec = function(command, options, args, callback) {
+    callback = arguments[arguments.length - 1];
+
+    if (arguments.length == 2) {
+        options = {};
+        args = [];
+    } else if (arguments.length == 3) {
+        args = arguments[1];
+        options = [];
+    }
+
+    args = args.join(' ');
+    options = Git.optionsToString(options)
+
+    var cmd = this.binary + ' ' + this.args + ' ' + command + ' ' + options + ' ' + args;
+    debug("cmd=%s", cmd);
+    exec(cmd, {
+        cwd: this.cwd
+    }, function(err, stdout, stderr) {
+        callback(err || stderr, stdout);
+    });
+};
+
+// see: https://github.com/pvorb/node-git-wrapper
+Git.optionsToString = function(options) {
+    var args = [];
+
+    for (var k in options) {
+        var val = options[k];
+
+        if (k.length == 1) {
+            // val is true, add '-k'
+            if (val === true)
+                args.push('-' + k);
+            // if val is not false, add '-k val'
+            else if (val !== false)
+                args.push('-' + k + ' ' + val);
+        } else {
+            if (val === true)
+                args.push('--' + k);
+            else if (val !== false)
+                args.push('--' + k + '=' + val);
+        }
+    }
+
+    return args.join(' ');
+};
 
 /**
  * 克隆仓库
@@ -20,29 +78,19 @@ function Git(url) {
  */
 Git.prototype.clone = function(callback) {
 	var git = this;
+	var dataPath = config.dataPath || 'data/';
 	var urlMap = url.parse(git.url);
 	var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-	var local = path.resolve('data/', urlMap.hostname, pathname);
-	mkdirp(local, function(err) {
+	var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
+	async.each([dataPath, local], mkdirp, function(err) {
 		if(err) {
 			return callback(err);
 		}
-		var command = ['git clone', git.url, local].join(" ");
-		debug("command=%s", command);
-		exec(command, function(err, stdout, stderr) {
+		git.exec('clone', [git.url, local], function(err, stdout, stderr) {
 			callback(err || stderr, stdout);
 		});
 	});
 	return git;
-}
-
-/**
- * 进入仓库根目录
- * @param callback(err)
- */
-Git.prototype.enter = function(callback) {
-	// TODO
-	return this;
 }
 
 /**
@@ -69,9 +117,11 @@ Git.prototype.checkout = function(branch, callback){
  * @param commit 版本号
  * @param callback(err, Object.<commit, date, message, author>)
  */
-Git.prototype.log = function(commit, callback) {
+Git.prototype.show = function(commit, callback) {
+	var git = this;
 	// TODO
-	return this;
+	// git show --pretty=format:"%h | %an | %ct%n%s" --no-patch commitid
+	return git;
 };
 
 /**

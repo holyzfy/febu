@@ -1,7 +1,7 @@
 var path = require('path');
 var mocha = require('mocha');
 var assert = require("assert");
-var Git = require(path.resolve(__dirname, '../module/git.js'));
+var Git = require('../module/git.js');
 
 describe(__filename, function(){
 	describe('Git.prototype.clone', function(){
