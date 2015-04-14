@@ -1,75 +1,94 @@
-var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var url = require('url');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var debug = require('debug')('febu:' + __filename);
 var config = require('../config.js');
 var async = require('async');
+var through2 = require('through2');
+var Q = require('q');
 
 /**
  * @constructor
  * @param url 仓库地址
- * @param Object.<[cwd]> options 其他参数，cwd: git根目录
+ * @param {Object} options 其他参数
  */
 function Git(url, options) {
-	this.binary = 'git';
 	this.url = url;
-	options = options || {};
-	this.cwd = options.cwd || process.cwd();
-	delete options.cwd;
-	this.args = Git.optionsToString(options);
+	this.options = options || {};
 }
 
 /**
- * git.exec(command [[, options], args ], callback)
- * see: https://github.com/pvorb/node-git-wrapper
+ * 运行git命令
+ * @param  {String} command  git命令
+ * @param  {Array}   args     git参数
+ * @param  {Function} callback(err, data)
  */
-Git.prototype.exec = function(command, options, args, callback) {
-    callback = arguments[arguments.length - 1];
+Git.prototype.exec = function(command, args, callback) {
+    var git = this;
+    args = [command].concat(args);
+    // debug('git exec args=', args);
+    var p = spawn('git', args, git.options);
+    var done = false;
+    var ret;
+    var dfd = Q.defer();
 
-    if (arguments.length == 2) {
-        options = {};
-        args = [];
-    } else if (arguments.length == 3) {
-        args = arguments[1];
-        options = [];
-    }
-
-    args = args.join(' ');
-    options = Git.optionsToString(options)
-
-    var cmd = this.binary + ' ' + this.args + ' ' + command + ' ' + options + ' ' + args;
-    debug("cmd=%s", cmd);
-    exec(cmd, {
-        cwd: this.cwd
-    }, function(err, stdout, stderr) {
-        callback(err || stderr, stdout);
+    dfd.promise.then(function(ret){
+        callback(null, ret);
+    }, function(err){
+        callback(err);
     });
+
+    var outAll = [];
+    p.stdout.pipe(through2(function out(chunk, enc, cb) {
+        outAll.push(chunk);
+        cb(null, chunk);
+    }, function(){
+        ret = outAll.join('');
+        // debug('p stdout:', ret);
+        dfd.resolve(ret);
+    }));
+
+    var errAll = [];
+    p.stderr.pipe(through2(function out(chunk, enc, cb) {
+        errAll.push(chunk);
+        cb(null, chunk);
+    }, function(){
+        ret = errAll.join('');
+        // debug('p stderr:', ret);
+        dfd.reject(ret);
+    }));
+
+    p.on('error', function(err) {
+        if(done) return;
+        done = true;
+        // debug('p error:', arguments);
+        ret = ['git', command].concat(args).join(' ');
+        dfd.reject(ret);
+    });
+
+    // 出错时exit事件可能不被触发
+    p.on('exit', function(code, signal) {
+        if(done) return;
+        done = true;
+        // debug('p exit:', arguments);
+        var action = (code == 0) ? 'resolve' : 'reject';
+        dfd[action](ret);
+    });
+
+    return git;
 };
 
-// see: https://github.com/pvorb/node-git-wrapper
-Git.optionsToString = function(options) {
-    var args = [];
 
-    for (var k in options) {
-        var val = options[k];
-
-        if (k.length == 1) {
-            // val is true, add '-k'
-            if (val === true)
-                args.push('-' + k);
-            // if val is not false, add '-k val'
-            else if (val !== false)
-                args.push('-' + k + ' ' + val);
-        } else {
-            if (val === true)
-                args.push('--' + k);
-            else if (val !== false)
-                args.push('--' + k + '=' + val);
-        }
-    }
-
-    return args.join(' ');
+/**
+ * 取得本地仓库的根目录
+ */
+Git.getCwd = function(repo) {
+    var dataPath = config.dataPath || 'data/';
+    var urlMap = url.parse(repo);
+    var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
+    var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
+    return local;
 };
 
 /**
@@ -87,9 +106,7 @@ Git.prototype.clone = function(callback) {
 		if(err) {
 			return callback(err);
 		}
-		git.exec('clone', [git.url, local], function(err, stdout, stderr) {
-			callback(err || stderr, stdout);
-		});
+		git.exec('clone', [git.url, local], callback);
 	});
 	return git;
 }
@@ -120,8 +137,26 @@ Git.prototype.checkout = function(branch, callback){
  */
 Git.prototype.show = function(commit, callback) {
 	var git = this;
-	// TODO
-	// git show --pretty=format:"%h | %an | %ct%n%s" --no-patch commitid
+    var args = ['--pretty=format:%h | %an | %ct%n%s', '--no-patch', commit];
+    git.exec('show', args, function(err, data) {
+        // debug('show:', arguments);
+        if(err) throw err;
+
+        var dataArray = data.split(/\r?\n/);
+        var reg = /^([^|]+)\s*|\s*([^|]+)\s*|\s*([[^|]+])$/gi;
+        var metadata = dataArray[0].match(reg);
+        // 转成毫秒
+        var date = metadata[2].trim();
+        date = date.length < 13 ? parseInt(date) * 1000 : date;
+        var ret = {
+            commit: metadata[0].trim(),
+            author: metadata[1].trim(),
+            datetime: date,
+            message: dataArray[1].trim()
+        }
+        // debug('show callback ret=', ret);
+        callback(null, ret);
+    });
 	return git;
 };
 
