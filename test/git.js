@@ -15,17 +15,9 @@ describe(__filename, function(){
 			repo.should.equal(git.url);
 		});
 
-		/*it('克隆仓库成功', function(done){
-			git.clone(function(err){
-				should.not.exist(err);
-				var local = Git.getCwd(repo);
-				var gitDir = path.join(local, '.git');
-				fs.readdir(gitDir, function(err, files) {
-					should.exist(files);
-					done();
-				});
-			});
-		});*/
+		it('克隆仓库成功', function(done){
+			git.clone(done);
+		});
 
 		it('取得本地仓库的根目录', function(done){
 			var local = Git.getCwd(repo);
@@ -39,17 +31,7 @@ describe(__filename, function(){
 		it('查询日志', function(done){
 			var commit = '7b11df0';
 			git.options.cwd = Git.getCwd(repo);
-			git.show(commit, function(err, ret){
-				var expected = {
-					commit: commit,
-					author: 'zfq',
-					datetime: 1400251035000,
-					message: '添加images'
-				};
-
-				should.deepEqual(ret, expected);
-				done();
-			});
+			git.show(commit, done);
 		});
 
 	});

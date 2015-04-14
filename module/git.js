@@ -14,6 +14,7 @@ var Q = require('q');
  * @param {Object} options 其他参数
  */
 function Git(url, options) {
+    this.binary = 'git';
 	this.url = url;
 	this.options = options || {};
 }
@@ -28,10 +29,12 @@ Git.prototype.exec = function(command, args, callback) {
     var git = this;
     args = [command].concat(args);
     // debug('git exec args=', args);
-    var p = spawn('git', args, git.options);
+    var p = spawn(git.binary, args, git.options);
     var done = false;
     var ret;
     var dfd = Q.defer();
+    var dfdStdout = Q.defer();
+    var dfdStdErr = Q.defer();
 
     dfd.promise.then(function(ret){
         callback(null, ret);
@@ -46,7 +49,7 @@ Git.prototype.exec = function(command, args, callback) {
     }, function(){
         ret = outAll.join('');
         // debug('p stdout:', ret);
-        dfd.resolve(ret);
+        dfdStdout.resolve(ret);
     }));
 
     var errAll = [];
@@ -56,14 +59,14 @@ Git.prototype.exec = function(command, args, callback) {
     }, function(){
         ret = errAll.join('');
         // debug('p stderr:', ret);
-        dfd.reject(ret);
+        dfdStdErr.resolve(ret);
     }));
 
     p.on('error', function(err) {
         if(done) return;
         done = true;
         // debug('p error:', arguments);
-        ret = ['git', command].concat(args).join(' ');
+        ret = [git.binary].concat(args).join(' ');
         dfd.reject(ret);
     });
 
@@ -71,9 +74,15 @@ Git.prototype.exec = function(command, args, callback) {
     p.on('exit', function(code, signal) {
         if(done) return;
         done = true;
-        // debug('p exit:', arguments);
-        var action = (code == 0) ? 'resolve' : 'reject';
-        dfd[action](ret);
+        Q.all([dfdStdout.promise, dfdStdErr.promise]).then(function(ret){
+            if(code === 0) {
+                // debug('p exit resolve:', ret[0]);
+                dfd.resolve(ret[0]);
+            } else {
+                // debug('p exit reject:', ret[1]);
+                dfd.reject(ret[1]);
+            }
+        });
     });
 
     return git;
@@ -140,7 +149,9 @@ Git.prototype.show = function(commit, callback) {
     var args = ['--pretty=format:%h | %an | %ct%n%s', '--no-patch', commit];
     git.exec('show', args, function(err, data) {
         // debug('show:', arguments);
-        if(err) throw err;
+        if(err) {
+            return callback(err);
+        }
 
         var dataArray = data.split(/\r?\n/);
         var reg = /^([^|]+)\s*|\s*([^|]+)\s*|\s*([[^|]+])$/gi;
