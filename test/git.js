@@ -1,6 +1,5 @@
 var path = require('path');
 var mocha = require('mocha');
-var assert = require("assert");
 var Git = require('../module/git.js');
 var debug = require('debug')('febu:' + __filename);
 var fs = require('fs');
@@ -31,7 +30,23 @@ describe(__filename, function(){
 		it('查询日志', function(done){
 			var commit = '7b11df0';
 			git.options.cwd = Git.getCwd(repo);
-			git.show(commit, done);
+			git.show(commit, function(err, ret){
+				var expected = {
+					commit: commit,
+					author: 'zfq',
+					datetime: 1400251035000,
+					message: '添加images'
+				};
+
+				try {
+					should.not.exist(err);
+					should.deepEqual(ret, expected);
+					done();
+				} catch(err) {
+					done(err);
+				}
+
+			});
 		});
 
 	});
