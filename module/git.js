@@ -186,21 +186,14 @@ Git.prototype.show = function(commit, callback) {
 Git.prototype.diff = function(from, to, callback) {
 	var git = this;
     callback = arguments[arguments.length - 1];
-    var args = [from, '--name-status'];
+    // 跳过已删除的文件
+    var args = [from, to, '--name-only', '--diff-filter=ACMRTUXB'];
     git.exec('diff', args, function(err, data){
         if(err) {
             return callback(err);
         }
 
-        var ret = [];
-        var files = data.match(/^([^\r\n]+)(?:\r?\n)*?$/igm);
-        files.forEach(function(item){
-            var pair = item.split(/\s+/);
-            ret.push({
-                file: pair[1],
-                status: pair[0].toUpperCase()
-            });
-        });
+        var ret = data.trim().split(/\r?\n/);
         callback(null, ret);
     });
 

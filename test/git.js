@@ -62,30 +62,11 @@ describe(__filename, function(){
 			var from = 'eae17bd';
 			var to = '0b6d734';
 			var expected = [
-			    {
-			        "file": "images/174338a0ay2nnznr3fv116.jpg",
-			        "status": "A"
-			    },
-			    {
-			        "file": "images/logo_107.gif",
-			        "status": "A"
-			    },
-			    {
-			        "file": "images/yoko_ogura.jpg",
-			        "status": "A"
-			    },
-			    {
-			        "file": "index.html",
-			        "status": "M"
-			    },
-			    {
-			        "file": "list.html",
-			        "status": "A"
-			    },
-			    {
-			        "file": "test.txt",
-			        "status": "D"
-			    }
+			    'images/174338a0ay2nnznr3fv116.jpg',
+			    'images/logo_107.gif',
+			    'images/yoko_ogura.jpg',
+			    'index.html',
+			    'list.html'
 			];
 			git.options.cwd = Git.getCwd(repo);
 			git.diff(from, to, function(err, data){
