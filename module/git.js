@@ -135,13 +135,13 @@ Git.prototype.pull = function(callback){
 };
 
 /**
- * 切换分支
- * @param branch 分支名
+ * 检出指定版本
+ * @param commit 分支名或者版本号
  * @param callback(err)
  */
-Git.prototype.checkout = function(branch, callback){
+Git.prototype.checkout = function(commit, callback){
 	var git = this;
-    git.exec('checkout', [branch], callback);
+    git.exec('checkout', [commit], callback);
 	return git;
 };
 
