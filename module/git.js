@@ -27,6 +27,10 @@ function Git(url, options) {
  */
 Git.prototype.exec = function(command, args, callback) {
     var git = this;
+    callback = arguments[arguments.length - 1];
+    if (arguments.length < 3) {
+        args = [];
+    }
     args = [command].concat(args);
     // debug('git exec args=', args);
     var p = spawn(git.binary, args, git.options);
@@ -125,7 +129,8 @@ Git.prototype.clone = function(callback) {
  * @param callback(err)
  */
 Git.prototype.pull = function(callback){
-	// TODO
+	var git = this;
+    git.exec('pull', callback);
 	return this;
 };
 
@@ -135,8 +140,9 @@ Git.prototype.pull = function(callback){
  * @param callback(err)
  */
 Git.prototype.checkout = function(branch, callback){
-	// TODO
-	return this;
+	var git = this;
+    git.exec('checkout', [branch], callback);
+	return git;
 };
 
 /**
@@ -172,14 +178,33 @@ Git.prototype.show = function(commit, callback) {
 };
 
 /**
- * 比较两次提交的差异，列出的数组项由目录+文件名构成
+ * 比较两次提交的差异
  * @param from 版本号
- * @param to   版本号
+ * @param [to] 版本号
  * @param callback(err, Array)
  */
 Git.prototype.diff = function(from, to, callback) {
-	// TODO
-	return this;
+	var git = this;
+    callback = arguments[arguments.length - 1];
+    var args = [from, '--name-status'];
+    git.exec('diff', args, function(err, data){
+        if(err) {
+            return callback(err);
+        }
+
+        var ret = [];
+        var files = data.match(/^([^\r\n]+)(?:\r?\n)*?$/igm);
+        files.forEach(function(item){
+            var pair = item.split(/\s+/);
+            ret.push({
+                file: pair[1],
+                status: pair[0].toUpperCase()
+            });
+        });
+        callback(null, ret);
+    });
+
+    return git;
 };
 
 module.exports = Git;

@@ -45,7 +45,57 @@ describe(__filename, function(){
 				} catch(err) {
 					done(err);
 				}
+			});
+		});
 
+		it('从远程仓库拉取当前分支', function(done){
+			git.options.cwd = Git.getCwd(repo);
+			git.pull(done);
+		});
+
+		it('切换到master分支', function(done){
+			git.options.cwd = Git.getCwd(repo);
+			git.checkout('master', done);
+		});
+
+		it('比较两次提交的差异', function(done){
+			var from = 'eae17bd';
+			var to = '0b6d734';
+			var expected = [
+			    {
+			        "file": "images/174338a0ay2nnznr3fv116.jpg",
+			        "status": "A"
+			    },
+			    {
+			        "file": "images/logo_107.gif",
+			        "status": "A"
+			    },
+			    {
+			        "file": "images/yoko_ogura.jpg",
+			        "status": "A"
+			    },
+			    {
+			        "file": "index.html",
+			        "status": "M"
+			    },
+			    {
+			        "file": "list.html",
+			        "status": "A"
+			    },
+			    {
+			        "file": "test.txt",
+			        "status": "D"
+			    }
+			];
+			git.options.cwd = Git.getCwd(repo);
+			git.diff(from, to, function(err, data){
+				try {
+					// debug(data);
+					should.deepEqual(data, expected);
+					done();
+				} catch(e) {
+					done(e);
+				}
 			});
 		});
 
