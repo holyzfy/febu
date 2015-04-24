@@ -12,6 +12,8 @@ var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var del = require('del');
 var replace = require('gulp-replace');
+var argv = require('yargs').argv;
+var Git = require('./module/git.js');
 
 var repo = 'https://github.com/holyzfy/trygit'; // 测试用
 var src = util.getCwd(repo, 'src');
@@ -71,8 +73,26 @@ gulp.task('clean', function(callback){
 	del([build, dest], callback);
 });
 
+// 检出版本库相应的版本 --commit commitid
+gulp.task('getProject', function(callback){
+	var git = new Git(repo);
+	var tasks = [
+		function(cb){
+			git.clone(cb);
+		},
+		function(cb){
+			git.pull(cb);
+		},
+		function(cb){
+			var commit = argv.commit || 'master';
+			git.checkout(commit, cb);
+		}
+	];
+	async.series(tasks, callback);
+});
+
 // 收集要处理的文件列表
-gulp.task('getSource', ['clean'], function(callback){
+gulp.task('getSource', ['clean', 'getProject'], function(callback){
 	glob('**/*', {
 		cwd: src,
 		ignore: ignore
@@ -139,3 +159,6 @@ gulp.task('html', ['minify'], function(){
 
 		.pipe(gulp.dest(dest));
 });
+
+// 上线
+gulp.task('release', ['html']);

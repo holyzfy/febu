@@ -48,12 +48,10 @@ describe(__filename, function(){
 	});
 
 	it('从远程仓库拉取当前分支', function(done){
-		git.options.cwd = Git.getCwd(repo);
 		git.pull(done);
 	});
 
 	it('切换到master分支', function(done){
-		git.options.cwd = Git.getCwd(repo);
 		git.checkout('master', done);
 	});
 
@@ -67,7 +65,6 @@ describe(__filename, function(){
 		    'index.html',
 		    'list.html'
 		];
-		git.options.cwd = Git.getCwd(repo);
 		git.diff(from, to, function(err, data){
 			try {
 				// debug(data);

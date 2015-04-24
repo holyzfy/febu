@@ -17,6 +17,7 @@ function Git(url, options) {
     this.binary = 'git';
 	this.url = url;
 	this.options = options || {};
+    this.options.cwd = Git.getCwd(url);
 }
 
 /**
