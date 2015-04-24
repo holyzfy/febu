@@ -78,7 +78,15 @@ gulp.task('getProject', function(callback){
 	var git = new Git(repo);
 	var tasks = [
 		function(cb){
-			git.clone(cb);
+			var src = util.getCwd(repo, 'src');
+			util.isEmpty(src, function(empty){
+				if(empty) {
+					git.clone(cb);
+				} else {
+					debug('仓库已存在');
+					cb();
+				}
+			});
 		},
 		function(cb){
 			git.pull(cb);

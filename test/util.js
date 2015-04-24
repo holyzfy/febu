@@ -19,4 +19,21 @@ describe(__filename, function(){
 			done();
 		});
 	});
+
+	it('isEmpty: 文件存在', function(done) {
+		var local = util.getCwd(repo, 'src');
+		util.isEmpty(local, function(ret){
+			ret.should.be.false;
+			done();
+		});
+	});
+
+	it('isEmpty: 文件不存在', function(done) {
+		var fold = path.resolve(__dirname, '_not_exsited');
+		util.isEmpty(fold, function(ret){
+			ret.should.be.true;
+			done();
+		});
+	});
+
 });
