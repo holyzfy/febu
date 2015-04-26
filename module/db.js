@@ -1,8 +1,23 @@
 var mongoose = require('mongoose');
+var config = require('../config.js');
+var debug = require('debug')('febu:' + __filename);
 
 var db = {};
-var db.projects = {};
-var db.resources = {};
+db.projects = {};
+db.resources = {};
+
+var Schema = mongoose.Schema;
+var ProjectSchema = new Schema({
+	repo: String,
+	development: {
+		ftp: String,
+		web: String 
+	},
+	production: {
+		ftp: String,
+		web: String 
+	}
+});
 
 /**
  * 读取项目配置
@@ -11,16 +26,21 @@ var db.resources = {};
  * @return {Query} @link http://mongoosejs.com/docs/queries.html
  */
 db.projects.find = function(repo, callback) {
-
+	var Project = mongoose.model('Project', ProjectSchema);
+	Project.findOne({
+		repo: repo
+	}, callback);
 };
 
 // 新建或更新项目配置
-db.projects.save = function(project, callback){
-
+db.projects.save = function(data, callback){
+	var Project = mongoose.model('Project', ProjectSchema);
+	Project.update({repo: data.repo}, data, {upsert: true}, callback);
 };
 
 db.projects.remove = function(conditions, callback) {
-
+	var Project = mongoose.model('Project', ProjectSchema);
+	return Project.remove(conditions, callback);
 };
 
 /**
@@ -39,6 +59,22 @@ db.resources.save = function(resource, callback){
 
 db.resources.remove = function(conditions, callback) {
 
+};
+
+db.init = function() {
+	var db = mongoose.connection;
+	var readyState = mongoose.connection.readyState;
+	db.on('open', function() {
+		debug('connection open');
+	});
+	db.on('close', function() {
+		debug('connection open');
+	});
+	db.on('error', function(err){
+		debug('connection error ', err);
+	});
+	mongoose.connect(config.database);
+	return this;
 };
 
 module.exports = db;

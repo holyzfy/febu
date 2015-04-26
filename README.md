@@ -15,6 +15,14 @@
 	npm install -g gulp
 	npm install
 
+## 上线
+
+	gulp release --repo repo [--commit commitid]
+
+例如发布项目[trygit](https://github.com/holyzfy/trygit)的`master`分支的最新代码
+
+	gulp release --repo https://github.com/holyzfy/trygit
+
 ## 测试
 
 安装依赖
