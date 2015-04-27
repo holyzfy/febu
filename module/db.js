@@ -16,7 +16,8 @@ var ProjectSchema = new Schema({
 	production: {
 		ftp: String,
 		web: String 
-	}
+	},
+	version: String
 });
 
 /**

@@ -132,7 +132,7 @@ Git.prototype.clone = function(callback) {
 Git.prototype.pull = function(callback){
 	var git = this;
     git.exec('pull', callback);
-	return this;
+	return git;
 };
 
 /**

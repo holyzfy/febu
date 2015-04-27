@@ -1,4 +1,3 @@
-var gulp = require('gulp');
 var glob = require("glob");
 var path = require('path');
 var async = require('async');
@@ -10,7 +9,6 @@ var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var del = require('del');
 var replace = require('gulp-replace');
-var argv = require('yargs').argv;
 var exit = require('gulp-exit');
 var config = require('../config.js');
 var util = require('./util.js');
@@ -19,7 +17,7 @@ var Git = require('./git.js');
 var helper = {};
 
 var version = (new Date).getTime();
-var ignore = ['**/*.?(shtml|html|htm)', '**/*.less', '**/*.md', '**/*.markdown'];
+var ignore = ['**/*.less', '**/*.md', '**/*.markdown'];
 
 // 打版本号
 helper.ver = function(projectCfg, _path){
@@ -67,8 +65,8 @@ helper.replaceScript = function(projectCfg, search) {
 	return script;
 };
 
-// 检出版本库相应的版本 --commit commitid
-helper.getProject = function(projectCfg, callback){
+// 检出版本库相应的版本
+helper.getProject = function(projectCfg, commit, callback){
 	var git = new Git(projectCfg.repo);
 	var tasks = [
 		function(cb){
@@ -84,16 +82,15 @@ helper.getProject = function(projectCfg, callback){
 			});
 		},
 		function(cb){
-			debug('pull');
-			git.pull(cb);
-		},
-		function(cb){
 			debug('checkout master');
 			git.checkout('master', cb);
 		},
 		function(cb){
-			debug('checkout HEAD');
-			var commit = argv.commit || 'HEAD';
+			debug('pull');
+			git.pull(cb);
+		},
+		function(cb){
+			debug('checkout ', commit);
 			git.checkout(commit, cb);
 		}
 	];
@@ -101,40 +98,43 @@ helper.getProject = function(projectCfg, callback){
 };
 
 // 收集要处理的文件列表
-helper.getSource = function(projectCfg, callback){
-	debug('getSource');
-	var src = util.getCwd(projectCfg.repo, 'src');
+helper.getSource = function(projectCfg, commit, callback) {
 	var source = [];
-	glob('**/*', {
-		cwd: src,
-		ignore: ignore
-	}, function(err, files) {
-		files.forEach(function(item){
-			var newPath = path.resolve(src, item);
-			// debug(newPath);
-			source.push(newPath);
+	var git = new Git(projectCfg.repo);
+	var src = util.getCwd(projectCfg.repo, 'src');
+	git.diff(projectCfg.version, commit, function(err, ret) {
+		if(err) return callback(err);
+
+		ret.forEach(function(item){
+			item = path.join(src, item);
+			source.push(item)
 		});
-		callback(err, source);
+		// debug('source=', source);
+		callback(null, source);
 	});
 };
 
 // 压缩 + 打版本号
 helper.minify = function(projectCfg){
+	var gulp = this;
 	var build = util.getCwd(projectCfg.repo, 'build');
 	var dest = util.getCwd(projectCfg.repo, 'dest');
 
 	var jsFilter = gulpFilter('**/*.js');
 	var cssFilter = gulpFilter('**/*.css');
+	var ignoreHtmlFilter = gulpFilter(ignore);
 
 	return gulp.src('**/*', {
 			cwd: path.join(build, '..'),
-			base: build
+			base: build,
+			ignore: ignore
 		})
 		
 		// 压缩js
 		.pipe(jsFilter)
 		.pipe(uglify())
 		.pipe(jsFilter.restore())
+
 
 		// 压缩css
 		.pipe(cssFilter)
@@ -151,6 +151,7 @@ helper.minify = function(projectCfg){
 
 // 处理html文件
 helper.html = function(projectCfg, callback){
+	var gulp = this;
 	var src = util.getCwd(projectCfg.repo, 'src');
 	var dest = util.getCwd(projectCfg.repo, 'dest');
 	var scriptTag = /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi;

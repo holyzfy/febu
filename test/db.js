@@ -3,13 +3,15 @@ var should = require('should');
 var debug = require('debug')('febu:' + __filename);
 
 describe(__filename, function(){
+	var repo = 'test_repo_url';
+
 	before(function(done){
 		db.init(done);
 	});
 
 	it('db.projects.save', function(done){
 		var project = {
-			repo: 'https://github.com/holyzfy/trygit',
+			repo: repo,
 			development: {
 				ftp: '',
 				web: '//qa.developer.163.com/'
@@ -17,13 +19,13 @@ describe(__filename, function(){
 			production: {
 				ftp: '',
 				web: '//img1.cache.netease.com/f2e/'
-			}
+			},
+			version: '3bc6453'
 		};
 		db.projects.save(project, done);		
 	});
 	
 	it('db.projects.find', function(done) {
-		var repo = 'https://github.com/holyzfy/trygit';
 		db.projects.find(repo, function(err, ret){
 			should.not.exist(err);
 			should.exist(ret);
@@ -33,7 +35,7 @@ describe(__filename, function(){
 
 	it('db.projects.remove', function(done) {
 		var conditions = {
-			repo: 'https://github.com/holyzfy/trygit'
+			repo: repo
 		};
 		db.projects.remove(conditions, done);
 	});
