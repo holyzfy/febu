@@ -3,6 +3,9 @@ var should = require('should');
 var debug = require('debug')('febu:' + __filename);
 
 describe(__filename, function(){
+	before(function(done){
+		db.init(done);
+	});
 
 	it('db.projects.save', function(done){
 		var project = {
