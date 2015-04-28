@@ -60,4 +60,8 @@ util.isEmpty = function (searchPath, cb) {
   });
 };
 
+util.reg = {
+    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi
+};
+
 module.exports = util;
