@@ -6,7 +6,7 @@ var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
-var exit = require('gulp-exit');
+// var exit = require('gulp-exit');
 var util = require('./util.js');
 
 var version = (new Date).getTime();
@@ -118,7 +118,8 @@ p.html = function(projectCfg, callback){
 		// TODO 替换单个css外链
 
 		.pipe(gulp.dest(dest))
-		.pipe(exit());
+		// TODO 标记该项目busy = false
+		// .pipe(exit());
 }
 
 module.exports = p;
