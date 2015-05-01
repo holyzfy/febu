@@ -19,7 +19,7 @@ util.getPathname = function(repo) {
 /**
  * 取得仓库的根目录
  * @param repo 仓库地址
- * @param type 有效值src, build, dest
+ * @param type 有效值src, build, development, production
  * @return {String}
  */
 util.getCwd = function (repo, type) {

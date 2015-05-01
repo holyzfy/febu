@@ -3,24 +3,45 @@ var debug = require('debug')('febu:' + __filename);
 var minifyCss = require('gulp-minify-css');
 var argv = require('yargs').argv;
 var del = require('del');
+var async = require('async');
 var Git = require('./module/git.js');
 var util = require('./module/util.js');
 var db = require('./module/db.js');
-var dev = require('./module/development.js');
-var release = require('./module/production.js');
+var Development = require('./module/development.js');
+var Production = require('./module/production.js');
 
 var repo;
 var commit = argv.commit || 'HEAD';  // 检出相应版本
+var dev;
+var release;
 var src;
 var build;
-var dest;
+var destDev;
+var destRelease;
 var source = [];
 var projectCfg;
 var ignore = ['**/*.less', '**/*.md', '**/*.markdown'];
 
+var formatCommit = function(repo, commit, cb) {
+	if(commit === 'HEAD') {
+		// 取得HEAD版本的版本号
+		var git = new Git(repo);
+		var args = ['--pretty=format:%h', '--no-patch', commit];
+	    git.exec('show', args, function(err, data) {
+	    	if(err) {
+	            return callback(err);
+	        }
+	        cb(null, data);
+	    });
+	} else {
+		cb(null, commit);
+	}
+};
+
 // 检出版本库相应的版本
-var getProject = function(projectCfg, commit, callback){
+var getProject = function(projectCfg, commitId, callback){
 	var git = new Git(projectCfg.repo);
+
 	var tasks = [
 		function(cb){
 			debug('clone');
@@ -43,6 +64,16 @@ var getProject = function(projectCfg, commit, callback){
 			git.pull(cb);
 		},
 		function(cb){
+			debug('formatCommit');
+			formatCommit(projectCfg.repo, commitId, function(err, data) {
+				if(err) {
+					return cb(err);
+				}
+				commit = data;
+				cb();
+			})
+		},
+		function(cb){
 			debug('checkout ', commit);
 			git.checkout(commit, cb);
 		}
@@ -55,18 +86,35 @@ var getSource = function(projectCfg, commit, callback) {
 	var source = [];
 	var git = new Git(projectCfg.repo);
 	var src = util.getCwd(projectCfg.repo, 'src');
-	git.diff(projectCfg.version, commit, function(err, ret) {
-		if(err) {
-			return callback(err);
-		}
+	if(projectCfg.version) {
+		git.diff(projectCfg.version, commit, function(err, ret) {
+			if(err) {
+				return callback(err);
+			}
 
-		ret.forEach(function(item){
-			item = path.join(src, item);
-			source.push(item)
+			ret.forEach(function(item){
+				item = path.join(src, item);
+				source.push(item)
+			});
+			callback(null, source);
 		});
-		// debug('source=', source);
-		callback(null, source);
-	});
+	} else {
+		callback(null, ['**/*']);
+	}
+};
+
+/**
+ * 标记为已发布
+ * @param  Object.<type, srcCommit, destCommit, projectCfg, db> options
+ *                type 			发布类型，有效值development, production
+ *                srcCommit		源版本号
+ *                destCommit	对应目标仓库的版本号
+ *                projectCfg
+ *                db
+ * @param callback
+ */
+var mark = function(options, callback) {
+
 };
 
 gulp.task('before', function(callback){
@@ -76,25 +124,28 @@ gulp.task('before', function(callback){
 	repo = argv.repo;
 	src = util.getCwd(repo, 'src');
 	build = util.getCwd(repo, 'build');
-	dest = util.getCwd(repo, 'dest');
-
+	destDev = util.getCwd(repo, 'development');
+	destRelease = util.getCwd(repo, 'production');
 	db.init(function(){
 		// TODO 标记该项目busy = true
 
 		db.projects.find(repo, function(err, ret){
 			projectCfg = ret;
+			dev = new Development(projectCfg);
+			// TODO release = new Production(projectCfg);
 			callback(err, ret);
 		});
 	});
 });
 
-gulp.task('clean', ['before'], function(callback){
-	del([build, dest], callback);
+gulp.task('clean', ['before'], function(){
+	del([build], {force: true});
 });
 
-gulp.task('getProject', ['before'], getProject.bind(gulp, projectCfg, commit));
+/*
+gulp.task('getProject', ['clean', 'before'], getProject.bind(gulp, projectCfg, commit));
 
-gulp.task('getSource', ['clean', 'getProject'], function(callback){
+gulp.task('getSource', ['getProject'], function(callback){
 	getSource.call(gulp, projectCfg, commit, function(err, ret) {
 		if(err) {
 			return callback(err);
@@ -114,12 +165,43 @@ gulp.task('collectFiles', ['getSource'], function(){
 
 gulp.task('release_minify', ['collectFiles'], release.minify.bind(gulp, projectCfg));
 gulp.task('release_html', ['release_minify'], release.html.bind(gulp, projectCfg));
-
-gulp.task('dev_resource', dev.resource.bind(gulp, projectCfg));
-gulp.task('dev_html', dev.html.bind(gulp, projectCfg));
+*/
 
 // 发布到测试环境
-gulp.task('development', ['dev_resource', 'dev_html']);
+gulp.task('development', ['before'], function(callback) {
+	dev.exist(commit, function(err, exist) {
+		if(err) {
+			return callback(err);
+		}
+
+		if(exist) {
+			dev.checkout(commit, callback);
+		} else {
+			dev.commit(function(err, data){
+				if(err) {
+					return callback(err);
+				}
+				var args = {
+					type: 'development',
+					srcCommit: commit,
+					destCommit: data,
+					projectCfg: projectCfg,
+					db: db
+				}
+				mark(args, callback);
+			});
+		}
+	});
+});
 
 // 发布到正式环境
 gulp.task('production', ['release_html']);
+
+module.exports = {
+	debug: {
+		formatCommit: formatCommit,
+		getProject: getProject,
+		getSource: getSource,
+		mark: mark
+	}
+};

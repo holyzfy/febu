@@ -63,15 +63,15 @@ db.resources.remove = function(conditions, callback) {
 };
 
 db.init = function(callback) {
-	var db = mongoose.connection;
+	var conn = mongoose.connection;
 	var readyState = mongoose.connection.readyState;
-	db.on('open', function() {
+	conn.on('open', function() {
 		debug('connection open');
 	});
-	db.on('close', function() {
-		debug('connection open');
+	conn.on('close', function() {
+		debug('connection close');
 	});
-	db.on('error', function(err){
+	conn.on('error', function(err){
 		debug('connection error ', err);
 	});
 	mongoose.connect(config.database, callback);

@@ -1,5 +1,4 @@
 var path = require('path');
-var mocha = require('mocha');
 var Git = require('../module/git.js');
 var debug = require('debug')('febu:' + __filename);
 var fs = require('fs');
