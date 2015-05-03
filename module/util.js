@@ -2,6 +2,9 @@ var config = require('../config.js');
 var url = require('url');
 var path = require('path');
 var fs = require('fs');
+var async = require('async');
+var debug = require('debug')('febu:' + __filename);
+var Git = require('./git.js');
 
 var util = {};
 
@@ -11,7 +14,7 @@ var util = {};
  * @return {[type]}      [description]
  */
 util.getPathname = function(repo) {
-	var urlMap = url.parse(repo);
+    var urlMap = url.parse(repo);
     var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
     return pathname;
 };
@@ -22,8 +25,8 @@ util.getPathname = function(repo) {
  * @param type 有效值src, build, development, production
  * @return {String}
  */
-util.getCwd = function (repo, type) {
-	var dataPath = config.dataPath || 'data/';
+util.getCwd = function(repo, type) {
+    var dataPath = config.dataPath || 'data/';
     var pathname = util.getPathname(repo);
     var urlMap = url.parse(repo);
     var local = path.resolve(dataPath, type, urlMap.hostname, pathname);
@@ -37,27 +40,111 @@ util.getCwd = function (repo, type) {
  * @param {string} searchPath
  * @param {Function} cb
  */
-util.isEmpty = function (searchPath, cb) {
-  fs.stat(searchPath, function (err, stat) {
-    if (err) {
-      return cb(true);
-    }
-    if (stat.isDirectory()) {
-      fs.readdir(searchPath, function (err, items) {
+util.isEmpty = function(searchPath, callback) {
+    fs.stat(searchPath, function(err, stat) {
         if (err) {
-          return cb(true);
+            return callback(true);
         }
-        cb(!items || !items.length);
-      });
+        if (stat.isDirectory()) {
+            fs.readdir(searchPath, function(err, items) {
+                if (err) {
+                    return callback(true);
+                }
+                callback(!items || !items.length);
+            });
+        } else {
+            fs.readFile(searchPath, function(err, data) {
+                if (err) {
+                    callback(true);
+                }
+                callback(!data || !data.length)
+            });
+        }
+    });
+};
+
+util.formatCommit = function(repo, commit, callback) {
+    if (commit.toUpperCase() === 'HEAD') {
+        // 取得HEAD版本的版本号
+        var git = new Git(repo);
+        var args = ['--pretty=format:%h', '--no-patch', 'HEAD'];
+        git.exec('show', args, function(err, data) {
+            if (err) {
+                return callback(err);
+            }
+            callback(null, data);
+        });
     } else {
-      fs.readFile(searchPath, function (err, data) {
-        if (err) {
-          cb(true);
-        }
-        cb(!data || !data.length)
-      });
+        callback(null, commit);
     }
-  });
+};
+
+// 检出版本库相应的版本
+util.getProject = function(project, commit, callback) {
+    var repo = project.repo;
+    var git = new Git(repo);
+
+    var tasks = [
+        function(cb) {
+            var src = util.getCwd(repo, 'src');
+            util.isEmpty(src, function(empty) {
+                if (empty) {
+                    git.clone(cb);
+                } else {
+                    cb(null, '仓库已存在');
+                }
+            });
+        },
+        function(data, cb){
+            git.checkout('master', cb);
+        },
+        function(data, cb) {
+            git.pull(cb);
+        },
+        function(data, cb) {
+            util.formatCommit(repo, commit, cb);
+        },
+        function(commit, cb) {
+            git.checkout(commit, cb);
+        }
+    ];
+    async.waterfall(tasks, callback);
+};
+
+// 收集要处理的文件列表
+util.getSource = function(project, commit, callback) {
+    var source = [];
+    var git = new Git(project.repo);
+    var src = util.getCwd(project.repo, 'src');
+    if (project.version) {
+        git.diff(project.version, commit, function(err, ret) {
+            if (err) {
+                return callback(err);
+            }
+
+            ret.forEach(function(item) {
+                item = path.join(src, item);
+                source.push(item)
+            });
+            callback(null, source);
+        });
+    } else {
+        callback(null, ['**/*']);
+    }
+};
+
+/**
+ * 标记为已发布
+ * @param  db 
+ * @param  Object.<type, srcCommit, destCommit, project, db> options
+ *                type  发布类型，有效值development, production
+ *                src   源版本号
+ *                dest  对应目标仓库的版本号
+ *                repo
+ * @param  callback
+ */
+util.mark = function(db, data, callback) {
+    db.versions.save(data, callback);
 };
 
 util.reg = {

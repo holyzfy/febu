@@ -2,6 +2,7 @@ var util = require('../module/util.js');
 var fs = require('fs');
 var path = require('path');
 var should = require('should');
+var async = require('async');
 
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
@@ -34,6 +35,55 @@ describe(__filename, function(){
 			ret.should.be.true;
 			done();
 		});
+	});
+
+	it('formatCommit', function(done) {
+		async.series([
+			function(callback){
+				var commit = '3bc6453';
+				util.formatCommit(repo, commit, function(err, data) {
+					if(err) {
+						return callback(err);
+					}
+					commit.should.equal(data);
+					callback();
+				});
+			},
+			function(callback) {
+				util.formatCommit(repo, 'HEAD', callback);
+			}
+		], done);
+	});
+
+	it('getProject', function(done) {
+		var commit = 'HEAD';
+		util.getProject({repo: repo}, commit, done);
+	});
+
+	it('getSource', function(done) {
+		async.series([
+			function(callback) {
+				util.getSource({repo: repo}, 'HEAD', callback);
+			},
+			function(callback){
+				var project = {
+					repo: repo,
+					version: '3bc6453'
+				};
+				util.getSource(project, '00ce303', function(err, data){
+					if(err) {
+						return callback(err);
+					}
+					try {
+						data.should.be.Array;
+						data.should.have.length(2);
+					} catch(e) {
+						callback(e);
+					}
+					callback();
+				});
+			}
+		], done);
 	});
 
 });

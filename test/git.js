@@ -8,7 +8,7 @@ describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
 	var git = new Git(repo);
 
-	it('取得仓库地址', function(){
+	/*it('取得仓库地址', function(){
 		repo.should.equal(git.url);
 	});
 
@@ -68,6 +68,17 @@ describe(__filename, function(){
 			try {
 				// debug(data);
 				should.deepEqual(data, expected);
+				done();
+			} catch(e) {
+				done(e);
+			}
+		});
+	});*/
+
+	it('getHeadCommit', function(done) {
+		git.getHeadCommit(function(err, data) {
+			try {
+				should.exist(data);
 				done();
 			} catch(e) {
 				done(e);

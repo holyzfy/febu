@@ -17,7 +17,7 @@ function Git(url, options) {
     this.binary = 'git';
 	this.url = url;
 	this.options = options || {};
-    this.options.cwd = Git.getCwd(url);
+    this.options.cwd = Git.getCwd(url, this.options.type);
 }
 
 /**
@@ -96,12 +96,15 @@ Git.prototype.exec = function(command, args, callback) {
 
 /**
  * 取得本地仓库的根目录
+ * @param  repo
+ * @param  type 有效值 src, development, production，默认值是src
  */
-Git.getCwd = function(repo) {
+Git.getCwd = function(repo, type) {
+    type = type || 'src';
     var dataPath = config.dataPath || 'data/';
     var urlMap = url.parse(repo);
     var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-    var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
+    var local = path.resolve(dataPath, type, urlMap.hostname, pathname);
     return local;
 };
 
@@ -200,5 +203,19 @@ Git.prototype.diff = function(from, to, callback) {
 
     return git;
 };
+
+/**
+ * 取得HEAD的版本号
+ */
+Git.prototype.getHeadCommit = function(callback) {
+    var git = this;
+    var args = ['--pretty=format:%h', '--no-patch', 'HEAD'];
+    git.exec('show', args, function(err, data) {
+        if(err) {
+            return callback(err);
+        }
+        callback(null, data);
+    });
+}
 
 module.exports = Git;

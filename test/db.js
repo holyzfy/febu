@@ -14,11 +14,11 @@ describe(__filename, function(){
 			repo: repo,
 			development: {
 				ftp: '',
-				web: '//qa.developer.163.com/'
+				web: '//qa.developer.test.com/'
 			},
 			production: {
 				ftp: '',
-				web: '//img1.cache.netease.com/f2e/'
+				web: '//img1.cache.test.com/f2e/'
 			},
 			version: '3bc6453'
 		};
@@ -38,6 +38,28 @@ describe(__filename, function(){
 			repo: repo
 		};
 		db.projects.remove(conditions, done);
+	});
+
+	it('db.versions.save', function(done){
+		var data = {
+			repo: repo,
+			type: 'development',
+			src: '9bfb77f',
+			dest: 'yuk0573'
+		};
+		db.versions.save(data, done);
+	});
+
+	it('db.versions.find', function(done) {
+		db.versions.find({src: '9bfb77f', repo: repo}, function(err, doc) {
+			should.not.exist(err);
+			should.exist(doc);
+			done();
+		});
+	});
+
+	it('db.versions.remove', function(done) {
+		db.versions.remove({src: '9bfb77f', repo: repo}, done);
 	});
 	
 });
