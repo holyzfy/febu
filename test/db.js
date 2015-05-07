@@ -6,7 +6,11 @@ describe(__filename, function(){
 	var repo = 'test_repo_url';
 
 	before(function(done){
-		db.init(done);
+		db.open(done);
+	});
+
+	after(function(done) {
+		db.close(done);
 	});
 
 	it('db.projects.save', function(done){

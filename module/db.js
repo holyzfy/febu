@@ -33,13 +33,16 @@ db.projects.find = function(repo, callback) {
 	var Project = mongoose.model('Project', ProjectSchema);
 	return Project.findOne({
 		repo: repo
-	}, callback);
+	}, function(err, data) {
+		callback(err, data.toObject());
+	});
 };
 
 // 新建或更新项目配置
 db.projects.save = function(data, callback){
 	var Project = mongoose.model('Project', ProjectSchema);
-	return Project.update({repo: data.repo}, data.toObject(), {upsert: true}, callback);
+	debug('projects.save', data);
+	return Project.update({repo: data.repo}, data, {upsert: true}, callback);
 };
 
 db.projects.remove = function(conditions, callback) {
@@ -87,7 +90,9 @@ var VersionSchema = new Schema({
 
 db.versions.find = function(conditions, callback) {
 	var Version = mongoose.model('Version', VersionSchema);
-	Version.findOne(conditions, callback);
+	Version.findOne(conditions, function(err, data) {
+		callback(err, data.toObject());
+	});
 };
 
 db.versions.save = function(data, callback) {
@@ -96,7 +101,7 @@ db.versions.save = function(data, callback) {
 		repo: data.repo,
 		src: data.src
 	};
-	return Version.update(conditions, data.toObject(), {upsert: true}, callback);
+	return Version.update(conditions, data, {upsert: true}, callback);
 };
 
 db.versions.remove = function(conditions, callback) {
@@ -104,20 +109,24 @@ db.versions.remove = function(conditions, callback) {
 	return Version.remove(conditions, callback);
 }
 
-db.init = function(callback) {
-	var conn = mongoose.connection;
-	var readyState = mongoose.connection.readyState;
-	conn.on('open', function() {
-		debug('connection open');
-	});
-	conn.on('close', function() {
-		debug('connection close');
-	});
-	conn.on('error', function(err){
-		debug('connection error ', err);
-	});
-	mongoose.connect(config.database, callback);
-	return this;
+var conn = mongoose.connection;
+
+conn.on('open', function() {
+	debug('connection open');
+});
+conn.on('close', function() {
+	debug('connection close');
+});
+conn.on('error', function(err){
+	debug('connection error ', err);
+});
+
+db.open = function(callback) {
+	return mongoose.connect(config.database, callback);
+};
+
+db.close = function(callback) {
+	return conn.close(callback);
 };
 
 module.exports = db;

@@ -42,7 +42,7 @@ gulp.task('before', function(callback){
 	};
 
 	var dbInit = function(cb) {
-		db.init(function(){
+		db.open(function(){
 			db.projects.find(repo, function(err, data){
 				if(err) {
 					return cb(err);
@@ -79,7 +79,9 @@ gulp.task('release_html', ['release_minify'], release.html.bind(gulp, project));
 gulp.task('development', ['before'], function(callback){
 	var dev = new Development(project);
 	dev.db = db;
-	dev.run(commit, callback);
+	dev.run(commit, function(err, data){
+		dev.db.close(callback);
+	});
 });
 
 // 发布到正式环境

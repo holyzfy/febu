@@ -4,6 +4,8 @@ var path = require('path');
 var fs = require('fs');
 var async = require('async');
 var util = require('./util.js');
+var gulp = require('gulp');
+var gulpIgnore = require('gulp-ignore');
 
 function Dev(project) {
 	this.project = project;
@@ -15,8 +17,7 @@ function Dev(project) {
  * @param  callback(err, boolean)
  */
 Dev.prototype.exist = function(commit, callback) {
-	return callback(null, false);
-	/*var dev = this;
+	var dev = this;
 
 	var git = new Git(dev.project.repo, {
 		type: 'development'
@@ -43,14 +44,27 @@ Dev.prototype.exist = function(commit, callback) {
 		} else {
 			callback(null, ret);
 		}
-	});*/
+	});
 };
 
 // 收集静态资源
 Dev.prototype.resource = function(source, callback) {
 	// TODO 输出到dest目录
 	debug('resource');
-	callback(); // 测试
+	var dev = this;
+	gulp.task('resource', function(){
+		var ignore = ['**/*.less', '**/*.md', '**/*.markdown', '**/*.+(shtml|html|htm)'];
+		var src = util.getCwd(dev.project.repo, 'src');
+		var dest = util.getCwd(dev.project.repo, 'dest');
+		gulp.src(source, {
+			base: src
+		})
+		.pipe(gulpIgnore.exclude(ignore))
+		.pipe(gulp.dest(dest))
+		.on('end', callback)
+		.on('error', callback);
+	});
+	gulp.start('resource');
 };
 
 // 处理html文件
@@ -89,42 +103,44 @@ Dev.prototype.run = function(commit, callback) {
 			return callback(err);
 		}
 		if(exist) {
-			dev.checkout(commit, callback);
+			return dev.checkout(commit, callback);
 		} else {
 			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布
-			var checkout = function(cb) {
+			var checkout = function() {
 				debug('checkout ', arguments);
+				var next = arguments[arguments.length - 1];
 				async.waterfall([
-					function(_cb) {
+					function(cb) {
 						util.getProject(dev.project, commit, function(){
-							_cb();
+							cb();
 						});
 					},
 					util.getSource.bind(null, dev.project, commit)
-				], cb);
+				], next);
 			};
 
-			var compile = function(source, cb) {
+			var compile = function(source) {
 				debug('compile ', arguments);
+				var next = arguments[arguments.length - 1];
 				async.series([
-					function(_cb) {
-						dev.resource(source, _cb);
+					function(cb) {
+						dev.resource(source, cb);
 					},
-					function(_cb){
-						dev.html(source, _cb);
+					function(cb){
+						dev.html(source, cb);
 					}
-				], function(){
-					cb();
-				});
+				], next);
 			};
 
-			var save = function(cb){
+			var save = function(){
 				debug('save ', arguments);
-				dev.commit(cb);
+				var next = arguments[arguments.length - 1];
+				dev.commit(next);
 			};
 
-			var getHeadCommit = function(cb) {
+			var getHeadCommit = function() {
 				debug('getHeadCommit', arguments);
+				var next = arguments[arguments.length - 1];
 				var git = new Git(dev.project.repo, {
 					type: 'development'
 				});
@@ -135,18 +151,21 @@ Dev.prototype.run = function(commit, callback) {
 						dest: data,
 						repo: dev.project.repo
 					}
-					cb(null, args);
+					next(null, args);
 				});
 			};
 
-			var mark = function(data, cb) {
+			var mark = function(data) {
 				debug('mark', arguments);
-				// util.mark(dev.db, data, cb);
+				var next = arguments[arguments.length - 1];
+				return next(null, {}); // 测试用
+				// util.mark(dev.db, data, next);
 			};
 
 			var tasks = [checkout, compile, save, getHeadCommit, mark];
-			async.waterfall(tasks, callback);
-			
+			async.waterfall(tasks, function(err, data){
+				callback(err, data);
+			});
 		}
 	});
 };
