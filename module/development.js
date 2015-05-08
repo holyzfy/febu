@@ -49,7 +49,6 @@ Dev.prototype.exist = function(commit, callback) {
 
 // 收集静态资源
 Dev.prototype.resource = function(source, callback) {
-	// TODO 输出到dest目录
 	debug('resource');
 	var dev = this;
 	gulp.task('resource', function(){
@@ -70,10 +69,11 @@ Dev.prototype.resource = function(source, callback) {
 // 处理html文件
 Dev.prototype.html = function(source, callback) {
 	debug('html');
+	// TODO 根据css, js收集变更的html文件
 	// TODO 替换静态资源链接
 	// TODO 输出到dest目录
 	// TODO 标记该项目busy = false;
-	callback(); // 测试
+	callback();
 }
 
 // 从测试环境的仓库里检出指定版本

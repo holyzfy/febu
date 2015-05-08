@@ -147,6 +147,21 @@ util.mark = function(db, data, callback) {
     db.versions.save(data, callback);
 };
 
+/**
+ * 查找被引用的文件
+ * @param  {Array}    source 相对于仓库根目录的文件列表
+ * @param  {Function} callback(err, data)
+ */
+util.getRelatedFiles = function(source, callback) {
+    // TODO
+};
+
+util.resolvePath = function(from, to, base) {
+    var dir = path.dirname(from);
+    var thisPath = path.resolve(dir, to);
+    return path.relative(base, thisPath);
+};
+
 util.reg = {
     script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi
 };

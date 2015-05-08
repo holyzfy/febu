@@ -86,4 +86,13 @@ describe(__filename, function(){
 		], done);
 	});
 
+	it('resolvePath', function(){
+		var from = 'd:/febu/data/src/github.com/test/index.html';
+		var to = 'style/list.css';
+		var base = 'd:/febu/data/src/github.com/test';
+
+		var ret = util.resolvePath(from, to, base);
+		should.equal(path.normalize(ret), path.normalize(to));
+	});
+
 });
