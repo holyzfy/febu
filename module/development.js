@@ -6,6 +6,7 @@ var async = require('async');
 var util = require('./util.js');
 var gulp = require('gulp');
 var gulpIgnore = require('gulp-ignore');
+var frep = require('gulp-frep');
 
 function Dev(project) {
 	this.project = project;
@@ -69,11 +70,26 @@ Dev.prototype.resource = function(source, callback) {
 // 处理html文件
 Dev.prototype.html = function(source, callback) {
 	debug('html');
-	// TODO 根据css, js收集变更的html文件
-	// TODO 替换静态资源链接
-	// TODO 输出到dest目录
-	// TODO 标记该项目busy = false;
-	callback();
+	var dev = this;
+	
+	// 替换静态资源链接
+	// @link https://github.com/jonschlinkert/gulp-frep
+	var patterns = [/*TODO*/];
+	
+	util.getRelatedFiles(source, function(err, htmlFiles){
+		gulp.task('html', function(){
+			var src = util.getCwd(dev.project.repo, 'src');
+			var dest = util.getCwd(dev.project.repo, 'dest');
+			gulp.src(htmlFiles, {
+				base: src
+			})
+			.pipe(frep(patterns))
+			.pipe(gulp.dest(dest))
+			.on('end', callback)
+			.on('error', callback);
+		});
+		gulp.start('html');
+	});
 }
 
 // 从测试环境的仓库里检出指定版本
@@ -159,6 +175,7 @@ Dev.prototype.run = function(commit, callback) {
 				debug('mark', arguments);
 				var next = arguments[arguments.length - 1];
 				return next(null, {}); // 测试用
+				// TODO
 				// util.mark(dev.db, data, next);
 			};
 

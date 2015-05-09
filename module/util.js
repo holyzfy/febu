@@ -153,7 +153,7 @@ util.mark = function(db, data, callback) {
  * @param  {Function} callback(err, data)
  */
 util.getRelatedFiles = function(source, callback) {
-    // TODO
+    // TODO 查找，去重
 };
 
 util.resolvePath = function(from, to, base) {
