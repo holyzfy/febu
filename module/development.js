@@ -5,8 +5,9 @@ var fs = require('fs');
 var async = require('async');
 var util = require('./util.js');
 var gulp = require('gulp');
-var gulpIgnore = require('gulp-ignore');
 var frep = require('gulp-frep');
+var gulpFilter = require('gulp-filter');
+var gulpIgnore = require('gulp-ignore');
 
 function Dev(project) {
 	this.project = project;
@@ -59,7 +60,10 @@ Dev.prototype.resource = function(source, callback) {
 		gulp.src(source, {
 			base: src
 		})
+
+		// 跳过非静态资源
 		.pipe(gulpIgnore.exclude(ignore))
+
 		.pipe(gulp.dest(dest))
 		.on('end', callback)
 		.on('error', callback);
@@ -72,24 +76,26 @@ Dev.prototype.html = function(source, callback) {
 	debug('html');
 	var dev = this;
 	
-	// 替换静态资源链接
-	// @link https://github.com/jonschlinkert/gulp-frep
 	var patterns = [/*TODO*/];
 	
-	util.getRelatedFiles(source, function(err, htmlFiles){
-		gulp.task('html', function(){
-			var src = util.getCwd(dev.project.repo, 'src');
-			var dest = util.getCwd(dev.project.repo, 'dest');
-			gulp.src(htmlFiles, {
-				base: src
-			})
-			.pipe(frep(patterns))
-			.pipe(gulp.dest(dest))
-			.on('end', callback)
-			.on('error', callback);
-		});
-		gulp.start('html');
+	gulp.task('html', function(){
+		var htmlFilter = gulpFilter('**/*.?(shtml|html|htm)');
+		var src = util.getCwd(dev.project.repo, 'src');
+		var dest = util.getCwd(dev.project.repo, 'dest');
+		gulp.src(source, {
+			base: src
+		})
+		.pipe(htmlFilter)
+		
+		// 替换静态资源链接
+		// @link https://github.com/jonschlinkert/gulp-frep
+		.pipe(frep(patterns))
+		
+		.pipe(gulp.dest(dest))
+		.on('end', callback)
+		.on('error', callback);
 	});
+	gulp.start('html');
 }
 
 // 从测试环境的仓库里检出指定版本

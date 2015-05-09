@@ -6,10 +6,10 @@ var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
+var gulpIgnore = require('gulp-ignore');
 var util = require('./util.js');
 
 var version = (new Date).getTime();
-var ignore = ['**/*.less', '**/*.md', '**/*.markdown'];
 
 var p = {};
 
@@ -67,13 +67,12 @@ p.minify = function(projectCfg){
 
 	var jsFilter = gulpFilter('**/*.js');
 	var cssFilter = gulpFilter('**/*.css');
-	var ignoreHtmlFilter = gulpFilter(ignore);
 
 	return gulp.src('**/*', {
 			cwd: path.join(build, '..'),
-			base: build,
-			ignore: ignore
+			base: build
 		})
+		.pipe(gulpIgnore.exclude('**/*.?(shtml|html|htm)'))
 		
 		// 压缩js
 		.pipe(jsFilter)
