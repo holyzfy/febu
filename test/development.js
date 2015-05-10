@@ -1,5 +1,6 @@
 var should = require('should');
 var debug = require('debug')('febu:' + __filename);
+var replace = require('frep');
 var db = require('../module/db.js');
 var Dev = require('../module/development.js');
 
@@ -19,7 +20,7 @@ describe(__filename, function(){
 	
 	var dev = new Dev(project);
 
-	before(function(done){
+	/*before(function(done){
 		dev.db = db;
 		db.init(done);
 	});
@@ -29,5 +30,37 @@ describe(__filename, function(){
 			data.should.be.false;
 			done();
 		});
+	});*/
+
+	it('getReplacements', function(){
+		var urlRoot = 'http://static.test.febu.com/';
+		var patterns = dev.getReplacements(urlRoot);
+
+		var link = '<link rel="stylesheet" href="css/common.css" _group="all">';
+		var linkExpected = '<link rel="stylesheet" href="http://static.test.febu.com/css/common.css" _group="all">';
+		var linkActual = replace.strWithArr(link, patterns);
+		linkActual.should.equal(linkExpected);
+
+		var link2 = '<link rel="prev" title="专业破坏队形20年" href="http://163pinglun.com/archives/15393" />';
+		var link2Actual = replace.strWithArr(link2, patterns);
+		link2Actual.should.equal(link2);
+
+		var link3 = '<link rel="stylesheet" href=\'css/common.css\' _group="all">';
+		var link3Actual = replace.strWithArr(link3, patterns);
+		link3Actual.should.equal(linkExpected);
+
+		var link4 = '<link rel="stylesheet" href=css/common.css _group="all">';
+		var link4Actual = replace.strWithArr(link4, patterns);
+		link4Actual.should.equal(linkExpected);
+
+		var link5 = '<link rel="stylesheet" href=css/common.css _group="all">';
+		var link5Actual = replace.strWithArr(link5, patterns);
+		link5Actual.should.equal(linkExpected);
+
+		var link6 = '<link rel="stylesheet" _group="all" href="css/common.css">';
+		var link6Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css">';
+		var link6Actual = replace.strWithArr(link6, patterns);
+		link6Actual.should.equal(link6Expected);
+
 	});
 });

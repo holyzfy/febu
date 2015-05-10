@@ -1,6 +1,7 @@
 var Git = require('./git.js');
 var debug = require('debug')('febu:' + __filename);
 var path = require('path');
+var url = require('url');
 var fs = require('fs');
 var async = require('async');
 var util = require('./util.js');
@@ -71,12 +72,80 @@ Dev.prototype.resource = function(source, callback) {
 	gulp.start('resource');
 };
 
+Dev.prototype.getReplacements = function(urlRoot) {
+	var patterns = [
+		{
+			// css
+			pattern: util.regex.link,
+			replacement: function(match) {
+				var attrs = (match.match(/<link(.+)>/)[1] || '').trim().split(/\s+/)
+				
+				var css = attrs.some(function(item) {
+					return item === 'rel="stylesheet"' || item === "rel='stylesheet'"
+				});
+				if(!css) {
+					return match;
+				}
+				
+				var rel = attrs.filter(function(item){
+					return /^rel=/.test(item);
+				});
+				if(rel.length < 1) {
+					return match;
+				}
+
+				var href = attrs.filter(function(item){
+					return /^href=/.test(item);
+				})[0];
+
+				if(/^href="/.test(href)) {
+					match = match.replace(/\bhref="([^"]+)"/, function(match, sub) {
+						var newHref = url.resolve(urlRoot, sub);
+						return 'href="' + newHref + '"';
+					});
+				} else if(/^href='/.test(href)) {
+					match = match.replace(/\bhref='([^']+)'/, function(match, sub) {
+						var newHref = url.resolve(urlRoot, sub);
+						return 'href="' + newHref + '"';
+					});
+				} else if(/^href=(?!["'])/.test(href)) {
+					match = match.replace(/\bhref=([^\s>]+)/, function(match, sub) {
+						var newHref = url.resolve(urlRoot, sub);
+						return 'href="' + newHref + '"';
+					});
+				}
+
+				return match;
+			}
+		},
+		{
+			// js
+			pattern: util.regex.script,
+			replacement: function(match) {
+
+			}
+		},
+		{
+			// img
+			pattern: util.regex.img,
+			replacement: function(match) {
+
+			}
+		}
+	];
+
+	// 禁止外部函数修改patterns
+	var ret = [].concat(patterns);
+
+	return ret;
+};
+
 // 处理html文件
 Dev.prototype.html = function(source, callback) {
 	debug('html');
 	var dev = this;
 	
-	var patterns = [/*TODO*/];
+	var patterns = dev.getReplacements(dev.project.development.web);
 	
 	gulp.task('html', function(){
 		var htmlFilter = gulpFilter('**/*.?(shtml|html|htm)');

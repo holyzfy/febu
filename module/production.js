@@ -105,7 +105,7 @@ p.html = function(projectCfg, callback){
 		})
 
 		// TODO合并js
-		.pipe(replace(util.reg.scriptTag, function(search) {
+		.pipe(replace(util.regex.scriptTag, function(search) {
 			return replaceScript(projectCfg, search);
 		}))
 

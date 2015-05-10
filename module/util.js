@@ -162,8 +162,12 @@ util.resolvePath = function(from, to, base) {
     return path.relative(base, thisPath);
 };
 
-util.reg = {
-    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi
+util.regex = {
+    // 带src属性的script标签
+    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi,
+
+    link: /<link\b[^<]*>/mgi,
+    img: /<img\b[^<]*>/mgi,
 };
 
 module.exports = util;
