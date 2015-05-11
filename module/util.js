@@ -167,7 +167,8 @@ util.regex = {
     script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi,
 
     link: /<link\b[^<]*>/mgi,
-    img: /<img\b[^<]*>/mgi,
+    media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
+    object: /<object\b[^<]*>/mgi,
 };
 
 module.exports = util;
