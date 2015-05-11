@@ -109,7 +109,7 @@ Dev.prototype.getReplacements = function(urlRoot) {
 						return 'href="' + newHref + '"';
 					});
 				} else if(/^href=(?!["'])/.test(href)) {
-					match = match.replace(/\bhref=([^\s>]+)/, function(match, sub) {
+					match = match.replace(/\bhref=([^\s\\>]+)/, function(match, sub) {
 						var newHref = url.resolve(urlRoot, sub);
 						return 'href="' + newHref + '"';
 					});

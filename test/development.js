@@ -20,7 +20,7 @@ describe(__filename, function(){
 	
 	var dev = new Dev(project);
 
-	/*before(function(done){
+	before(function(done){
 		dev.db = db;
 		db.init(done);
 	});
@@ -30,7 +30,7 @@ describe(__filename, function(){
 			data.should.be.false;
 			done();
 		});
-	});*/
+	});
 
 	it('getReplacements', function(){
 		var urlRoot = 'http://static.test.febu.com/';
@@ -53,9 +53,15 @@ describe(__filename, function(){
 		var link4Actual = replace.strWithArr(link4, patterns);
 		link4Actual.should.equal(linkExpected);
 
-		var link5 = '<link rel="stylesheet" href=css/common.css _group="all">';
+		var link5 = '<link rel="stylesheet" _group="all" href="css/common.css" />';
+		var link5Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
 		var link5Actual = replace.strWithArr(link5, patterns);
-		link5Actual.should.equal(linkExpected);
+		link5Actual.should.equal(link5Expected);
+
+		var link7 = '<link rel="stylesheet" _group="all" href=css/common.css />';
+		var link7Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link7Actual = replace.strWithArr(link7, patterns);
+		link7Actual.should.equal(link7Expected);
 
 		var link6 = '<link rel="stylesheet" _group="all" href="css/common.css">';
 		var link6Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css">';
