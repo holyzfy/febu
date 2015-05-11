@@ -86,13 +86,6 @@ Dev.prototype.getReplacements = function(urlRoot) {
 				if(!css) {
 					return match;
 				}
-				
-				var rel = attrs.filter(function(item){
-					return /^rel=/.test(item);
-				});
-				if(rel.length < 1) {
-					return match;
-				}
 
 				var href = attrs.filter(function(item){
 					return /^href=/.test(item);
@@ -100,18 +93,33 @@ Dev.prototype.getReplacements = function(urlRoot) {
 
 				if(/^href="/.test(href)) {
 					match = match.replace(/\bhref="([^"]+)"/, function(match, sub) {
-						var newHref = url.resolve(urlRoot, sub);
-						return 'href="' + newHref + '"';
+						var protocol = url.parse(sub).protocol;
+						if(protocol === null) {
+							var newHref = url.resolve(urlRoot, sub);
+							return 'href="' + newHref + '"';
+						} else {
+							return match;
+						}
 					});
 				} else if(/^href='/.test(href)) {
 					match = match.replace(/\bhref='([^']+)'/, function(match, sub) {
-						var newHref = url.resolve(urlRoot, sub);
-						return 'href="' + newHref + '"';
+						var protocol = url.parse(sub).protocol;
+						if(protocol === null) {
+							var newHref = url.resolve(urlRoot, sub);
+							return 'href="' + newHref + '"';
+						} else {
+							return match;
+						}
 					});
 				} else if(/^href=(?!["'])/.test(href)) {
 					match = match.replace(/\bhref=([^\s\\>]+)/, function(match, sub) {
-						var newHref = url.resolve(urlRoot, sub);
-						return 'href="' + newHref + '"';
+						var protocol = url.parse(sub).protocol;
+						if(protocol === null) {
+							var newHref = url.resolve(urlRoot, sub);
+							return 'href="' + newHref + '"';
+						} else {
+							return match;
+						}
 					});
 				}
 

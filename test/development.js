@@ -58,15 +58,19 @@ describe(__filename, function(){
 		var link5Actual = replace.strWithArr(link5, patterns);
 		link5Actual.should.equal(link5Expected);
 
-		var link7 = '<link rel="stylesheet" _group="all" href=css/common.css />';
-		var link7Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
-		var link7Actual = replace.strWithArr(link7, patterns);
-		link7Actual.should.equal(link7Expected);
-
 		var link6 = '<link rel="stylesheet" _group="all" href="css/common.css">';
 		var link6Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css">';
 		var link6Actual = replace.strWithArr(link6, patterns);
 		link6Actual.should.equal(link6Expected);
 
+		var link7 = '<link rel="stylesheet" _group="all" href=css/common.css />';
+		var link7Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link7Actual = replace.strWithArr(link7, patterns);
+		link7Actual.should.equal(link7Expected);
+
+		var link8 = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link8Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link8Actual = replace.strWithArr(link8, patterns);
+		link8Actual.should.equal(link8Expected);
 	});
 });
