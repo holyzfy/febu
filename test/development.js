@@ -20,7 +20,7 @@ describe(__filename, function(){
 	
 	var dev = new Dev(project);
 
-	/*before(function(done){
+	before(function(done){
 		dev.db = db;
 		db.init(done);
 	});
@@ -30,7 +30,7 @@ describe(__filename, function(){
 			data.should.be.false;
 			done();
 		});
-	});*/
+	});
 
 	var urlRoot = 'http://static.test.febu.com/';
 	var patterns = dev.getReplacements(urlRoot);
@@ -41,7 +41,7 @@ describe(__filename, function(){
 		var linkActual = replace.strWithArr(link, patterns);
 		linkActual.should.equal(linkExpected);
 
-		var link2 = '<link rel="prev" title="专业破坏队形20年" href="http://163pinglun.com/archives/15393" />';
+		var link2 = '<link rel="prev" title="专业破坏队形20年" HREF="http://163pinglun.com/archives/15393" />';
 		var link2Actual = replace.strWithArr(link2, patterns);
 		link2Actual.should.equal(link2);
 
@@ -80,7 +80,7 @@ describe(__filename, function(){
 		var scriptActual = replace.strWithArr(script, patterns);
 		scriptActual.should.equal(scriptExpected);
 
-		var script2 = '<script src="js/arttemplate.js" _group="all"></script>';
+		var script2 = '<script SRC="js/arttemplate.js" _group="all"></script>';
 		var script2Expected = '<script src="http://static.test.febu.com/js/arttemplate.js" _group="all"></script>';
 		var script2Actual = replace.strWithArr(script2, patterns);
 		script2Actual.should.equal(script2Expected);
@@ -106,7 +106,7 @@ describe(__filename, function(){
 		var imgActual = replace.strWithArr(img, patterns);
 		imgActual.should.equal(imgExpected);
 
-		var img2 = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUh" alt="">';
+		var img2 = '<img SRC="data:image/png;base64,iVBORw0KGgoAAAANSUh" alt="">';
 		var img2Actual = replace.strWithArr(img2, patterns);
 		img2Actual.should.equal(img2);
 
