@@ -1,33 +1,55 @@
 var path = require('path');
 var Git = require('../module/git.js');
 var debug = require('debug')('febu:' + __filename);
-var fs = require('fs');
+var fs = require('fs-extra')
 var should = require('should');
 
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
 	var git = new Git(repo);
+	var p = '__test_init';
 
-	/*it('取得仓库地址', function(){
+	before(function(done){
+		fs.mkdirs(p, done);
+	});
+
+	after(function(done) {
+		fs.remove(p, done);
+	})
+
+	it('repo url', function(){
 		repo.should.equal(git.url);
 	});
 
-	it('克隆仓库成功', function(done){
-		git.clone(done);
-	});
-
-	it('取得本地仓库的根目录', function(done){
-		var local = Git.getCwd(repo);
-		var gitDir = path.join(local, '.git');
-		fs.exists(gitDir, function(ret) {
-			should.exist(ret);
-			done();
+	it('init', function(done) {
+		var git = new Git(repo, {
+			cwd: p
+		});
+		git.init(function(error){
+			if(error) {
+				return done(error);
+			}
+			var gitDir = path.join(p, '.git');
+			fs.exists(gitDir, function(ret) {
+				should.exist(ret);
+				done();
+			});
 		});
 	});
 
-	it('查询日志', function(done){
+	it('init 2', function(done) {
+		var git = new Git(repo, {
+			cwd: p
+		});
+		git.init(done);
+	});
+
+	it('clone', function(done){
+		git.clone(done);
+	});
+
+	it('show', function(done){
 		var commit = '7b11df0';
-		git.options.cwd = Git.getCwd(repo);
 		git.show(commit, function(err, ret){
 			var expected = {
 				commit: commit,
@@ -46,15 +68,15 @@ describe(__filename, function(){
 		});
 	});
 
-	it('从远程仓库拉取当前分支', function(done){
+	it('pull', function(done){
 		git.pull(done);
 	});
 
-	it('切换到master分支', function(done){
+	it('checkout', function(done){
 		git.checkout('master', done);
 	});
 
-	it('比较两次提交的差异', function(done){
+	it('diff', function(done){
 		var from = 'eae17bd';
 		var to = '0b6d734';
 		var expected = [
@@ -73,7 +95,7 @@ describe(__filename, function(){
 				done(e);
 			}
 		});
-	});*/
+	});
 
 	it('getHeadCommit', function(done) {
 		git.getHeadCommit(function(err, data) {

@@ -1,12 +1,13 @@
 var spawn = require('child_process').spawn;
 var url = require('url');
-var mkdirp = require('mkdirp');
 var path = require('path');
 var debug = require('debug')('febu:' + __filename);
-var config = require('../config.js');
 var async = require('async');
 var through2 = require('through2');
 var Q = require('q');
+var fs = require('fs-extra');
+var config = require('../config.js');
+var util = require('./util.js');
 
 /**
  * @constructor
@@ -17,7 +18,8 @@ function Git(url, options) {
     this.binary = 'git';
 	this.url = url;
 	this.options = options || {};
-    this.options.cwd = Git.getCwd(url, this.options.type);
+    this.options.type = this.options.type || 'src';
+    this.options.cwd = this.options.cwd || util.getCwd(url, this.options.type);
 }
 
 /**
@@ -93,19 +95,17 @@ Git.prototype.exec = function(command, args, callback) {
     return git;
 };
 
-
-/**
- * 取得本地仓库的根目录
- * @param  repo
- * @param  type 有效值 src, development, production，默认值是src
- */
-Git.getCwd = function(repo, type) {
-    type = type || 'src';
-    var dataPath = config.dataPath || 'data/';
-    var urlMap = url.parse(repo);
-    var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-    var local = path.resolve(dataPath, type, urlMap.hostname, pathname);
-    return local;
+// 初始化仓库
+Git.prototype.init = function(callback) {
+    var git = this;
+    var gitDir = path.join(git.options.cwd, '.git');
+    fs.exists(gitDir, function(exists) {
+        if(exists) {
+            callback();
+        } else {
+            git.exec('init', callback);
+        }
+    });
 };
 
 /**
@@ -119,7 +119,7 @@ Git.prototype.clone = function(callback) {
 	var urlMap = url.parse(git.url);
 	var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
 	var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
-	async.each([dataPath, local], mkdirp, function(err) {
+	async.each([dataPath, local], fs.mkdirs, function(err) {
 		if(err) {
 			return callback(err);
 		}
