@@ -136,7 +136,7 @@ util.getSource = function(project, commit, callback) {
 /**
  * 标记为已发布
  * @param  db 
- * @param  Object.<type, srcCommit, destCommit, project, db> options
+ * @param  Object.<type, srcCommit, destCommit, project, db> data
  *                type  发布类型，有效值development, production
  *                src   源版本号
  *                dest  对应目标仓库的版本号
