@@ -4,13 +4,13 @@
 
 ## 安装
 
-1. 命令行窗口需要能执行`git`命令
+0. 命令行窗口需要能执行`git`命令
 
-2. 安装MongoDB
+0. 安装MongoDB
 
-3. 配置config.js
+0. 配置config.js
 
-4. 安装依赖
+0. 安装依赖
 
 	* `npm install -g gulp`
 	* `npm install`
