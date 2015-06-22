@@ -4,6 +4,7 @@ var minifyCss = require('gulp-minify-css');
 var argv = require('yargs').argv;
 var del = require('del');
 var async = require('async');
+var path = require('path');
 var common = require('./module/common.js');
 var Git = require('./module/git.js');
 var util = require('./module/util.js');
@@ -34,6 +35,9 @@ gulp.task('before', function(callback){
 				if(err) {
 					db.close();
 					return cb(err);
+				} else if(!data) {
+					db.close();
+					return cb('请在数据库里初始化该项目 ' + repo);
 				} else if(data.busy) {
 					db.close();
 					return cb('该项目正在发布，请稍后再试');
@@ -41,7 +45,6 @@ gulp.task('before', function(callback){
 				data.busy = true;
 				project = data;
 				db.projects.save(data, cb);
-				cb();
 			});
 		});
 	};
@@ -61,7 +64,7 @@ gulp.task('before', function(callback){
 		});
 	};
 
-	async.series([initDB, clone, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit], callback);
+	async.series([initDB, clone/*, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit*/], callback);
 });
 
 gulp.task('clean', ['before'], function(){

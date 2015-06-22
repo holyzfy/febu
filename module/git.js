@@ -35,7 +35,7 @@ Git.prototype.exec = function(command, args, callback) {
         args = [];
     }
     args = [command].concat(args);
-    // debug('git exec args=', args);
+    // debug('git exec ', args);
     var p = spawn(git.binary, args, git.options);
     var done = false;
     var ret;

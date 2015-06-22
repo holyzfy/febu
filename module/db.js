@@ -31,10 +31,12 @@ var ProjectSchema = new Schema({
  */
 db.projects.find = function(repo, callback) {
 	var Project = mongoose.model('Project', ProjectSchema);
+	debug('repo=', repo);
 	return Project.findOne({
 		repo: repo
 	}, function(err, data) {
-		callback(err, data.toObject());
+		var ret = data ? data.toObject() : null;
+		callback(err, ret);
 	});
 };
 

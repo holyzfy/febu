@@ -10,6 +10,9 @@ var gulp = require('gulp');
 var frep = require('gulp-frep');
 var gulpFilter = require('gulp-filter');
 
+// 项目里有requirejs的构建脚本吗
+var hasAMD;
+
 function Dev(project) {
 	this.project = project;
 }
@@ -56,6 +59,7 @@ Dev.prototype.resource = function(source, callback) {
 	var dev = this;
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
+		src = hasAMD ? path.join(src, 'www') : src;
 		var dest = common.getCwd(dev.project.repo, 'development/static');
 		gulp.src(source, {
 			base: src
@@ -244,6 +248,7 @@ Dev.prototype.html = function(source, callback) {
 	
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
+		src = hasAMD ? path.join(src, 'www') : src;
 		var dest = common.getCwd(dev.project.repo, 'development/vm');
 		gulp.src(source, {
 			base: src
@@ -292,6 +297,16 @@ Dev.prototype.run = function(commit, callback) {
 		} else {
 			debug('开始发布...');
 			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布
+			
+			var checkAMD = function() {
+				var next = arguments[arguments.length - 1];
+				util.hasAMD(dev.project, function(err, ret){
+					hasAMD = ret;
+					debug('hasAMD=', ret);
+					next(err, ret);
+				});
+			};
+
 			var checkout = function() {
 				debug('checkout ', arguments);
 				var next = arguments[arguments.length - 1];
@@ -311,6 +326,10 @@ Dev.prototype.run = function(commit, callback) {
 				async.series([
 					function(cb) {
 						dev.resource(source, cb);
+					},
+					function(cb) {
+						var dest = common.getCwd(dev.project.repo, 'development/static');
+						util.runAMD(dev.project, dest, cb);
 					},
 					function(cb){
 						dev.html(source, cb);
@@ -349,7 +368,7 @@ Dev.prototype.run = function(commit, callback) {
 				// util.mark(dev.db, data, next);
 			};
 
-			var tasks = [checkout, compile, save, getHeadCommit, mark];
+			var tasks = [checkAMD, checkout, compile, save, getHeadCommit, mark];
 			async.waterfall(tasks, function(err, data){
 				callback(err, data);
 			});

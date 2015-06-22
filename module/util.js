@@ -1,9 +1,12 @@
-var config = require('../config.js');
 var url = require('url');
 var path = require('path');
-var fs = require('fs');
+var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:' + __filename);
+var gulp = require('gulp');
+var gulpif = require('gulp-if');
+var exec = require('child_process').exec;
+var config = require('../config.js');
 var common = require('./common.js');
 var Git = require('./git.js');
 
@@ -160,6 +163,62 @@ util.getVmFileType = function() {
     });
     return ret;
 }
+
+// 项目里有requirejs的构建脚本吗
+util.hasAMD = function(project, callback) {
+    var src = common.getCwd(project.repo, 'src');
+    var tools = path.join(src, 'tools');
+    var files = [tools, path.join(tools, 'build.js'), path.join(tools, 'r.js')];
+    async.filter(files, fs.exists, function(result) {
+        if(result.length === 3) {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    });
+};
+
+/**
+ * 运行requirejs的构建脚本
+ * @param {Object}  project 
+ * @param {String}  dest     把生成的脚本复制到dest目录
+ * @param {Function}  callback
+ */
+util.runAMD = function(project, dest, callback) {
+    callback = arguments[arguments.length - 1];
+    var util = this;
+    util.hasAMD(project, function(err, exist) {
+        if(err) return callback(err);
+        if(!exist) return callback();
+        var command = 'node tools/r.js -o tools/build.js';
+        var src = common.getCwd(project.repo, 'src');
+
+        exec(command, {
+            cwd: src
+        }, function(err, stdout, stderr) {
+            if(err) {
+                return callback(err);
+            }
+            gulp.task('copy', function() {
+                // 构建后的目录路径，约定几个常用名
+                var globs = [
+                    'www-built/**/*.js',
+                    'www-build/**/*.js',
+                    'built/**/*.js',
+                    'build/**/*.js'
+                ];
+                gulp.src(globs, {
+                    cwd: src
+                })
+                .pipe(gulpif(!!dest, gulp.dest(dest)))
+                .on('end', callback)
+                .on('error', callback);
+            });
+            gulp.start('copy');
+        });
+
+    });
+};
 
 util.regex = {
     // 带src属性的script标签
