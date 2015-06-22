@@ -6,7 +6,6 @@ var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
-var gulpIgnore = require('gulp-ignore');
 var util = require('./util.js');
 
 var version = (new Date).getTime();
@@ -72,7 +71,7 @@ p.minify = function(projectCfg){
 			cwd: path.join(build, '..'),
 			base: build
 		})
-		.pipe(gulpIgnore.exclude('**/*.?(shtml|html|htm)'))
+		.pipe(gulpFilter(util.getStaticFileType()))
 		
 		// 压缩js
 		.pipe(jsFilter)

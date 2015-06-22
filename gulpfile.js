@@ -4,6 +4,7 @@ var minifyCss = require('gulp-minify-css');
 var argv = require('yargs').argv;
 var del = require('del');
 var async = require('async');
+var common = require('./module/common.js');
 var Git = require('./module/git.js');
 var util = require('./module/util.js');
 var db = require('./module/db.js');
@@ -15,74 +16,74 @@ var commit = argv.commit || 'HEAD';  // 检出相应版本
 var release;
 var src;
 var build;
-var destDev;
-var destRelease;
+
 var source = [];
 var project;
-var ignore = ['**/*.less', '**/*.md', '**/*.markdown'];
 
 gulp.task('before', function(callback){
 	if(!argv.repo) {
 		return callback('请输入仓库地址，参数--repo');
 	}
 	repo = argv.repo;
-	src = util.getCwd(repo, 'src');
-	build = util.getCwd(repo, 'build');
-	destDev = util.getCwd(repo, 'development');
-	destRelease = util.getCwd(repo, 'production');
+	src = common.getCwd(repo, 'src');
+	build = common.getCwd(repo, 'build');
 
-	var formatCommit = function(cb) {
-		util.formatCommit(repo, commit, function(err, data) {
-			if(err) {
-				return cb(err);
-			}
-			commit = data;
-			cb();
-		});
-	};
-
-	var dbInit = function(cb) {
+	var initDB = function(cb) {
 		db.open(function(){
 			db.projects.find(repo, function(err, data){
 				if(err) {
+					db.close();
 					return cb(err);
+				} else if(data.busy) {
+					db.close();
+					return cb('该项目正在发布，请稍后再试');
 				}
 				data.busy = true;
 				project = data;
 				db.projects.save(data, cb);
+				cb();
 			});
 		});
 	};
 
-	async.series([formatCommit, dbInit], callback);
+	var git = new Git(repo);
+
+	var clone = function(cb) {
+		git.clone(function() {
+			cb();
+		});
+	};
+
+	var formatCommit = function(cb) {
+		util.formatCommit(function(err, data) {
+			commit = data;
+			cb(err);
+		});
+	};
+
+	async.series([initDB, clone, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit], callback);
 });
 
 gulp.task('clean', ['before'], function(){
 	del([build], {force: true});
 });
 
-/*
-
-// 收集要处理的文件
-gulp.task('collectFiles', ['getSource'], function(){
-	return gulp.src(source, {
-		base: src,
-		ignore: ignore
-	}).pipe(gulp.dest(build));
-});
-
-gulp.task('release_minify', ['collectFiles'], release.minify.bind(gulp, project));
-gulp.task('release_html', ['release_minify'], release.html.bind(gulp, project));
-*/
+var closeDb = function(callback) {
+	db.projects.find(repo, function(err, data){
+		if(err) {
+			return callback(err);
+		}
+		data.busy = false;
+		db.projects.save(data, db.close.bind(db));
+	});
+};
 
 // 发布到测试环境
 gulp.task('development', ['before'], function(callback){
 	var dev = new Development(project);
 	dev.db = db;
-	dev.run(commit, function(err, data){
-		dev.db.close(callback);
-	});
+	dev.run(commit, closeDb);
 });
 
 // 发布到正式环境
-gulp.task('production', ['release_html']);
+// gulp.task('production', ['release_html']);

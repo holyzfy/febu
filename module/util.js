@@ -4,34 +4,10 @@ var path = require('path');
 var fs = require('fs');
 var async = require('async');
 var debug = require('debug')('febu:' + __filename);
+var common = require('./common.js');
 var Git = require('./git.js');
 
 var util = {};
-
-/**
- * 取得仓库的路径名
- * @param  {[type]} repo [description]
- * @return {[type]}      [description]
- */
-util.getPathname = function(repo) {
-    var urlMap = url.parse(repo);
-    var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-    return pathname;
-};
-
-/**
- * 取得仓库的根目录
- * @param repo 仓库地址
- * @param type 有效值src, build, development, production
- * @return {String}
- */
-util.getCwd = function(repo, type) {
-    var dataPath = config.dataPath || 'data/';
-    var pathname = util.getPathname(repo);
-    var urlMap = url.parse(repo);
-    var local = path.resolve(dataPath, type, urlMap.hostname, pathname);
-    return local;
-}
 
 /**
  * Check if a file or directory is empty
@@ -64,7 +40,7 @@ util.isEmpty = function(searchPath, callback) {
 };
 
 util.formatCommit = function(repo, commit, callback) {
-    if (commit.toUpperCase() === 'HEAD') {
+    if (commit && commit.toUpperCase() === 'HEAD') {
         // 取得HEAD版本的版本号
         var git = new Git(repo);
         var args = ['--pretty=format:%h', '--no-patch', 'HEAD'];
@@ -86,7 +62,7 @@ util.getProject = function(project, commit, callback) {
 
     var tasks = [
         function(cb) {
-            var src = util.getCwd(repo, 'src');
+            var src = common.getCwd(repo, 'src');
             util.isEmpty(src, function(empty) {
                 if (empty) {
                     git.clone(cb);
@@ -115,7 +91,7 @@ util.getProject = function(project, commit, callback) {
 util.getSource = function(project, commit, callback) {
     var source = [];
     var git = new Git(project.repo);
-    var src = util.getCwd(project.repo, 'src');
+    var src = common.getCwd(project.repo, 'src');
     if (project.version) {
         git.diff(project.version, commit, function(err, ret) {
             if (err) {
@@ -161,6 +137,29 @@ util.resolvePath = function(from, to, base) {
     var thisPath = path.resolve(dir, to);
     return path.relative(base, thisPath);
 };
+
+util.getStaticFileType = function() {
+    var list =  [
+        'css',
+        'js',
+        'jpg', 'jpeg', 'png', 'gif',
+        'mp3', 'aac', 'mpeg', 'flv', 'f4v', 'swf', 'ogg', 'mp4', 'm4v', 'webm', 'wav', 'ogv', 'mov', 'm3u8',
+        'ttf', 'otf', 'eot', 'woff', 'woff2', 'svg',
+        'vml', 'htc'
+    ];
+    var ret = list.map(function(item) {
+        return '**/*.' + item;
+    });
+    return ret;
+};
+
+util.getVmFileType = function() {
+    var list = ['shtml', 'html', 'html', 'vm'];
+    var ret = list.map(function(item) {
+        return '**/*.' + item;
+    });
+    return ret;
+}
 
 util.regex = {
     // 带src属性的script标签

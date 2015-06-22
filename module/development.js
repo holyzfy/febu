@@ -5,10 +5,10 @@ var url = require('url');
 var fs = require('fs');
 var async = require('async');
 var util = require('./util.js');
+var common = require('./common.js');
 var gulp = require('gulp');
 var frep = require('gulp-frep');
 var gulpFilter = require('gulp-filter');
-var gulpIgnore = require('gulp-ignore');
 
 function Dev(project) {
 	this.project = project;
@@ -28,8 +28,8 @@ Dev.prototype.exist = function(commit, callback) {
 	var gitDir = path.join(git.options.cwd, '.git');
 	fs.exists(gitDir, function(ret) {
 		if(ret) {
+			debug('该版本已发布过，直接签出');
 			dev.checkout('master', function(err, cb){
-				debug('exist');
 				if(err) {
 					return callback(err);
 				}
@@ -55,16 +55,12 @@ Dev.prototype.resource = function(source, callback) {
 	debug('resource');
 	var dev = this;
 	gulp.task('resource', function(){
-		var ignore = ['**/*.less', '**/*.md', '**/*.markdown', '**/*.+(shtml|html|htm)'];
-		var src = util.getCwd(dev.project.repo, 'src');
-		var dest = util.getCwd(dev.project.repo, 'dest');
+		var src = common.getCwd(dev.project.repo, 'src');
+		var dest = common.getCwd(dev.project.repo, 'development/static');
 		gulp.src(source, {
 			base: src
 		})
-
-		// 跳过非静态资源
-		.pipe(gulpIgnore.exclude(ignore))
-
+		.pipe(gulpFilter(util.getStaticFileType()))
 		.pipe(gulp.dest(dest))
 		.on('end', callback)
 		.on('error', callback);
@@ -247,13 +243,12 @@ Dev.prototype.html = function(source, callback) {
 	var patterns = dev.getReplacements(dev.project.development.web);
 	
 	gulp.task('html', function(){
-		var htmlFilter = gulpFilter('**/*.?(shtml|html|htm)');
-		var src = util.getCwd(dev.project.repo, 'src');
-		var dest = util.getCwd(dev.project.repo, 'dest');
+		var src = common.getCwd(dev.project.repo, 'src');
+		var dest = common.getCwd(dev.project.repo, 'development/vm');
 		gulp.src(source, {
 			base: src
 		})
-		.pipe(htmlFilter)
+		.pipe(gulpFilter(util.getVmFileType()))
 		
 		// 替换静态资源链接
 		// @link https://github.com/jonschlinkert/gulp-frep
@@ -295,6 +290,7 @@ Dev.prototype.run = function(commit, callback) {
 		if(exist) {
 			return dev.checkout(commit, callback);
 		} else {
+			debug('开始发布...');
 			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布
 			var checkout = function() {
 				debug('checkout ', arguments);
@@ -360,6 +356,7 @@ Dev.prototype.run = function(commit, callback) {
 		}
 	});
 };
+
 
 
 module.exports = Dev;

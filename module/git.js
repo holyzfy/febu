@@ -7,7 +7,7 @@ var through2 = require('through2');
 var Q = require('q');
 var fs = require('fs-extra');
 var config = require('../config.js');
-var util = require('./util.js');
+var common = require('./common.js');
 
 /**
  * @constructor
@@ -19,7 +19,7 @@ function Git(url, options) {
 	this.url = url;
 	this.options = options || {};
     this.options.type = this.options.type || 'src';
-    this.options.cwd = this.options.cwd || util.getCwd(url, this.options.type);
+    this.options.cwd = this.options.cwd || common.getCwd(url, this.options.type);
 }
 
 /**
