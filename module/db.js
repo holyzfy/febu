@@ -12,11 +12,11 @@ var Schema = mongoose.Schema;
 var ProjectSchema = new Schema({
 	repo: String,
 	development: {
-		ftp: String,
+		async: String,
 		web: String
 	},
 	production: {
-		ftp: String,
+		async: String,
 		web: String 
 	},
 	version: String,
