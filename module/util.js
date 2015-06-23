@@ -167,8 +167,8 @@ util.getVmFileType = function() {
 // 项目里有requirejs的构建脚本吗
 util.hasAMD = function(project, callback) {
     var src = common.getCwd(project.repo, 'src');
-    var tools = path.join(src, 'tools');
-    var files = [tools, path.join(tools, 'build.js'), path.join(tools, 'r.js')];
+    var tools = path.join(src, config.amd.tools);
+    var files = [tools, path.join(tools, config.amd.config), path.join(tools, config.amd.optimizer)];
     async.filter(files, fs.exists, function(result) {
         if(result.length === 3) {
             callback(null, true);
@@ -190,7 +190,7 @@ util.runAMD = function(project, dest, callback) {
     util.hasAMD(project, function(err, exist) {
         if(err) return callback(err);
         if(!exist) return callback();
-        var command = 'node tools/r.js -o tools/build.js';
+        var command = 'node tools/' + config.amd.optimizer + ' -o tools/' + config.amd.config;
         var src = common.getCwd(project.repo, 'src');
 
         exec(command, {
@@ -201,13 +201,8 @@ util.runAMD = function(project, dest, callback) {
             }
             gulp.task('copy', function() {
                 // 构建后的目录路径，约定几个常用名
-                var globs = [
-                    'www-built/**/*.js',
-                    'www-build/**/*.js',
-                    'built/**/*.js',
-                    'build/**/*.js'
-                ];
-                gulp.src(globs, {
+                var source = config.amd.build + '/**/*.js';
+                gulp.src(source, {
                     cwd: src
                 })
                 .pipe(gulpif(!!dest, gulp.dest(dest)))

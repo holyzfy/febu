@@ -3,5 +3,15 @@ module.exports = {
 	database: 'mongodb://localhost/febu',
 
 	// 存放部署数据的目录
-	dataPath: 'data/'
+	dataPath: 'data/',
+
+	// 约定requirejs项目的目录结构
+	// 示例 @link https://github.com/requirejs/example-multipage
+	amd: {
+		tools: 'tools', // 构建目录
+		optimizer: 'r.js', // 构建脚本
+		config: 'build.js', // 构建用的配置文件
+		www: 'www', // 项目目录
+		build: 'build' // 构建后的目录
+	}
 };
