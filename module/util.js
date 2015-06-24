@@ -6,6 +6,7 @@ var debug = require('debug')('febu:' + __filename);
 var gulp = require('gulp');
 var gulpif = require('gulp-if');
 var exec = require('child_process').exec;
+var file = require('read-file');
 var config = require('../config.js');
 var common = require('./common.js');
 var Git = require('./git.js');
@@ -213,6 +214,33 @@ util.runAMD = function(project, dest, callback) {
         });
 
     });
+};
+
+// 取得AMD项目里的config文件路径
+util.getConfigPath = function(project, callback) {
+    var src = common.getCwd(project.repo, 'src');
+    var buildPath = path.join(src, config.amd.tools, config.amd.config);
+    file.readFile(buildPath, function(err, data) {
+        if(err) {
+            return callback(err);
+        }
+
+        var build = eval("(" + data + ")");
+        var configPath = path.join(src, config.amd.tools, build.mainConfigFile);
+        callback(null, configPath);
+    });
+}
+
+// 处理AMD项目里的config文件
+util.replaceConfigPaths = function(contents, newPaths) {
+    var reg = /require(?:js)?(?:\.config)?\(([\s\S]*)\)/m;
+    contents = contents.match(reg)[1];
+    var cfg = eval("(" + contents + ")");
+    delete cfg.paths;
+    delete cfg.baseUrl;
+    cfg.paths = newPaths;
+    var newContents = 'require.config(' + JSON.stringify(cfg, null, 4) + ');';
+    return newContents;
 };
 
 util.regex = {

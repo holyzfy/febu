@@ -1,14 +1,17 @@
-var Git = require('./git.js');
 var debug = require('debug')('febu:' + __filename);
 var path = require('path');
 var url = require('url');
 var fs = require('fs');
 var async = require('async');
-var util = require('./util.js');
-var common = require('./common.js');
 var gulp = require('gulp');
 var frep = require('gulp-frep');
 var gulpFilter = require('gulp-filter');
+var through = require('through-gulp');
+var dir = require('node-dir');
+var config = require('../config.js');
+var Git = require('./git.js');
+var util = require('./util.js');
+var common = require('./common.js');
 
 // 项目里有requirejs的构建脚本吗
 var hasAMD;
@@ -286,6 +289,58 @@ Dev.prototype.commit = function(callback) {
 	callback(); // 测试
 };
 
+// 替换config.js里的paths
+Dev.prototype.buildConfigFile = function(callback) {
+	var dev = this;
+	util.getConfigPath(dev.project, function(err, configPath) {
+		if(err) {
+			return callback(err);
+		}
+
+		var newPaths = {};
+
+		gulp.task('build', function() {
+			var dest = common.getCwd(dev.project.repo, 'development/static');
+			gulp.src(configPath, {
+				base: path.join(src, config.amd.www)
+			})
+				.pipe(through.map(function(file) {
+					var contents = util.replaceConfigPaths(file.contents.toString(), newPaths);
+					file.contents = new Buffer(contents);
+					return file;
+				}))
+				.pipe(gulp.dest(dest))
+				.on('end', callback)
+				.on('error', callback);
+		});
+
+		var src = common.getCwd(dev.project.repo, 'src');
+		var www = path.join(src, config.amd.www);
+		dir.readFiles(www,
+			{ match: /.js$/ }, 
+			function(err, content, next) {
+				if(err) throw err;
+				next();
+			},
+			function(err, files) {
+				if(err) {
+					return callback(err);
+				}
+
+				var webRoot = dev.project.development.web;
+				files.forEach(function(file) {
+					var fileName = path.parse(file).name;
+					var filePath = path.relative(path.join(config.dataPath, 'src'), file);
+					var newFilePath = url.resolve(webRoot, filePath);
+					newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
+					newPaths[fileName] = newFilePath;
+				});
+				gulp.start('build');	
+			}
+		);
+	});
+};
+
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
 	dev.exist(commit, function(err, exist) {
@@ -323,14 +378,15 @@ Dev.prototype.run = function(commit, callback) {
 			var compile = function(source) {
 				debug('compile ', arguments);
 				var next = arguments[arguments.length - 1];
+				var dest = common.getCwd(dev.project.repo, 'development/static');
 				async.series([
 					function(cb) {
 						dev.resource(source, cb);
 					},
 					function(cb) {
-						var dest = common.getCwd(dev.project.repo, 'development/static');
 						util.runAMD(dev.project, dest, cb);
 					},
+					dev.buildConfigFile,
 					function(cb){
 						dev.html(source, cb);
 					}

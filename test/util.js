@@ -1,9 +1,11 @@
-var util = require('../module/util.js');
-var common = require('../module/common.js');
 var fs = require('fs');
 var path = require('path');
 var should = require('should');
 var async = require('async');
+var util = require('../module/util.js');
+var common = require('../module/common.js');
+var config = require('../config.js');
+var Git = require('../module/git.js');
 
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
@@ -80,6 +82,37 @@ describe(__filename, function(){
 
 		var ret = util.resolvePath(from, to, base);
 		should.equal(path.normalize(ret), path.normalize(to));
+	});
+
+	it('getConfigPath', function(done) {
+		var project = {
+			repo: 'https://bitbucket.org/holyzfy/tianchuang'
+		};
+		var git = new Git(project.repo);
+		git.clone(function() {
+			var src = common.getCwd(project.repo, 'src');
+			var configPath = path.join(src, 'www/js/config.js');
+
+			util.getConfigPath(project, function(err, path) {
+				if(err) {
+					return done(err);
+				}
+				path.should.be.equal(configPath);
+				done();
+			});
+		});
+	});
+
+	it('replaceConfigPaths', function() {
+		var contents = "  require({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
+		var newPaths = {
+			jquery: '//code.jquery.com/jquery-1.11.3.min'
+		};
+		var newContents = util.replaceConfigPaths(contents, newPaths);
+		newContents.should.startWith("require.config(");
+		newContents.indexOf('lib/jquery').should.below(0);
+		newContents.indexOf('//code.jquery.com/jquery-1.11.3.min').should.above(-1);
+		newContents.should.endWith(");");
 	});
 
 });

@@ -27,9 +27,12 @@
     "gulp-replace": "^0.5.3",
     "gulp-uglify": "^1.2.0",
     "mongoose": "^4.0.2",
+    "node-dir": "^0.1.8",
     "q": "^1.2.0",
+    "read-file": "^0.1.2",
     "rev": "0.0.1",
     "should": "^5.2.0",
+    "through-gulp": "^0.3.8",
     "through2": "^0.6.5",
     "yargs": "^3.7.2"
   }

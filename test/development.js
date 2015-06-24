@@ -1,8 +1,12 @@
 var should = require('should');
 var debug = require('debug')('febu:' + __filename);
 var replace = require('frep');
+var fs = require('fs');
+var path = require('path');
+var common = require('../module/common.js');
 var db = require('../module/db.js');
 var Dev = require('../module/development.js');
+var Git = require('../module/git.js');
 
 describe(__filename, function(){
 	var project = {
@@ -151,5 +155,29 @@ describe(__filename, function(){
 		var objectExpected = '<object data="http://static.test.febu.com/bookmark.swf"></object>';
 		var objectActual = replace.strWithArr(object, patterns);
 		objectActual.should.equal(objectExpected);
+	});
+
+	it('buildConfigFile', function(done) {
+		var project = {
+				"repo" : "https://bitbucket.org/holyzfy/tianchuang",
+				"production" : {
+				"web" : "//img1.cache.yeepay.com/f2e/"
+			},
+				"development" : {
+				"web" : "//dev.f2e.yeepay.com/f2e/"
+			}
+		};
+		var git = new Git(project.repo);
+		git.clone(function() {
+			var dev = new Dev(project);
+			dev.buildConfigFile(function() {
+				var dest = common.getCwd(dev.project.repo, 'development/static');
+				var configFile = path.join(dest, 'js/config.js');
+				fs.exists(configFile, function(exist) {
+					exist.should.be.true;
+					done();
+				});
+			});
+		});
 	});
 });
