@@ -130,36 +130,22 @@ var replaceHref = function(urlRoot, attrs, match) {
 		return /^href=/i.test(item);
 	})[0];
 
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol === null) {
+			var newHref = url.resolve(urlRoot, sub);
+			return 'href="' + newHref + '"';
+		} else {
+			return match;
+		}
+	};
+
 	if(/^href="/i.test(href)) {
-		match = match.replace(/\bhref="([^"]+)"/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newHref = url.resolve(urlRoot, sub);
-				return 'href="' + newHref + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bhref="([^"]+)"/i, replacement);
 	} else if(/^href='/i.test(href)) {
-		match = match.replace(/\bhref='([^']+)'/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newHref = url.resolve(urlRoot, sub);
-				return 'href="' + newHref + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bhref='([^']+)'/i, replacement);
 	} else if(/^href=(?!["'])/i.test(href)) {
-		match = match.replace(/\bhref=([^\s\\>]+)/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newHref = url.resolve(urlRoot, sub);
-				return 'href="' + newHref + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bhref=([^\s\\>]+)/i, replacement);
 	}
 	return match;
 };
@@ -169,36 +155,22 @@ var replaceSrc = function(urlRoot, attrs, match) {
 		return /^src=/i.test(item);
 	})[0];
 
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol === null) {
+			var newSrc = url.resolve(urlRoot, sub);
+			return 'src="' + newSrc + '"';
+		} else {
+			return match;
+		}
+	};
+
 	if(/^src="/i.test(src)) {
-		match = match.replace(/\bsrc="([^"]+)"/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'src="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bsrc="([^"]+)"/i, replacement);
 	} else if(/^src='/i.test(src)) {
-		match = match.replace(/\bsrc='([^']+)'/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'src="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bsrc='([^']+)'/i, replacement);
 	} else if(/^src=(?!["'])/i.test(src)) {
-		match = match.replace(/\bsrc=([^\s\\>]+)/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'src="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bsrc=([^\s\\>]+)/i, replacement);
 	}
 	return match;
 };
@@ -208,36 +180,22 @@ var replaceData = function(urlRoot, attrs, match) {
 		return /^data=/i.test(item);
 	})[0];
 
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol === null) {
+			var newSrc = url.resolve(urlRoot, sub);
+			return 'data="' + newSrc + '"';
+		} else {
+			return match;
+		}
+	};
+
 	if(/^data="/i.test(src)) {
-		match = match.replace(/\bdata="([^"]+)"/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'data="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bdata="([^"]+)"/i, replacement);
 	} else if(/^data='/i.test(src)) {
-		match = match.replace(/\bdata='([^']+)'/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'data="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bdata='([^']+)'/i, replacement);
 	} else if(/^data=(?!["'])/i.test(src)) {
-		match = match.replace(/\bdata=([^\s\\>]+)/i, function(match, sub) {
-			var protocol = url.parse(sub).protocol;
-			if(protocol === null) {
-				var newSrc = url.resolve(urlRoot, sub);
-				return 'data="' + newSrc + '"';
-			} else {
-				return match;
-			}
-		});
+		match = match.replace(/\bdata=([^\s\\>]+)/i, replacement);
 	}
 	return match;
 };

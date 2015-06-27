@@ -26,7 +26,7 @@ describe(__filename, function(){
 
 	before(function(done){
 		dev.db = db;
-		db.init(done);
+		db.open(done);
 	});
 
 	it('exist', function(done) {
