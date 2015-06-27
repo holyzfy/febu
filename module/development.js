@@ -260,8 +260,8 @@ Dev.prototype.buildConfigFile = function(callback) {
 		gulp.task('build', function() {
 			var dest = common.getCwd(dev.project.repo, 'development/static');
 			gulp.src(configPath, {
-				base: path.join(src, config.amd.www)
-			})
+					base: path.join(src, config.amd.www)
+				})
 				.pipe(through.map(function(file) {
 					var contents = util.replaceConfigPaths(file.contents.toString(), newPaths);
 					file.contents = new Buffer(contents);
