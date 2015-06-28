@@ -63,7 +63,8 @@ Dev.prototype.resource = function(source, callback) {
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
 		src = hasAMD ? path.join(src, 'www') : src;
-		var dest = common.getCwd(dev.project.repo, 'development/static');
+		var destRoot = common.getCwd(dev.project.repo, 'development');
+		var dest = path.join(destRoot, 'static');
 		gulp.src(source, {
 			base: src
 		})
@@ -210,7 +211,8 @@ Dev.prototype.html = function(source, callback) {
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
 		src = hasAMD ? path.join(src, 'www') : src;
-		var dest = common.getCwd(dev.project.repo, 'development/vm');
+		var destRoot = common.getCwd(dev.project.repo, 'development');
+		var dest = path.join(destRoot, 'vm');
 		gulp.src(source, {
 			base: src
 		})
@@ -239,12 +241,27 @@ Dev.prototype.checkout = function(commit, callback) {
 
 /**
  * 把发布好的文件提交到目标仓库
- * @param  callback(err, commit) commit对应目标仓库的版本号
  */
-Dev.prototype.commit = function(callback) {
-	// TODO
+Dev.prototype.commit = function(message, callback) {
 	debug('commit');
-	callback(); // 测试
+	var dev = this;
+
+	var git = new Git(dev.project.repo, {
+		type: 'development'
+	});
+
+	var tasks = [
+		function(cb) {
+			// 首先确保已初始化仓库
+			git.init(function(){
+				cb();
+			});
+		},
+		git.add.bind(git),
+		git.commit.bind(git, message)
+	];
+
+	async.waterfall(tasks, callback);
 };
 
 // 替换config.js里的paths
@@ -258,7 +275,8 @@ Dev.prototype.buildConfigFile = function(callback) {
 		var newPaths = {};
 
 		gulp.task('build', function() {
-			var dest = common.getCwd(dev.project.repo, 'development/static');
+			var destRoot = common.getCwd(dev.project.repo, 'development');
+			var dest = path.join(destRoot, 'static');
 			gulp.src(configPath, {
 					base: path.join(src, config.amd.www)
 				})
@@ -336,7 +354,8 @@ Dev.prototype.run = function(commit, callback) {
 			var compile = function(source) {
 				debug('compile ', arguments);
 				var next = arguments[arguments.length - 1];
-				var dest = common.getCwd(dev.project.repo, 'development/static');
+				var destRoot = common.getCwd(dev.project.repo, 'development');
+				var dest = path.join(destRoot, 'static');
 				async.series([
 					function(cb) {
 						dev.resource(source, cb);
@@ -354,7 +373,7 @@ Dev.prototype.run = function(commit, callback) {
 			var save = function(){
 				debug('save ', arguments);
 				var next = arguments[arguments.length - 1];
-				dev.commit(next);
+				dev.commit(commit, next);
 			};
 
 			var getHeadCommit = function() {
@@ -377,9 +396,7 @@ Dev.prototype.run = function(commit, callback) {
 			var mark = function(data) {
 				debug('mark', arguments);
 				var next = arguments[arguments.length - 1];
-				return next(null, {}); // 测试用
-				// TODO
-				// util.mark(dev.db, data, next);
+				util.mark(dev.db, data, next);
 			};
 
 			var tasks = [checkAMD, checkout, compile, save, getHeadCommit, mark];
@@ -389,7 +406,5 @@ Dev.prototype.run = function(commit, callback) {
 		}
 	});
 };
-
-
 
 module.exports = Dev;

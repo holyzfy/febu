@@ -169,7 +169,8 @@ describe(__filename, function(){
 		git.clone(function() {
 			var dev = new Dev(project);
 			dev.buildConfigFile(function() {
-				var dest = common.getCwd(dev.project.repo, 'development/static');
+				var destRoot = common.getCwd(dev.project.repo, 'development');
+				var dest = path.join(destRoot, 'static');
 				var configFile = path.join(dest, 'js/config.js');
 				fs.exists(configFile, function(exist) {
 					exist.should.be.true;
