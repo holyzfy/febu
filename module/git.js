@@ -1,11 +1,9 @@
-var spawn = require('child_process').spawn;
 var url = require('url');
 var path = require('path');
 var debug = require('debug')('febu:' + __filename);
 var async = require('async');
-var through2 = require('through2');
-var Q = require('q');
 var fs = require('fs-extra');
+var shell = require('shelljs');
 var config = require('../config.js');
 var common = require('./common.js');
 
@@ -34,62 +32,14 @@ Git.prototype.exec = function(command, args, callback) {
     if (arguments.length < 3) {
         args = [];
     }
-    args = [command].concat(args);
-    // debug('git exec ', args);
-    var p = spawn(git.binary, args, git.options);
-    var done = false;
-    var ret;
-    var dfd = Q.defer();
-    var dfdStdout = Q.defer();
-    var dfdStdErr = Q.defer();
 
-    dfd.promise.then(function(ret){
-        callback(null, ret);
-    }, function(err){
-        callback(err);
-    });
-
-    var outAll = [];
-    p.stdout.pipe(through2(function out(chunk, enc, cb) {
-        outAll.push(chunk);
-        cb(null, chunk);
-    }, function(){
-        ret = outAll.join('');
-        // debug('p stdout:', ret);
-        dfdStdout.resolve(ret);
-    }));
-
-    var errAll = [];
-    p.stderr.pipe(through2(function out(chunk, enc, cb) {
-        errAll.push(chunk);
-        cb(null, chunk);
-    }, function(){
-        ret = errAll.join('');
-        // debug('p stderr:', ret);
-        dfdStdErr.resolve(ret);
-    }));
-
-    p.on('error', function(err) {
-        if(done) return;
-        done = true;
-        // debug('p error:', arguments);
-        ret = [git.binary].concat(args).join(' ');
-        dfd.reject(ret);
-    });
-
-    // 出错时exit事件可能不被触发
-    p.on('exit', function(code, signal) {
-        if(done) return;
-        done = true;
-        Q.all([dfdStdout.promise, dfdStdErr.promise]).then(function(ret){
-            if(code === 0) {
-                // debug('p exit resolve:', ret[0]);
-                dfd.resolve(ret[0]);
-            } else {
-                // debug('p exit reject:', ret[1]);
-                dfd.reject(ret[1]);
-            }
-        });
+    shell.cd(git.options.cwd);
+    // debug('cwd=', shell.pwd());
+    
+    var _command = [git.binary, command].concat(args).join(' ');
+    shell.exec(_command, function(code, output) {
+        var err = code === 0 ? null : output;
+        callback(err, output);
     });
 
     return git;
@@ -156,7 +106,7 @@ Git.prototype.checkout = function(commit, callback){
  */
 Git.prototype.show = function(commit, callback) {
 	var git = this;
-    var args = ['--pretty=format:%h | %an | %ct%n%s', '--no-patch', commit];
+    var args = ['--pretty="format:%h | %an | %ct%n%s"', '--no-patch', commit];
     git.exec('show', args, function(err, data) {
         // debug('show:', arguments);
         if(err) {
@@ -216,6 +166,25 @@ Git.prototype.getHeadCommit = function(callback) {
         }
         callback(null, data);
     });
+}
+
+Git.prototype.addAll = function(callback) {
+    var git = this;
+    var args = ['.'];
+    git.exec('add', args, callback);
+    return git;
+}
+
+Git.prototype.commit = function(message, callback) {
+    var git = this;
+    callback = arguments[arguments.length - 1];
+    if(arguments.length === 1) {
+        message = 'empty message';
+    }
+    message = message.replace(/['"'\s]/g, '_');
+    var args = ['-m', "'" + message + "'"];
+    git.exec('commit', args, callback);
+    return git;
 }
 
 module.exports = Git;

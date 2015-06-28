@@ -15,7 +15,7 @@ describe(__filename, function(){
 
 	after(function(done) {
 		fs.remove(p, done);
-	})
+	});
 
 	it('repo url', function(){
 		repo.should.equal(git.url);
@@ -107,4 +107,5 @@ describe(__filename, function(){
 			}
 		});
 	});
+
 });
