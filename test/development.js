@@ -12,11 +12,9 @@ describe(__filename, function(){
 	var project = {
 		repo: 'http://github.com/holyzfy/test_repo_url',
 		development: {
-			ftp: '',
 			web: '//qa.developer.test.com/'
 		},
 		production: {
-			ftp: '',
 			web: '//img1.cache.test.com/f2e/'
 		},
 		version: '3bc6453'
