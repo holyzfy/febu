@@ -91,9 +91,11 @@ var VersionSchema = new Schema({
 });
 
 db.versions.find = function(conditions, callback) {
+	debug('conditions=', conditions);
 	var Version = mongoose.model('Version', VersionSchema);
 	Version.findOne(conditions, function(err, data) {
-		callback(err, data.toObject());
+		var ret = data ? data.toObject() : null;
+		callback(err, ret);
 	});
 };
 
