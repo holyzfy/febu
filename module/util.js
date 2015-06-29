@@ -4,7 +4,6 @@ var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:' + __filename);
 var gulp = require('gulp');
-var gulpif = require('gulp-if');
 var exec = require('child_process').exec;
 var file = require('read-file');
 var config = require('../config.js');
@@ -189,8 +188,14 @@ util.runAMD = function(project, dest, callback) {
     callback = arguments[arguments.length - 1];
     var util = this;
     util.hasAMD(project, function(err, exist) {
-        if(err) return callback(err);
-        if(!exist) return callback();
+        if(err) {
+            return callback(err);
+        }
+
+        if(!exist) {
+            return callback();
+        }
+
         var command = 'node tools/' + config.amd.optimizer + ' -o tools/' + config.amd.config;
         var src = common.getCwd(project.repo, 'src');
 
@@ -200,19 +205,20 @@ util.runAMD = function(project, dest, callback) {
             if(err) {
                 return callback(err);
             }
-            gulp.task('copy', function() {
-                // 构建后的目录路径，约定几个常用名
-                var source = config.amd.build + '/**/*.js';
-                gulp.src(source, {
-                    cwd: src
-                })
-                .pipe(gulpif(!!dest, gulp.dest(dest)))
-                .on('end', callback)
-                .on('error', callback);
-            });
-            gulp.start('copy');
+            if(dest) {
+                gulp.task('copy', function() {
+                    // 构建后的目录路径
+                    var source = config.amd.build + '/**/*.js';
+                    gulp.src(source, {
+                        cwd: src
+                    })
+                    .pipe(gulp.dest(dest))
+                    .on('end', callback)
+                    .on('error', callback);
+                });
+                gulp.start('copy');
+            }
         });
-
     });
 };
 

@@ -1,4 +1,4 @@
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
 var should = require('should');
 var async = require('async');
@@ -113,6 +113,30 @@ describe(__filename, function(){
 		newContents.indexOf('lib/jquery').should.below(0);
 		newContents.indexOf('//code.jquery.com/jquery-1.11.3.min').should.above(-1);
 		newContents.should.endWith(");");
+	});
+	
+	it('hasAMD', function(done) {
+		var project = {
+			repo: 'https://bitbucket.org/holyzfy/tianchuang'
+		};
+		util.hasAMD(project, function(err, exist){
+			exist.should.be.true;
+			done(err);
+		});
+	});
+
+	it('runAMD', function(done) {
+		var project = {
+			repo: 'https://bitbucket.org/holyzfy/tianchuang'
+		};		
+		var dest = './test_amd_dest';
+		var commonjsPath = path.join(dest, 'js/common.js');
+		util.runAMD(project, dest, function(err) {
+			fs.exists(commonjsPath, function(exist) {
+				exist.should.be.true;
+				fs.remove(dest, done);
+			});
+		});
 	});
 
 });
