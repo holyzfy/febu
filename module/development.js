@@ -6,7 +6,6 @@ var async = require('async');
 var gulp = require('gulp');
 var frep = require('gulp-frep');
 var gulpFilter = require('gulp-filter');
-// var through = require('through-gulp');
 var replace = require('gulp-replace');
 var dir = require('node-dir');
 var config = require('../config.js');
