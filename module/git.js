@@ -15,9 +15,10 @@ var common = require('./common.js');
 function Git(url, options) {
     this.binary = 'git';
 	this.url = url;
+    options = options || {}
 	this.options = options || {};
-    this.options.type = this.options.type || 'src';
-    this.options.cwd = this.options.cwd || common.getCwd(url, this.options.type);
+    this.options.type = options.type || 'src';
+    this.options.cwd = options.cwd || common.getCwd(url, this.options.type);
 }
 
 /**
@@ -34,10 +35,12 @@ Git.prototype.exec = function(command, args, callback) {
     }
 
     shell.cd(git.options.cwd);
-    // debug('cwd=', shell.pwd());
     
     var _command = [git.binary, command].concat(args).join(' ');
-    shell.exec(_command, function(code, output) {
+    shell.exec(_command, {
+        async: true,
+        silent: true
+    }, function(code, output) {
         var err = code === 0 ? null : output;
         callback(err, output);
     });

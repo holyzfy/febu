@@ -58,13 +58,13 @@ gulp.task('before', function(callback){
 	};
 
 	var formatCommit = function(cb) {
-		util.formatCommit(function(err, data) {
+		util.formatCommit(repo, commit, function(err, data) {
 			commit = data;
 			cb(err);
 		});
 	};
 
-	async.series([initDB, clone/*, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit*/], callback);
+	async.series([initDB, clone, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit], callback);
 });
 
 gulp.task('clean', ['before'], function(){
@@ -85,6 +85,7 @@ var closeDb = function(callback) {
 gulp.task('development', ['before'], function(callback){
 	var dev = new Development(project);
 	dev.db = db;
+	debug('发布到测试环境 src commit=%s', commit);
 	dev.run(commit, closeDb);
 });
 

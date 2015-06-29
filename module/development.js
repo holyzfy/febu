@@ -6,7 +6,8 @@ var async = require('async');
 var gulp = require('gulp');
 var frep = require('gulp-frep');
 var gulpFilter = require('gulp-filter');
-var through = require('through-gulp');
+// var through = require('through-gulp');
+var replace = require('gulp-replace');
 var dir = require('node-dir');
 var config = require('../config.js');
 var Git = require('./git.js');
@@ -257,7 +258,7 @@ Dev.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
-		git.add.bind(git),
+		git.addAll.bind(git),
 		git.commit.bind(git, message)
 	];
 
@@ -277,13 +278,14 @@ Dev.prototype.buildConfigFile = function(callback) {
 		gulp.task('build', function() {
 			var destRoot = common.getCwd(dev.project.repo, 'development');
 			var dest = path.join(destRoot, 'static');
+			debug('configPath=%s\ndest=%s, base=%s', configPath, dest, path.join(src, config.amd.www));
 			gulp.src(configPath, {
 					base: path.join(src, config.amd.www)
 				})
-				.pipe(through.map(function(file) {
-					var contents = util.replaceConfigPaths(file.contents.toString(), newPaths);
-					file.contents = new Buffer(contents);
-					return file;
+				.pipe(replace(/^[\s\S]*$/g, function(match) {
+					return util.replaceConfigPaths(match, newPaths);
+				}, {
+					skipBinary: true
 				}))
 				.pipe(gulp.dest(dest))
 				.on('end', callback)
@@ -363,7 +365,9 @@ Dev.prototype.run = function(commit, callback) {
 					function(cb) {
 						util.runAMD(dev.project, dest, cb);
 					},
-					dev.buildConfigFile,
+					function(cb) {
+						dev.buildConfigFile(cb);
+					},
 					function(cb){
 						dev.html(source, cb);
 					}
@@ -377,7 +381,7 @@ Dev.prototype.run = function(commit, callback) {
 			};
 
 			var getHeadCommit = function() {
-				debug('getHeadCommit', arguments);
+				debug('getHeadCommit');
 				var next = arguments[arguments.length - 1];
 				var git = new Git(dev.project.repo, {
 					type: 'development'

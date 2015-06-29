@@ -18,11 +18,11 @@ common.getPathname = function(repo) {
 /**
  * 取得仓库的根目录
  * @param repo 仓库地址
- * @param type 有效值src, build, development/static, development/vm, production/static, production/vm
+ * @param type 有效值src, build, development, production
  * @return {String}
  */
 common.getCwd = function(repo, type) {
-    var dataPath = config.dataPath || 'data/';
+    var dataPath = path.resolve(__dirname, '..', config.dataPath);
     var pathname = common.getPathname(repo);
     var urlMap = url.parse(repo);
     var local = path.resolve(dataPath, type, urlMap.hostname, pathname);

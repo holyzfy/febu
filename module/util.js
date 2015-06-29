@@ -62,7 +62,7 @@ util.formatCommit = function(repo, commit, callback) {
 util.getProject = function(project, commit, callback) {
     var repo = project.repo;
     var git = new Git(repo);
-
+    debug('检出版本库相应的版本 ', git.options.cwd);
     var tasks = [
         function(cb) {
             var src = common.getCwd(repo, 'src');
