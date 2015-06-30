@@ -34,7 +34,6 @@ Dev.prototype.exist = function(commit, callback) {
 	var gitDir = path.join(git.options.cwd, '.git');
 	fs.exists(gitDir, function(ret) {
 		if(ret) {
-			debug('该版本已发布过，直接签出');
 			dev.checkout('master', function(err, cb){
 				if(err) {
 					return callback(err);
@@ -46,6 +45,9 @@ Dev.prototype.exist = function(commit, callback) {
 				dev.db.versions.find(conditions, function(err, ret) {
 					if(err) {
 						return callback(err);
+					}
+					if(!!ret) {
+						debug('该版本已发布过，直接签出');
 					}
 					callback(null, !!ret);
 				});
@@ -277,7 +279,6 @@ Dev.prototype.buildConfigFile = function(callback) {
 		gulp.task('build', function() {
 			var destRoot = common.getCwd(dev.project.repo, 'development');
 			var dest = path.join(destRoot, 'static');
-			debug('configPath=%s\ndest=%s, base=%s', configPath, dest, path.join(src, config.amd.www));
 			gulp.src(configPath, {
 					base: path.join(src, config.amd.www)
 				})
@@ -374,7 +375,7 @@ Dev.prototype.run = function(commit, callback) {
 			};
 
 			var save = function(){
-				debug('save ', arguments);
+				debug('save');
 				var next = arguments[arguments.length - 1];
 				dev.commit(commit, next);
 			};
