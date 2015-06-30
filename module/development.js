@@ -308,7 +308,7 @@ Dev.prototype.buildConfigFile = function(callback) {
 				var webRoot = dev.project.development.web;
 				files.forEach(function(file) {
 					var fileName = path.parse(file).name;
-					var filePath = path.relative(path.join(config.dataPath, 'src'), file);
+					var filePath = path.relative(www, file);
 					var newFilePath = url.resolve(webRoot, filePath);
 					newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
 					newPaths[fileName] = newFilePath;
