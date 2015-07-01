@@ -157,7 +157,12 @@ util.getStaticFileType = function() {
 };
 
 util.getVmFileType = function() {
-    var list = ['shtml', 'html', 'html', 'vm'];
+    var list = [
+        'shtml', 'html', 'html',
+        'jsp', 'vm', 'ftl',
+        'php', 'tpl',
+        'asp', 'aspx', 'cshtml', 'vbhtml'
+    ];
     var ret = list.map(function(item) {
         return '**/*.' + item;
     });
