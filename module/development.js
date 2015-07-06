@@ -215,6 +215,7 @@ Dev.prototype.html = function(source, callback) {
 		src = hasAMD ? path.join(src, 'www') : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
+		console.log('输出模板：%s', dest);
 		gulp.src(source, {
 			base: src
 		})
@@ -358,6 +359,7 @@ Dev.prototype.run = function(commit, callback) {
 				var next = arguments[arguments.length - 1];
 				var destRoot = common.getCwd(dev.project.repo, 'development');
 				var dest = path.join(destRoot, 'static');
+				console.log('输出静态资源：%s', dest);
 				async.series([
 					function(cb) {
 						dev.resource(source, cb);
