@@ -90,4 +90,9 @@ gulp.task('development', ['before'], function(callback){
 });
 
 // 发布到正式环境
-// gulp.task('production', ['release_html']);
+gulp.task('production', ['before'], function(callback){
+	var p = new Production(project);
+	p.db = db;
+	debug('发布到正式环境 src commit=%s', commit);
+	p.run(commit, closeDb);
+});
