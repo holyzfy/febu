@@ -39,7 +39,7 @@ Dev.prototype.exist = function(commit, callback) {
 					return callback(err);
 				}
 				var conditions = {
-					repo: dev.repo,
+					repo: dev.project.repo,
 					src: commit
 				};
 				dev.db.versions.find(conditions, function(err, ret) {
