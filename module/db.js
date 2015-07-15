@@ -58,7 +58,7 @@ var ResourceSchema = new Schema({
 
 /**
  * 读取静态资源文件
- * @param  <Object>conditions mongodb selector
+ * @param  <Object> conditions mongodb selector
  * @param  callback
  * @return {Query}  @link http://mongoosejs.com/docs/queries.html
  */
