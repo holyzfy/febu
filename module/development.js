@@ -344,7 +344,9 @@ Dev.prototype.run = function(commit, callback) {
 				var next = arguments[arguments.length - 1];
 				async.waterfall([
 					function(cb) {
-						util.getProject(dev.project, commit, cb);
+						util.getProject(dev.project, commit, function() {
+							cb();
+						});
 					},
 					util.getSource.bind(null, dev.project, commit)
 				], next);

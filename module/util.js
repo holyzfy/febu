@@ -70,21 +70,23 @@ util.getProject = function(project, commit, callback) {
                 if (empty) {
                     git.clone(cb);
                 } else {
-                    // 仓库已存在
-                    cb();
+                    cb(null, '仓库已存在');
                 }
             });
         },
         function(data, cb){
+            debug('git checkout master');
             git.checkout('master', cb);
         },
         function(data, cb) {
+            debug('git pull');
             git.pull(cb);
         },
         function(data, cb) {
             util.formatCommit(repo, commit, cb);
         },
         function(commit, cb) {
+            debug('git checkout %s', commit);
             git.checkout(commit, cb);
         }
     ];
