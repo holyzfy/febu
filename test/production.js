@@ -33,4 +33,19 @@ describe(__filename, function(){
 		});
 	});
 
+	it('getFilePath', function(done) {
+		// TODO
+		done();
+	});
+
+	it('compileStaticFiles', function(done) {
+		// TODO
+		done();
+	});
+
+	it('compileVmFiles', function(done) {
+		// TODO
+		done();
+	});
+
 });
