@@ -46,9 +46,6 @@ Dev.prototype.exist = function(commit, callback) {
 					if(err) {
 						return callback(err);
 					}
-					if(!!ret) {
-						debug('该版本已发布过，直接签出');
-					}
 					callback(null, !!ret);
 				});
 			});
@@ -327,6 +324,7 @@ Dev.prototype.run = function(commit, callback) {
 			return callback(err);
 		}
 		if(exist) {
+			debug('该版本已发布过，直接签出');
 			return dev.checkout(commit, callback);
 		} else {
 			debug('开始发布...');
@@ -346,9 +344,7 @@ Dev.prototype.run = function(commit, callback) {
 				var next = arguments[arguments.length - 1];
 				async.waterfall([
 					function(cb) {
-						util.getProject(dev.project, commit, function(){
-							cb();
-						});
+						util.getProject(dev.project, commit, cb);
 					},
 					util.getSource.bind(null, dev.project, commit)
 				], next);

@@ -70,7 +70,8 @@ util.getProject = function(project, commit, callback) {
                 if (empty) {
                     git.clone(cb);
                 } else {
-                    cb(null, '仓库已存在');
+                    // 仓库已存在
+                    cb();
                 }
             });
         },
