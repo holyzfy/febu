@@ -60,8 +60,37 @@ Production.prototype.exist = function(commit, callback) {
  */
 Production.prototype.getSource = function(commit, callback) {
 	debug('getSource', arguments);
-	// TODO
-	callback(null, ['**/*']);
+	
+	var p = this;
+	var git = new Git(p.project.repo);
+    var src = common.getCwd(p.project.repo, 'src');
+
+	if(p.project.version) {
+		var gitDiff = function(cb) {
+			git.diff(p.project.version, commit, function(err, ret) {
+	            if (err) {
+	                return cb(err);
+	            }
+
+	            var source = [];
+	            ret.forEach(function(item) {
+	                item = path.join(src, item);
+	                source.push(item)
+	            });
+
+	            cb(null, source);
+	        });
+		};
+
+		// 查找受影响的文件
+		var getRelativeFiles = function(files, cb) {
+			// TODO
+		};
+
+		async.waterfall([gitDiff, getRelativeFiles], callback);
+	} else {
+		callback(null, ['**/*']);
+	}
 };
 
 /**
@@ -75,13 +104,36 @@ Production.prototype.getFilePath = function(filepath, callback) {
 	// 如果未查到，就向数据库里新插入一条记录
 };
 
+Production.prototype.getBasename = function(filepath) {
+	var ret = path.parse(filepath);
+	return = ret.base.slice(0, ret.base.length - ret.ext.length);
+};
+
 // 处理静态资源
 Production.prototype.compileStaticFiles = function(files, callback) {
-	// TODO
 	debug('compileStaticFiles', arguments);
 
-	// 把files参数传递下去，方便async.waterfall的下个阶段使用
-	callback(null, files);
+	var img = function(cb) {
+		// TODO
+	};
+
+
+	var css = function(cb) {
+		// TODO
+	};
+
+	var js = function(cb) {
+		// TODO 考虑AMD情况
+	};
+
+	async.series([img, css, js], function(err, results) {
+		if(err) {
+			return callback(err);
+		}
+
+		// 把files参数传递下去，方便async.waterfall的下个阶段使用
+		callback(null, files);
+	});
 };
 
 // 处理模板文件

@@ -38,6 +38,18 @@ describe(__filename, function(){
 		done();
 	});
 
+	it('getBasename', function() {
+		var href1 = '//img1.febucache.com/f2e/style/all.1234.group.css';
+		p.getBasename(href1).should.be.equal('all.1234.group');
+
+		var href2 = '//img1.febucache.com/f2e/images/logo.png';
+		p.getBasename(href2).should.be.equal('logo');
+
+		var href3 = '//img1.febucache.com/f2e/images/logo.123.png';
+		p.getBasename(href3).should.be.equal('logo.123');
+
+	});
+
 	it('compileStaticFiles', function(done) {
 		// TODO
 		done();
