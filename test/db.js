@@ -13,7 +13,7 @@ describe(__filename, function(){
 		db.close(done);
 	});
 
-	/*it('db.projects.save', function(done){
+	it('db.projects.save', function(done){
 		var project = {
 			repo: repo,
 			development: {
@@ -62,7 +62,7 @@ describe(__filename, function(){
 
 	it('db.versions.remove', function(done) {
 		db.versions.remove({src: '9bfb77f', repo: repo}, done);
-	});*/
+	});
 	
 	var resource = {
 		repo: repo,
