@@ -7,6 +7,7 @@ var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
+var _ = require('underscore');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('../module/git.js');
@@ -74,8 +75,7 @@ Production.prototype.getSource = function(commit, callback) {
 
 	            var source = [];
 	            ret.forEach(function(item) {
-	                item = path.join(src, item);
-	                source.push(item)
+	                source.push(item);
 	            });
 
 	            cb(null, source);
@@ -84,10 +84,47 @@ Production.prototype.getSource = function(commit, callback) {
 
 		// 查找受影响的文件
 		var getRelativeFiles = function(files, cb) {
-			// TODO
+			var conditions = {
+				src: {
+					'$in': files
+				}
+			};
+			p.db.resources.find(conditions, function(err, ret) {
+				if (err) {
+	                return cb(err);
+	            }
+
+	            var list = [];
+				ret.forEach(function(item) {
+					list = list.concat(item.rel);
+				});
+				list = _.uniq(list);
+				cb(null, list);
+			});
 		};
 
-		async.waterfall([gitDiff, getRelativeFiles], callback);
+
+		// 查找两次即可找到所有的引用关系
+		var find = function(files, cb) {
+			getRelativeFiles(files, function(err, list) {
+				if (err) {
+	                return cb(err);
+	            }
+	            debug('第1次查找=%o', list);
+	            getRelativeFiles(list, function(err, list2) {
+	            	if (err) {
+		                return cb(err);
+		            }
+		            debug('第2次查找=%o', list2);
+		            files = files.concat(list, list2);
+		            files = _.uniq(files);
+		            debug('所有找到的文件=%o', files);
+		            cb(null, files);
+	            });
+			});
+		};
+
+		async.waterfall([gitDiff, find], callback);
 	} else {
 		callback(null, ['**/*']);
 	}
@@ -115,15 +152,18 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 
 	var img = function(cb) {
 		// TODO
+		cb();
 	};
 
 
 	var css = function(cb) {
 		// TODO
+		cb();
 	};
 
 	var js = function(cb) {
 		// TODO 考虑AMD情况
+		cb();
 	};
 
 	async.series([img, css, js], function(err, results) {
