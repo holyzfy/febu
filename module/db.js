@@ -53,7 +53,10 @@ db.projects.remove = function(conditions, callback) {
 };
 
 var ResourceSchema = new Schema({
-	// TODO
+	repo: String,
+	src: [String],
+	dest: String,
+	rel: [String] // 被哪些文件引用了
 });
 
 /**
@@ -63,15 +66,19 @@ var ResourceSchema = new Schema({
  * @return {Query}  @link http://mongoosejs.com/docs/queries.html
  */
 db.resources.find = function(conditions, callback) {
-
+	debug('resource conditions=', conditions);
+	var Resource = mongoose.model('Resource', ResourceSchema);
+	Resource.find(conditions, callback);
 };
 
-db.resources.save = function(resource, callback){
-
+db.resources.save = function(data, callback){
+	var Resource = mongoose.model('Resource', ResourceSchema);
+	return Resource.create(data, callback);
 };
 
 db.resources.remove = function(conditions, callback) {
-
+	var Resource = mongoose.model('Resource', ResourceSchema);
+	return Resource.remove(conditions, callback);
 };
 
 var VersionSchema = new Schema({

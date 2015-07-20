@@ -13,7 +13,7 @@ describe(__filename, function(){
 		db.close(done);
 	});
 
-	it('db.projects.save', function(done){
+	/*it('db.projects.save', function(done){
 		var project = {
 			repo: repo,
 			development: {
@@ -62,6 +62,30 @@ describe(__filename, function(){
 
 	it('db.versions.remove', function(done) {
 		db.versions.remove({src: '9bfb77f', repo: repo}, done);
-	});
+	});*/
 	
+	var resource = {
+		repo: repo,
+		src: ['style/common.css', 'style/list.css'],
+		dest: '//img1.cahce.febucdn.com/xxx/list.123456.group.css',
+		rel: ['list.shtml']
+	};
+
+	it('db.resources.save', function(done) {
+		db.resources.save(resource, done);
+	});
+
+	it('db.resources.find', function(done) {
+		db.resources.find(resource, function(err, ret) {
+			should.not.exist(err);
+			ret.should.have.length(1);
+			ret[0].dest.should.equal(resource.dest);
+			done();
+		});
+	});
+
+	it('db.resources.remove', function(done) {
+		db.resources.remove(resource, done);
+	});
+
 });
