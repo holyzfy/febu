@@ -106,7 +106,7 @@ Production.prototype.getFilePath = function(filepath, callback) {
 
 Production.prototype.getBasename = function(filepath) {
 	var ret = path.parse(filepath);
-	return = ret.base.slice(0, ret.base.length - ret.ext.length);
+	return ret.base.slice(0, ret.base.length - ret.ext.length);
 };
 
 // 处理静态资源
