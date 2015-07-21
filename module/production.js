@@ -8,6 +8,7 @@ var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
 var _ = require('underscore');
+var url = require('url');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('../module/git.js');
@@ -137,8 +138,42 @@ Production.prototype.getSource = function(commit, callback) {
  */
 Production.prototype.getFilePath = function(filepath, callback) {
 	var filepath = [].concat(filepath);
-	// TODO
-	// 如果未查到，就向数据库里新插入一条记录
+	var p = this;
+
+	var getResource = function(cb) {
+		if(p.resources) {
+			cb(null, p.resources);
+		} else {
+			p.db.resources.find(null, function(err, docs) {
+				if(err) {
+					return cb(err);
+				}
+				p.resources = docs;
+				cb(null, p.resources);
+			});
+		}
+	};
+
+	getResource(function(err, resources) {
+		if(err) {
+			return callback(err);
+		}
+		
+		var value = _.find(resources, function(item) {
+			return _.isEqual(filepath, item.src);
+		});
+		callback(null, value.dest);
+	});
+};
+
+Production.prototype.insertFilePath = function(doc, callback) {
+	var p = this;
+	doc.repo = doc.repo || p.project.repo;
+	var filepath = doc.src[0] || doc.src
+	var version = '.' + (new Date).getTime();
+	var dest = url.resolve(p.project.production.web, filepath, version, path.extname(filepath));
+	doc.dest = doc.dest || dest;
+	p.db.resources.save(doc, callback);
 };
 
 Production.prototype.getBasename = function(filepath) {

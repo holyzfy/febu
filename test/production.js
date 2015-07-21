@@ -26,6 +26,10 @@ describe(__filename, function(){
 		db.open(done);
 	});
 
+	after(function(done) {
+		db.close(done);
+	});
+
 	it('exist', function(done) {
 		p.exist('_a_commit_id', function(err, data) {
 			data.should.be.false;
@@ -47,7 +51,36 @@ describe(__filename, function(){
 
 		var href3 = '//img1.febucache.com/f2e/images/logo.123.png';
 		p.getBasename(href3).should.be.equal('logo.123');
+	});
 
+	it('getFilePath', function(done) {
+		var resource = {
+			repo: p.project.repo,
+			src: ['images/p_logo.png'],
+			dest: '//img1.cahce.febucdn.com/xxx/p_logo.123456.png',
+			rel: ['style/p_common.css', 'detail.shtml']
+		};
+		var filepath = 'images/p_logo.png';
+
+		db.resources.save(resource, function(err, newRes) {
+			p.getFilePath(filepath, function(err, dest) {
+				resource.dest.should.equal(dest);
+				db.resources.remove(resource, done);
+			});
+		});
+	});
+
+	it('insertFilePath', function(done) {
+		var resource = {
+			repo: p.project.repo,
+			src: ['images/p_logo.png'],
+			dest: '//img1.cahce.febucdn.com/xxx/p_logo.456789.png',
+			rel: ['style/p_common.css', 'detail.shtml']
+		};
+		p.insertFilePath(resource, function(err, newDoc) {
+			resource.dest.should.equal(newDoc.dest);
+			db.resources.remove(resource, done);
+		});
 	});
 
 	it('compileStaticFiles', function(done) {
