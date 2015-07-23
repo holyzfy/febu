@@ -131,16 +131,36 @@ Production.prototype.getSource = function(commit, callback) {
 	}
 };
 
+// 查询数据库的db.febu.resources，把结果放到Production实例的manifest属性里
+Production.prototype.initManifest = function(callback) {
+	var p = this;
+	// TODO
+	callback();
+};
+
+Production.prototype.updateManifest = function(doc) {
+	var p = this;
+	// TODO 新增加的doc用_status: 'dirty'标识
+};
+
+Production.prototype.serializeManifest = function(callback) {
+	var p = this;
+	// TODO 把_status: 'dirty'的doc保存到数据库db.febu.resources里
+	callback();
+};
+
 /**
  * 取得一个静态资源的线上路径
  * @param {String | Array} filepath 文件路径（相对于项目根目录）
- * @return {Function(err, newFilePath)} callback
+ * @return {String}
  */
-Production.prototype.getFilePath = function(filepath, callback) {
+Production.prototype.getFilePath = function(filepath) {
 	var filepath = [].concat(filepath);
 	var p = this;
 
-	var getResource = function(cb) {
+	// TODO
+
+	/*var getResource = function(cb) {
 		if(p.resources) {
 			cb(null, p.resources);
 		} else {
@@ -163,10 +183,10 @@ Production.prototype.getFilePath = function(filepath, callback) {
 			return _.isEqual(filepath, item.src);
 		});
 		callback(null, value.dest);
-	});
+	});*/
 };
 
-Production.prototype.insertFilePath = function(doc, callback) {
+/*Production.prototype.insertFilePath = function(doc, callback) {
 	var p = this;
 	doc.repo = doc.repo || p.project.repo;
 	var filepath = doc.src[0] || doc.src
@@ -174,7 +194,7 @@ Production.prototype.insertFilePath = function(doc, callback) {
 	var dest = url.resolve(p.project.production.web, filepath, version, path.extname(filepath));
 	doc.dest = doc.dest || dest;
 	p.db.resources.save(doc, callback);
-};
+};*/
 
 Production.prototype.getBasename = function(filepath) {
 	var ret = path.parse(filepath);
@@ -187,17 +207,26 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 
 	var img = function(cb) {
 		// TODO
+		// 1. 除js, css的静态资源rev后输出到dest目录
+		// 2. updateManifest
 		cb();
 	};
 
 
 	var css = function(cb) {
 		// TODO
+		// 1. 替换静态资源内链（图片，字体...）-> build目录
+		// 2. build目录 -> min + rev -> dest目录
+		// 3. updateManifest
+
 		cb();
 	};
 
 	var js = function(cb) {
-		// TODO 考虑AMD情况
+		// TODO
+		// 1. AMD -> build目录（如果有amd）
+		// 2. build目录 -> min + rev -> dest目录
+		// 3. updateManifest
 		cb();
 	};
 
@@ -308,7 +337,7 @@ Production.prototype.run = function(commit, callback) {
 				util.mark(p.db, data, next);
 			};
 
-			var tasks = [checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
+			var tasks = [p.initManifest.bind(p), checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
 			async.waterfall(tasks, function(err, data){
 				callback(err, data);
 			});

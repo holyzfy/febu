@@ -37,11 +37,6 @@ describe(__filename, function(){
 		});
 	});
 
-	it('getFilePath', function(done) {
-		// TODO
-		done();
-	});
-
 	it('getBasename', function() {
 		var href1 = '//img1.febucache.com/f2e/style/all.1234.group.css';
 		p.getBasename(href1).should.be.equal('all.1234.group');
@@ -53,7 +48,7 @@ describe(__filename, function(){
 		p.getBasename(href3).should.be.equal('logo.123');
 	});
 
-	it('getFilePath', function(done) {
+	/*it('getFilePath', function(done) {
 		var resource = {
 			repo: p.project.repo,
 			src: ['images/p_logo.png'],
@@ -68,9 +63,9 @@ describe(__filename, function(){
 				db.resources.remove(resource, done);
 			});
 		});
-	});
+	});*/
 
-	it('insertFilePath', function(done) {
+	/*it('insertFilePath', function(done) {
 		var resource = {
 			repo: p.project.repo,
 			src: ['images/p_logo.png'],
@@ -81,7 +76,7 @@ describe(__filename, function(){
 			resource.dest.should.equal(newDoc.dest);
 			db.resources.remove(resource, done);
 		});
-	});
+	});*/
 
 	it('compileStaticFiles', function(done) {
 		// TODO
