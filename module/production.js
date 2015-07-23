@@ -1,5 +1,5 @@
 var path = require('path');
-var fs = require('fs');
+var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:' + __filename);
 var rename = require("gulp-rename");
@@ -134,13 +134,40 @@ Production.prototype.getSource = function(commit, callback) {
 // 查询数据库的db.febu.resources，把结果放到Production实例的manifest属性里
 Production.prototype.initManifest = function(callback) {
 	var p = this;
-	// TODO
-	callback();
+	p.db.resources.find(null, function(err, docs) {
+		if(err) {
+			return callback(err);
+		}
+		
+		p.manifest = docs;
+		callback(null, p.manifest);
+	});
 };
 
+/**
+ * 更新manifest属性
+ * @param  {Object.<[repo], src, [hash], [dest], [rel]>} doc
+ *                  src和rel的路径都是相对于仓库根目录
+ * @return {Production}
+ */
 Production.prototype.updateManifest = function(doc) {
 	var p = this;
-	// TODO 新增加的doc用_status: 'dirty'标识
+	
+	_.extend(doc, {
+		repo: p.project.repo,
+		_status: 'dirty' // serializeManifest方法会用到
+	});
+	
+	var findIt = _.find(p.manifest, function(item) {
+		_.isEqual(item.src, doc.src);
+	});
+	if(findIt) {
+		findIt = doc;
+	} else {
+		p.manifest.push(doc);
+	}
+
+	return p;
 };
 
 Production.prototype.serializeManifest = function(callback) {
@@ -159,42 +186,7 @@ Production.prototype.getFilePath = function(filepath) {
 	var p = this;
 
 	// TODO
-
-	/*var getResource = function(cb) {
-		if(p.resources) {
-			cb(null, p.resources);
-		} else {
-			p.db.resources.find(null, function(err, docs) {
-				if(err) {
-					return cb(err);
-				}
-				p.resources = docs;
-				cb(null, p.resources);
-			});
-		}
-	};
-
-	getResource(function(err, resources) {
-		if(err) {
-			return callback(err);
-		}
-		
-		var value = _.find(resources, function(item) {
-			return _.isEqual(filepath, item.src);
-		});
-		callback(null, value.dest);
-	});*/
 };
-
-/*Production.prototype.insertFilePath = function(doc, callback) {
-	var p = this;
-	doc.repo = doc.repo || p.project.repo;
-	var filepath = doc.src[0] || doc.src
-	var version = '.' + (new Date).getTime();
-	var dest = url.resolve(p.project.production.web, filepath, version, path.extname(filepath));
-	doc.dest = doc.dest || dest;
-	p.db.resources.save(doc, callback);
-};*/
 
 Production.prototype.getBasename = function(filepath) {
 	var ret = path.parse(filepath);

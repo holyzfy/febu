@@ -48,35 +48,44 @@ describe(__filename, function(){
 		p.getBasename(href3).should.be.equal('logo.123');
 	});
 
-	/*it('getFilePath', function(done) {
+	it('initManifest', function(done) {
 		var resource = {
 			repo: p.project.repo,
 			src: ['images/p_logo.png'],
-			dest: '//img1.cahce.febucdn.com/xxx/p_logo.123456.png',
+			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a1b2c3d4e5.png',
 			rel: ['style/p_common.css', 'detail.shtml']
 		};
-		var filepath = 'images/p_logo.png';
 
 		db.resources.save(resource, function(err, newRes) {
-			p.getFilePath(filepath, function(err, dest) {
-				resource.dest.should.equal(dest);
-				db.resources.remove(resource, done);
+			p.initManifest(function(err, docs) {
+				docs.should.matchAny(function(item) {
+					item.dest.should.be.equal(resource.dest);
+					p.manifest.length.should.be.above(0);
+					db.resources.remove(resource, done);
+				});
 			});
 		});
-	});*/
+	});
 
-	/*it('insertFilePath', function(done) {
+	it('updateManifest', function() {
 		var resource = {
-			repo: p.project.repo,
 			src: ['images/p_logo.png'],
-			dest: '//img1.cahce.febucdn.com/xxx/p_logo.456789.png',
+			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png',
 			rel: ['style/p_common.css', 'detail.shtml']
 		};
-		p.insertFilePath(resource, function(err, newDoc) {
-			resource.dest.should.equal(newDoc.dest);
-			db.resources.remove(resource, done);
+		p.updateManifest(resource);
+		p.manifest.should.be.matchAny(function(item) {
+			item.repo.should.be.equal(p.project.repo);
+			item.dest.should.be.equal(resource.dest);
+			item._status.should.be.equal('dirty');
 		});
-	});*/
+		
+		resource.rel.push('list.shtml');
+		p.updateManifest(resource);
+		p.manifest.should.be.matchAny(function(item) {
+			item.rel.pop().should.be.equal('list.shtml');
+		});
+	});
 
 	it('compileStaticFiles', function(done) {
 		// TODO
