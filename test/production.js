@@ -3,6 +3,7 @@ var debug = require('debug')('febu:' + __filename);
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
+var _ = require('underscore');
 var common = require('../module/common.js');
 var db = require('../module/db.js');
 var P = require('../module/production.js');
@@ -69,12 +70,14 @@ describe(__filename, function(){
 
 	it('updateManifest', function() {
 		var resource = {
-			src: ['images/p_logo.png'],
+			src: 'images/p_logo.png',
 			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png',
 			rel: ['style/p_common.css', 'detail.shtml']
 		};
 		p.updateManifest(resource);
 		p.manifest.should.matchAny(function(item) {
+			var equal = _.isEqual(item.src, ['images/p_logo.png']);
+			equal.should.be.true;
 			item.repo.should.equal(p.project.repo);
 			item.dest.should.equal(resource.dest);
 			item._status.should.equal('dirty');

@@ -157,6 +157,8 @@ Production.prototype.updateManifest = function(doc) {
 		repo: p.project.repo,
 		_status: 'dirty' // serializeManifest方法会用到
 	});
+
+	doc.src = [].concat(doc.src);
 	
 	var findIt = _.find(p.manifest, function(item) {
 		return _.isEqual(item.src, doc.src);
