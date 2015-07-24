@@ -159,10 +159,14 @@ Production.prototype.updateManifest = function(doc) {
 	});
 	
 	var findIt = _.find(p.manifest, function(item) {
-		_.isEqual(item.src, doc.src);
+		return _.isEqual(item.src, doc.src);
 	});
 	if(findIt) {
-		findIt = doc;
+		if(doc.rel) {
+			doc.rel = [].concat(doc.rel);
+			doc.rel = _.union(findIt.rel, doc.rel);
+		}
+		_.extend(findIt, doc);
 	} else {
 		p.manifest.push(doc);
 	}

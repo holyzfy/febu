@@ -74,16 +74,22 @@ describe(__filename, function(){
 			rel: ['style/p_common.css', 'detail.shtml']
 		};
 		p.updateManifest(resource);
-		p.manifest.should.be.matchAny(function(item) {
-			item.repo.should.be.equal(p.project.repo);
-			item.dest.should.be.equal(resource.dest);
-			item._status.should.be.equal('dirty');
+		p.manifest.should.matchAny(function(item) {
+			item.repo.should.equal(p.project.repo);
+			item.dest.should.equal(resource.dest);
+			item._status.should.equal('dirty');
 		});
+
+		var resource2 = {
+			src: ['images/p_logo.png'],
+			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png',
+			rel: ['list.shtml']
+		};
 		
-		resource.rel.push('list.shtml');
-		p.updateManifest(resource);
-		p.manifest.should.be.matchAny(function(item) {
-			item.rel.pop().should.be.equal('list.shtml');
+		p.updateManifest(resource2);
+		p.manifest.should.matchAny(function(item) {
+			item.rel.length.should.equal(3);
+			item.rel.should.matchAny('list.shtml');
 		});
 	});
 
