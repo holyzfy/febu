@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var async = require('async');
 var config = require('../config.js');
 var debug = require('debug')('febu:' + __filename);
 
@@ -72,8 +73,25 @@ db.resources.find = function(conditions, callback) {
 };
 
 db.resources.save = function(data, callback){
+	data = [].concat(data);
 	var Resource = mongoose.model('Resource', ResourceSchema);
-	return Resource.create(data, callback);
+	
+	var saveOne = function(one, cb) {
+		var conditions = {
+			src: one.src
+		};
+		Resource.update(conditions, one, {upsert: true}, cb);
+	};
+
+	var actions = [];
+	data.forEach(function(item) {
+		var action = function(cb) {
+			saveOne(item, cb);
+		};
+		actions.push(action);
+	});
+	
+	async.series(actions, callback);
 };
 
 db.resources.remove = function(conditions, callback) {

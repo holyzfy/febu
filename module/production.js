@@ -178,8 +178,14 @@ Production.prototype.updateManifest = function(doc) {
 
 Production.prototype.serializeManifest = function(callback) {
 	var p = this;
-	// TODO 把_status: 'dirty'的doc保存到数据库db.febu.resources里
-	callback();
+	
+	// 把_status: 'dirty'的doc保存到数据库db.febu.resources里
+	var todo = _.filter(p.manifest, function(item) {
+		var isDirty = item._status === 'dirty';
+		delete item._status;
+		return isDirty;
+	});
+	p.db.resources.save(todo, callback);
 };
 
 /**

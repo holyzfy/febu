@@ -3,7 +3,6 @@ var debug = require('debug')('febu:' + __filename);
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
-var _ = require('underscore');
 var common = require('../module/common.js');
 var db = require('../module/db.js');
 var P = require('../module/production.js');
@@ -21,9 +20,9 @@ describe(__filename, function(){
 	};
 	
 	var p = new P(project);
+	p.db = db;
 
 	before(function(done){
-		p.db = db;
 		db.open(done);
 	});
 
@@ -52,8 +51,8 @@ describe(__filename, function(){
 	it('initManifest', function(done) {
 		var resource = {
 			repo: p.project.repo,
-			src: ['images/p_logo.png'],
-			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a1b2c3d4e5.png',
+			src: ['images/p_btn.png'],
+			dest: '//img1.cahce.febucdn.com/xxx/p_btn.a1b2c3d4e5.png',
 			rel: ['style/p_common.css', 'detail.shtml']
 		};
 
@@ -76,8 +75,7 @@ describe(__filename, function(){
 		};
 		p.updateManifest(resource);
 		p.manifest.should.matchAny(function(item) {
-			var equal = _.isEqual(item.src, ['images/p_logo.png']);
-			equal.should.be.true;
+			should.deepEqual(item.src, ['images/p_logo.png']);
 			item.repo.should.equal(p.project.repo);
 			item.dest.should.equal(resource.dest);
 			item._status.should.equal('dirty');
@@ -93,6 +91,29 @@ describe(__filename, function(){
 		p.manifest.should.matchAny(function(item) {
 			item.rel.length.should.equal(3);
 			item.rel.should.matchAny('list.shtml');
+		});
+	});
+
+	it('serializeManifest', function(done) {
+		var resource = {
+			src: ['images/p_book.png'],
+			dest: '//img1.cahce.febucdn.com/xxx/p_book.c8s5a7h1k3.png',
+			rel: ['book.shtml']
+		};
+		
+		p.updateManifest(resource);
+
+		p.serializeManifest(function(err){
+			should.not.exist(err);
+			var conditions = {
+				src: {
+					'$in': ['images/p_book.png', 'images/p_logo.png']
+				}
+			};
+			p.db.resources.find(conditions, function(err, docs) {
+				docs.length.should.equal(2);
+				db.resources.remove(docs, done);
+			});
 		});
 	});
 
