@@ -112,6 +112,7 @@ describe(__filename, function(){
 			};
 			p.db.resources.find(conditions, function(err, docs) {
 				docs.length.should.equal(2);
+				docs[0].should.not.have.property('_status');
 				db.resources.remove(docs, done);
 			});
 		});
