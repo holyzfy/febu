@@ -43,6 +43,8 @@ gulp.task('before', function(callback){
 					return cb('该项目正在发布，请稍后再试');
 				}
 				data.busy = true;
+				data.development.web = fixPath(data.development.web);
+				data.production.web = fixPath(data.production.web);
 				project = data;
 				db.projects.save(data, cb);
 			});
@@ -79,6 +81,14 @@ var closeDb = function(callback) {
 		data.busy = false;
 		db.projects.save(data, db.close.bind(db));
 	});
+};
+
+// project.development.web和project.production.web值最后需要一个/
+var fixPath = function(href) {
+	if(href.slice(-1) !== '/') {
+		href += '/';
+	}
+	return href;
 };
 
 // 发布到测试环境
