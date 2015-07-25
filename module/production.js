@@ -6,13 +6,12 @@ var rename = require("gulp-rename");
 var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
-var replace = require('gulp-replace');
 var rev = require('gulp-rev');
 var _ = require('underscore');
 var url = require('url');
 var through2 = require('through2');
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var del = require('del');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('../module/git.js');
@@ -262,17 +261,19 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	debug('处理静态资源');
 	var p = this;
 
+	var src = common.getCwd(p.project.repo, 'src');
+	var base = hasAMD ? path.join(src, 'www') : src;
+	var destRoot = common.getCwd(p.project.repo, 'production');
+	var destStatic = path.join(destRoot, 'static');
+	var build = common.getCwd(p.project.repo, 'build');
+
 	/**
 	 * 1. 除js, css的静态资源rev后输出到dest目录
-	 * 2. updateManifest
+	 * 2. 更新manifest
 	 */
 	var img = function(cb) {
 		debug('img');
-		var src = common.getCwd(p.project.repo, 'src');
-		var base = hasAMD ? path.join(src, 'www') : src;
 
-		var destRoot = common.getCwd(p.project.repo, 'production');
-		var dest = path.join(destRoot, 'static');
 		var filterList = util.getStaticFileType();
 		filterList = _.filter(filterList, function(item) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
@@ -285,10 +286,10 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				})
 				.pipe(filter)
 				.pipe(rev())
-				.pipe(gulp.dest(dest))
+				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-				.pipe(gulp.dest(dest))
+				.pipe(gulp.dest(destStatic))
 				.on('end', cb)
 				.on('error', cb);
 		});
@@ -296,14 +297,43 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		gulp.start('img');
 	};
 
+	gulp.task('clean', function(cb) {
+		del(build, cb);
+	});
+
+	/**
+	 * 1. 替换静态资源内链（图片，字体...）-> build目录
+	 * 2. build目录 -> min + rev -> dest目录
+	 * 3. 更新manifest
+	 */
 	var css = function(cb) {
 		debug('css');
-		// TODO
-		// 1. 替换静态资源内链（图片，字体...）-> build目录
-		// 2. build目录 -> min + rev -> dest目录
-		// 3. updateManifest
 
-		cb();
+		var filter = gulpFilter(['**/*.css']);
+
+		gulp.task('build', ['clean'], function() {
+			gulp.src(files, {
+					base: base
+				})
+				.pipe(filter)
+				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
+				.pipe(gulp.dest(build));
+		});
+
+		gulp.task('css', 'build', function() {
+			gulp.src('**/*', {
+					base: build
+				})
+				.pipe(minifyCss())
+				.pipe(rev())
+				.pipe(rev.manifest())
+				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+				.pipe(gulp.dest(destStatic))
+				.on('end', cb)
+				.on('error', cb);
+		});
+
+		gulp.start('css');
 	};
 
 	var js = function(cb) {
@@ -311,7 +341,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		// TODO
 		// 1. AMD -> build目录（如果有amd）
 		// 2. build目录 -> min + rev -> dest目录
-		// 3. updateManifest
+		// 3. 更新manifest
 		cb();
 	};
 

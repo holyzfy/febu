@@ -4,8 +4,11 @@ var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:' + __filename);
 var gulp = require('gulp');
+var gutil = require('gulp-util');
 var exec = require('child_process').exec;
 var file = require('read-file');
+var frep = require('frep');
+var File = require('vinyl');
 var config = require('../config.js');
 var common = require('./common.js');
 var Git = require('./git.js');
@@ -14,7 +17,7 @@ var util = {};
 
 /**
  * Check if a file or directory is empty
- * see: https://github.com/codexar/npm-extfs
+ * @see: https://github.com/codexar/npm-extfs
  *
  * @param {string} searchPath
  * @param {Function} cb
@@ -258,12 +261,119 @@ util.replaceConfigPaths = function(contents, newPaths) {
 };
 
 util.regex = {
-    // 带src属性的script标签
-    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi,
-
+    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi, // 带src属性的script标签
     link: /<link\b[^<]*>/mgi,
     media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
     object: /<object\b[^<]*>/mgi,
+    url: /(?:[\:\s]+)url\(([^\)]+)\)/mgi // 样式表里url(xxx)
+};
+
+/**
+ * @param  obj  Development或者Production实例
+ * @param  env  development或者production
+ * @param  {File} file @see: https://github.com/wearefractal/vinyl
+ */
+util.getReplacements = function(obj, env, file) {
+    var patterns = [
+        {
+            // css
+            pattern: util.regex.link,
+            replacement: function(match) {
+                if(!obj.replaceHref) {
+                    return match;
+                }
+
+                var attrs = (match.match(/<link\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                
+                var css = attrs.some(function(item) {
+                    return item === 'rel="stylesheet"' || item === "rel='stylesheet'"
+                });
+                if(!css) {
+                    return match;
+                }
+
+                return obj.replaceHref(attrs, match, file);
+            }
+        },
+        {
+            // js
+            pattern: util.regex.script,
+            replacement: function(match) {
+                if(!obj.replaceSrc) {
+                    return match;
+                }
+                var attrs = (match.match(/<script\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                return obj.replaceSrc(attrs, match, file);
+            }
+        },
+        {
+            // media
+            pattern: util.regex.media,
+            replacement: function(match) {
+                if(!obj.replaceSrc) {
+                    return match;
+                }
+                var attrs = (match.match(/<(?:img|video|audio|source|embed)\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                return obj.replaceSrc(attrs, match, file);
+            }
+        },
+        {
+            // object
+            pattern: util.regex.object,
+            replacement: function(match) {
+                if(!obj.replaceData) {
+                    return match;
+                }
+                var attrs = (match.match(/<object\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                return obj.replaceData(attrs, match, file);
+            }
+        },
+        {
+            // url
+            pattern: util.regex.url,
+            replacement: function(match, first) {
+                if(!obj.replaceUrl) {
+                    return match;
+                }
+                return obj.replaceUrl(match, first, file);
+            }
+        }
+    ];
+
+    // 禁止外部函数修改patterns
+    var ret = [].concat(patterns);
+
+    return ret;
+};
+
+util.replacePath = function (obj, env) {
+    var fn = function(file, enc, cb) {
+        if (file.isNull()) {
+            cb(null, file);
+            return;
+        }
+
+        if (file.isStream()) {
+            cb(new gutil.PluginError('febu replacePath', 'Streaming not supported'));
+            return;
+        }
+
+        var replacements = util.getReplacements(obj, env, file);
+        file.contents = new Buffer(frep.strWithArr(file.contents.toString(), replacements));
+        cb(null, file);
+    };
+
+    return fn;
+};
+
+// 求filepath的相对路径（相对于fromFile.base）
+util.relPath = function(fromFile, filepath) {
+    var dirname = path.dirname(fromFile.path);
+    var thisFile = new File({
+        base: fromFile.base,
+        path: path.resolve(dirname, filepath)
+    });
+    return thisFile.relative;
 };
 
 module.exports = util;

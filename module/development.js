@@ -4,10 +4,10 @@ var url = require('url');
 var fs = require('fs');
 var async = require('async');
 var gulp = require('gulp');
-var frep = require('gulp-frep');
-var gulpFilter = require('gulp-filter');
 var replace = require('gulp-replace');
+var gulpFilter = require('gulp-filter');
 var dir = require('node-dir');
+var through2 = require('through2');
 var config = require('../config.js');
 var Git = require('./git.js');
 var util = require('./util.js');
@@ -75,68 +75,20 @@ Dev.prototype.resource = function(source, callback) {
 	gulp.start('resource');
 };
 
-Dev.prototype.getReplacements = function(urlRoot) {
-	var patterns = [
-		{
-			// css
-			pattern: util.regex.link,
-			replacement: function(match) {
-				var attrs = (match.match(/<link\b(.+)>/i)[1] || '').trim().split(/\s+/);
-				
-				var css = attrs.some(function(item) {
-					return item === 'rel="stylesheet"' || item === "rel='stylesheet'"
-				});
-				if(!css) {
-					return match;
-				}
-
-				return replaceHref(urlRoot, attrs, match);
-			}
-		},
-		{
-			// js
-			pattern: util.regex.script,
-			replacement: function(match) {
-				var attrs = (match.match(/<script\b(.+)>/i)[1] || '').trim().split(/\s+/);
-				return replaceSrc(urlRoot, attrs, match);
-			}
-		},
-		{
-			// media
-			pattern: util.regex.media,
-			replacement: function(match) {
-				var attrs = (match.match(/<(?:img|video|audio|source|embed)\b(.+)>/i)[1] || '').trim().split(/\s+/);
-				return replaceSrc(urlRoot, attrs, match);
-			}
-		},
-		{
-			// object
-			pattern: util.regex.object,
-			replacement: function(match) {
-				var attrs = (match.match(/<object\b(.+)>/i)[1] || '').trim().split(/\s+/);
-				return replaceData(urlRoot, attrs, match);
-			}
-		},
-	];
-
-	// 禁止外部函数修改patterns
-	var ret = [].concat(patterns);
-
-	return ret;
-};
-
-var replaceHref = function(urlRoot, attrs, match) {
+Dev.prototype.replaceHref = function(attrs, match, file) {
+	var dev = this;
 	var href = attrs.filter(function(item){
 		return /^href=/i.test(item);
 	})[0];
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
-		if(protocol === null) {
-			var newHref = url.resolve(urlRoot, sub);
-			return 'href="' + newHref + '"';
-		} else {
+		if(protocol) {
 			return match;
+		} else {
+			var subPath = util.relPath(file, sub);
+			var newHref = url.resolve(dev.project.development.web, subPath);
+			return 'href="' + newHref + '"';
 		}
 	};
 
@@ -150,18 +102,22 @@ var replaceHref = function(urlRoot, attrs, match) {
 	return match;
 };
 
-var replaceSrc = function(urlRoot, attrs, match) {
+Dev.prototype.replaceSrc = function(attrs, match, file) {
+	var dev = this;
 	var src = attrs.filter(function(item){
 		return /^src=/i.test(item);
 	})[0];
 
 	var replacement = function(match, sub) {
+		sub = sub.trim();
+		var isDataURI = sub.slice(0, 5) === 'data:';
 		var protocol = url.parse(sub).protocol;
-		if(protocol === null) {
-			var newSrc = url.resolve(urlRoot, sub);
-			return 'src="' + newSrc + '"';
-		} else {
+		if(isDataURI || protocol) {
 			return match;
+		} else {
+			var subPath = util.relPath(file, sub);
+			var newSrc = url.resolve(dev.project.development.web, subPath);
+			return 'src="' + newSrc + '"';
 		}
 	};
 
@@ -175,7 +131,8 @@ var replaceSrc = function(urlRoot, attrs, match) {
 	return match;
 };
 
-var replaceData = function(urlRoot, attrs, match) {
+Dev.prototype.replaceData = function(attrs, match, file) {
+	var dev = this;
 	var src = attrs.filter(function(item){
 		return /^data=/i.test(item);
 	})[0];
@@ -183,7 +140,8 @@ var replaceData = function(urlRoot, attrs, match) {
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
 		if(protocol === null) {
-			var newSrc = url.resolve(urlRoot, sub);
+			var subPath = util.relPath(file, sub);
+			var newSrc = url.resolve(dev.project.development.web, subPath);
 			return 'data="' + newSrc + '"';
 		} else {
 			return match;
@@ -200,13 +158,25 @@ var replaceData = function(urlRoot, attrs, match) {
 	return match;
 };
 
+Dev.prototype.replaceUrl = function(match, sub, file) {
+	var dev = this;
+	sub = sub.trim();
+	var isDataURI = sub.slice(0, 5) === 'data:';
+	var protocol = url.parse(sub).protocol;
+	if(isDataURI || protocol) {
+		return match;
+	} else {
+		var subPath = util.relPath(file, sub);
+		var newSrc = url.resolve(dev.project.development.web, subPath);
+		return ':url(' + newSrc + ')';
+	}
+};
+
 // 处理html文件
 Dev.prototype.html = function(source, callback) {
 	debug('html');
 	var dev = this;
-	
-	var patterns = dev.getReplacements(dev.project.development.web);
-	
+		
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
 		src = hasAMD ? path.join(src, 'www') : src;
@@ -217,11 +187,7 @@ Dev.prototype.html = function(source, callback) {
 			base: src
 		})
 		.pipe(gulpFilter(util.getVmFileType()))
-		
-		// 替换静态资源链接
-		// @link https://github.com/jonschlinkert/gulp-frep
-		.pipe(frep(patterns))
-		
+		.pipe(through2.obj(util.replacePath(dev, 'development'))) // 替换静态资源链接
 		.pipe(gulp.dest(dest))
 		.on('end', callback)
 		.on('error', callback);

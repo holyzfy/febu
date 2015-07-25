@@ -2,6 +2,7 @@ var fs = require('fs-extra');
 var path = require('path');
 var should = require('should');
 var async = require('async');
+var File = require('vinyl');
 var util = require('../module/util.js');
 var common = require('../module/common.js');
 var config = require('../config.js');
@@ -137,6 +138,17 @@ describe(__filename, function(){
 				fs.remove(dest, done);
 			});
 		});
+	});
+
+	it('relPath', function() {
+		var cssFile = new File({
+			base: 'D:/febu/data_temp/test_project',
+			path: 'D:/febu/data_temp/test_project/style/sub_xxx/login.css'
+		});
+		var imagePath = '../../images/sub_xxx/btn.png';
+		var ret = util.relPath(cssFile, imagePath);
+		var expected = ['images', 'sub_xxx', 'btn.png'].join(path.sep);
+		ret.should.equal(expected);
 	});
 
 });
