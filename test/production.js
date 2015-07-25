@@ -12,10 +12,10 @@ describe(__filename, function(){
 	var project = {
 		repo: 'http://github.com/holyzfy/test_repo_url',
 		development: {
-			web: '//qa.developer.test.com/'
+			web: '//qa.developer.test.com/f2e/test_project/'
 		},
 		production: {
-			web: '//img1.cache.test.com/f2e/'
+			web: '//img1.cache.test.com/f2e/test_project/'
 		}
 	};
 	
@@ -118,8 +118,46 @@ describe(__filename, function(){
 		});
 	});
 
+	it('updateManifestHelper', function(done) {
+		var manifest = {
+			'images/logo.png': 'images/logo-4x6r2q7t9j.png',
+			'style/common.css': 'style/common-3j7x0f1d2n.css'
+		}
+		var file = {
+			path: 'rev-manifest.json',
+			contents: JSON.stringify(manifest)
+		};
+		var expected = [
+			{
+				repo: p.project.repo,
+				src: ['images/logo.png'],
+				dest: '//img1.cache.test.com/f2e/test_project/images/logo-4x6r2q7t9j.png',
+				_status: 'dirty'
+
+			},
+			{
+				repo: p.project.repo,
+				src: ['style/common.css'],
+				dest: '//img1.cache.test.com/f2e/test_project/style/common-3j7x0f1d2n.css',
+				_status: 'dirty'
+			}
+		];
+
+		p.initManifest(function(err, docs) {
+			should.not.exist(err);
+			p.updateManifestHelper(file, 'utf-8', function(err, ret) {
+				should.not.exist(err);
+				should.deepEqual(ret, expected);
+				done();
+			});
+		});
+	});
+
 	it('compileStaticFiles', function(done) {
 		// TODO
+		
+
+
 		done();
 	});
 

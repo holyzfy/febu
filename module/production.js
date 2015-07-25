@@ -7,11 +7,18 @@ var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var replace = require('gulp-replace');
+var rev = require('gulp-rev');
 var _ = require('underscore');
 var url = require('url');
+var through2 = require('through2');
+var gutil = require('gulp-util');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('../module/git.js');
+var config = require('../config.js');
+
+// 项目里有requirejs的构建脚本吗
+var hasAMD;
 
 function Production(project) {
 	this.project = project;
@@ -146,7 +153,7 @@ Production.prototype.initManifest = function(callback) {
 
 /**
  * 更新manifest属性
- * @param  {Object.<[repo], src, [hash], [dest], [rel]>} doc
+ * @param  {Object.<[repo], src, [dest], [rel]>} doc
  *                  src和rel的路径都是相对于仓库根目录
  * @return {Production}
  */
@@ -174,6 +181,35 @@ Production.prototype.updateManifest = function(doc) {
 	}
 
 	return p;
+};
+
+Production.prototype.updateManifestHelper = function (file, enc, cb) {
+	var p = this;
+
+	if(file.path !== 'rev-manifest.json') {
+		return cb();
+	}
+
+	var manifest;
+
+	try {
+		manifest = JSON.parse(file.contents.toString());
+	} catch(err) {
+		return cb(err);
+	}
+
+	var docs = []; // 方便做单元测试
+
+	_.mapObject(manifest, function(value, key) {
+		var doc = {
+			src: key,
+			dest: url.resolve(p.project.production.web, value)
+		};
+		docs.push(doc);
+		p.updateManifest(doc);
+	});
+
+	cb(null, docs);
 };
 
 Production.prototype.serializeManifest = function(callback) {
@@ -209,13 +245,33 @@ Production.prototype.getBasename = function(filepath) {
 Production.prototype.compileStaticFiles = function(files, callback) {
 	debug('compileStaticFiles', arguments);
 
+	/**
+	 * 1. 除js, css的静态资源rev后输出到dest目录
+	 * 2. updateManifest
+	 */
 	var img = function(cb) {
-		// TODO
-		// 1. 除js, css的静态资源rev后输出到dest目录
-		// 2. updateManifest
-		cb();
-	};
+		var src = common.getCwd(dev.project.repo, 'src');
+		var base = hasAMD ? path.join(src, 'www') : src;
 
+		var destRoot = common.getCwd(p.project.repo, 'production');
+		var dest = path.join(destRoot, 'static');
+		var filter = gulpFilter(['*', '!*.js', '!*.css']);
+
+		gulp.task('img', function() {
+			gulp.src(files, {
+					base: base
+				})
+				.pipe(filter)
+				.pipe(rev())
+				.pipe(gulp.dest(dest))
+				.pipe(rev.manifest())
+				.pipe(through2.obj(updateManifestHelper.bind(p)))
+				.on('end', callback)
+				.on('error', callback);
+		});
+
+		gulp.start('build');
+	};
 
 	var css = function(cb) {
 		// TODO
@@ -287,6 +343,15 @@ Production.prototype.run = function(commit, callback) {
 		} else {
 			debug('开始发布...');
 
+			var checkAMD = function() {
+				var next = arguments[arguments.length - 1];
+				util.hasAMD(dev.project, function(err, ret){
+					hasAMD = ret;
+					debug('hasAMD=', ret);
+					next(err, ret);
+				});
+			};
+
 			var checkout = function() {
 				debug('checkout');
 				var next = arguments[arguments.length - 1];
@@ -341,7 +406,7 @@ Production.prototype.run = function(commit, callback) {
 				util.mark(p.db, data, next);
 			};
 
-			var tasks = [p.initManifest.bind(p), checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
+			var tasks = [p.initManifest.bind(p), checkAMD, checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
 			async.waterfall(tasks, function(err, data){
 				callback(err, data);
 			});
