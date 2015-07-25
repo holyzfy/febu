@@ -118,7 +118,7 @@ describe(__filename, function(){
 		});
 	});
 
-	it('updateManifestHelper', function(done) {
+	it('updateManifestHelper', function() {
 		var manifest = {
 			'images/logo.png': 'images/logo-4x6r2q7t9j.png',
 			'style/common.css': 'style/common-3j7x0f1d2n.css'
@@ -145,11 +145,8 @@ describe(__filename, function(){
 
 		p.initManifest(function(err, docs) {
 			should.not.exist(err);
-			p.updateManifestHelper(file, 'utf-8', function(err, ret) {
-				should.not.exist(err);
-				should.deepEqual(ret, expected);
-				done();
-			});
+			var ret = p.updateManifestHelper(file, 'utf-8');
+			should.deepEqual(ret, expected);
 		});
 	});
 

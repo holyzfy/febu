@@ -11,6 +11,7 @@ var rev = require('gulp-rev');
 var _ = require('underscore');
 var url = require('url');
 var through2 = require('through2');
+var gulp = require('gulp');
 var gutil = require('gulp-util');
 var util = require('./util.js');
 var common = require('./common.js');
@@ -32,34 +33,28 @@ function Production(project) {
 Production.prototype.exist = function(commit, callback) {
 	var p = this;
 
+	var conditions = {
+		repo: p.project.repo,
+		src: commit
+	};
+	p.db.versions.find(conditions, function(err, ret) {
+		if(err) {
+			return callback(err);
+		}
+
+		var dest = ret ? ret.dest : null;
+		callback(null, !!ret, dest);
+	});
+};
+
+// 从生产环境的仓库里检出指定版本
+Production.prototype.checkout = function(commit, callback) {
+	debug('checkout=%o', commit);
+	var p = this;
 	var git = new Git(p.project.repo, {
 		type: 'production'
 	});
-	var gitDir = path.join(git.options.cwd, '.git');
-	fs.exists(gitDir, function(ret) {
-		if(ret) {
-			p.checkout('master', function(err, cb){
-				if(err) {
-					return callback(err);
-				}
-				var conditions = {
-					repo: p.repo,
-					src: commit
-				};
-				p.db.versions.find(conditions, function(err, ret) {
-					if(err) {
-						return callback(err);
-					}
-					if(!!ret) {
-						debug('该版本已发布过，直接签出');
-					}
-					callback(null, !!ret);
-				});
-			});
-		} else {
-			callback(null, ret);
-		}
-	});
+	git.checkout(commit, callback);
 };
 
 /**
@@ -74,9 +69,31 @@ Production.prototype.getSource = function(commit, callback) {
 	var git = new Git(p.project.repo);
     var src = common.getCwd(p.project.repo, 'src');
 
-	if(p.project.version) {
+    // 取得上次发布的src版本号
+    var getLatestVersion = function(cb) {
+    	p.db.versions.find({
+    		repo: p.project.repo
+    	}, function(err, ret) {
+		 	if (err) {
+                return cb(err);
+            }
+    		
+    		var srcCommit = ret ? ret.src : null;
+    		cb(null, srcCommit);
+    	});
+    };
+
+    getLatestVersion(function(err, srcCommit) {
+    	if (err) {
+            return callback(err);
+        }
+
+    	if(!srcCommit) {
+    		return callback(null, ['**/*']);
+    	}
+
 		var gitDiff = function(cb) {
-			git.diff(p.project.version, commit, function(err, ret) {
+			git.diff(srcCommit, commit, function(err, ret) {
 	            if (err) {
 	                return cb(err);
 	            }
@@ -118,24 +135,22 @@ Production.prototype.getSource = function(commit, callback) {
 				if (err) {
 	                return cb(err);
 	            }
-	            debug('第1次查找=%o', list);
+	            debug('第1次查找=%s', JSON.stringify(list, null, 4));
 	            getRelativeFiles(list, function(err, list2) {
 	            	if (err) {
 		                return cb(err);
 		            }
-		            debug('第2次查找=%o', list2);
+		            debug('第2次查找=%s', JSON.stringify(list2, null, 4));
 		            files = files.concat(list, list2);
 		            files = _.uniq(files);
-		            debug('所有找到的文件=%o', files);
+		            debug('共找到文件=%s', JSON.stringify(files, null, 4));
 		            cb(null, files);
 	            });
 			});
 		};
 
 		async.waterfall([gitDiff, find], callback);
-	} else {
-		callback(null, ['**/*']);
-	}
+    });
 };
 
 // 查询数据库的db.febu.resources，把结果放到Production实例的manifest属性里
@@ -194,22 +209,23 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	try {
 		manifest = JSON.parse(file.contents.toString());
+		debug('manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err);
 	}
 
 	var docs = []; // 方便做单元测试
-
 	_.mapObject(manifest, function(value, key) {
+		var dest = url.resolve(p.project.production.web, value);
 		var doc = {
 			src: key,
-			dest: url.resolve(p.project.production.web, value)
+			dest: dest
 		};
 		docs.push(doc);
 		p.updateManifest(doc);
 	});
-
-	cb(null, docs);
+	cb && cb();
+	return docs;
 };
 
 Production.prototype.serializeManifest = function(callback) {
@@ -243,19 +259,25 @@ Production.prototype.getBasename = function(filepath) {
 
 // 处理静态资源
 Production.prototype.compileStaticFiles = function(files, callback) {
-	debug('compileStaticFiles', arguments);
+	debug('处理静态资源');
+	var p = this;
 
 	/**
 	 * 1. 除js, css的静态资源rev后输出到dest目录
 	 * 2. updateManifest
 	 */
 	var img = function(cb) {
-		var src = common.getCwd(dev.project.repo, 'src');
+		debug('img');
+		var src = common.getCwd(p.project.repo, 'src');
 		var base = hasAMD ? path.join(src, 'www') : src;
 
 		var destRoot = common.getCwd(p.project.repo, 'production');
 		var dest = path.join(destRoot, 'static');
-		var filter = gulpFilter(['*', '!*.js', '!*.css']);
+		var filterList = util.getStaticFileType();
+		filterList = _.filter(filterList, function(item) {
+			return (item !== '**/*.css') && (item !== '**/*.js');
+		});
+		var filter = gulpFilter(filterList);
 
 		gulp.task('img', function() {
 			gulp.src(files, {
@@ -265,15 +287,17 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				.pipe(rev())
 				.pipe(gulp.dest(dest))
 				.pipe(rev.manifest())
-				.pipe(through2.obj(updateManifestHelper.bind(p)))
-				.on('end', callback)
-				.on('error', callback);
+				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+				.pipe(gulp.dest(dest))
+				.on('end', cb)
+				.on('error', cb);
 		});
 
-		gulp.start('build');
+		gulp.start('img');
 	};
 
 	var css = function(cb) {
+		debug('css');
 		// TODO
 		// 1. 替换静态资源内链（图片，字体...）-> build目录
 		// 2. build目录 -> min + rev -> dest目录
@@ -283,6 +307,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	};
 
 	var js = function(cb) {
+		debug('js');
 		// TODO
 		// 1. AMD -> build目录（如果有amd）
 		// 2. build目录 -> min + rev -> dest目录
@@ -295,6 +320,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return callback(err);
 		}
 
+		debug('compileStaticFiles done');
+
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
 		callback(null, files);
 	});
@@ -303,7 +330,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 // 处理模板文件
 Production.prototype.compileVmFiles = function(files, callback) {
 	// TODO
-	debug('compileVmFiles', arguments);
+	debug('处理模板文件');
+	var p = this;
 
 	// 把files参数传递下去，方便async.waterfall的下个阶段使用
 	callback(null, files);
@@ -334,18 +362,19 @@ Production.prototype.commit = function(message, callback) {
 
 Production.prototype.run = function(commit, callback) {
 	var p = this;
-	p.exist(commit, function(err, exist) {
+	p.exist(commit, function(err, exist, destCommit) {
 		if(err) {
 			return callback(err);
 		}
 		if(exist) {
-			return p.checkout(commit, callback);
+			debug('该版本%s已发布过，直接签出%s', commit, destCommit);
+			return p.checkout(destCommit, callback);
 		} else {
 			debug('开始发布...');
 
 			var checkAMD = function() {
 				var next = arguments[arguments.length - 1];
-				util.hasAMD(dev.project, function(err, ret){
+				util.hasAMD(p.project, function(err, ret){
 					hasAMD = ret;
 					debug('hasAMD=', ret);
 					next(err, ret);
