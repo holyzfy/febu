@@ -20,7 +20,6 @@ var ProjectSchema = new Schema({
 		async: String,
 		web: String 
 	},
-	version: String,
 	busy: Boolean
 });
 
@@ -32,7 +31,7 @@ var ProjectSchema = new Schema({
  */
 db.projects.find = function(repo, callback) {
 	var Project = mongoose.model('Project', ProjectSchema);
-	debug('repo=', repo);
+	// debug('repo=', repo);
 	return Project.findOne({
 		repo: repo
 	}, function(err, data) {
@@ -44,7 +43,7 @@ db.projects.find = function(repo, callback) {
 // 新建或更新项目配置
 db.projects.save = function(data, callback){
 	var Project = mongoose.model('Project', ProjectSchema);
-	debug('projects.save', data);
+	// debug('projects.save', data);
 	return Project.update({repo: data.repo}, data, {upsert: true}, callback);
 };
 
@@ -118,7 +117,12 @@ var VersionSchema = new Schema({
 db.versions.find = function(conditions, callback) {
 	debug('conditions=', conditions);
 	var Version = mongoose.model('Version', VersionSchema);
-	Version.findOne(conditions, function(err, data) {
+	Version.findOne({
+		'$query': conditions,
+		'$orderby':{
+			'_id': -1
+		}
+	}, function(err, data) {
 		var ret = data ? data.toObject() : null;
 		callback(err, ret);
 	});
