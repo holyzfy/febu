@@ -96,7 +96,12 @@ gulp.task('development', ['before'], function(callback){
 	var dev = new Development(project);
 	dev.db = db;
 	debug('发布到测试环境 src commit=%s', commit);
-	dev.run(commit, closeDb);
+	dev.run(commit, function(err) {
+		if(err) {
+			console.trace(err);
+		}
+		closeDb();
+	});
 });
 
 // 发布到正式环境
@@ -104,5 +109,10 @@ gulp.task('production', ['before'], function(callback){
 	var p = new Production(project);
 	p.db = db;
 	debug('发布到正式环境 src commit=%s', commit);
-	p.run(commit, closeDb);
+	p.run(commit, function(err) {
+		if(err) {
+			console.trace(err);
+		}
+		closeDb();
+	});
 });
