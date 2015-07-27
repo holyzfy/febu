@@ -143,6 +143,10 @@ Git.prototype.show = function(commit, callback) {
 Git.prototype.diff = function(from, to, callback) {
 	var git = this;
     callback = arguments[arguments.length - 1];
+    if(arguments.length == 1) {
+        from = '';
+        to = '';
+    }
     // 跳过已删除的文件
     var args = [from, to, '--name-only', '--diff-filter=ACMRTUXB'];
     git.exec('diff', args, function(err, data){
