@@ -2,7 +2,7 @@ var url = require('url');
 var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:util.js');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var exec = require('child_process').exec;
@@ -351,7 +351,8 @@ util.relPath = function(fromFile, filepath) {
         base: fromFile.base,
         path: path.resolve(dirname, filepath)
     });
-    return thisFile.relative;
+    var thisPath = thisFile.relative.replace(new RegExp('\\' + path.sep, 'g'), '/');
+    return thisPath;
 };
 
 module.exports = util;
