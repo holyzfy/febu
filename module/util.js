@@ -96,28 +96,6 @@ util.getProject = function(project, commit, callback) {
     async.waterfall(tasks, callback);
 };
 
-// 收集要处理的文件列表
-util.getSource = function(project, commit, callback) {
-    var source = [];
-    var git = new Git(project.repo);
-    var src = common.getCwd(project.repo, 'src');
-    if (project.version) {
-        git.diff(project.version, commit, function(err, ret) {
-            if (err) {
-                return callback(err);
-            }
-
-            ret.forEach(function(item) {
-                item = path.join(src, item);
-                source.push(item)
-            });
-            callback(null, source);
-        });
-    } else {
-        callback(null, ['**/*']);
-    }
-};
-
 /**
  * 标记为已发布
  * @param  db 

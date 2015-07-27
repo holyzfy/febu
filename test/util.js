@@ -50,32 +50,6 @@ describe(__filename, function(){
 		util.getProject({repo: repo}, commit, done);
 	});
 
-	it('getSource', function(done) {
-		async.series([
-			function(callback) {
-				util.getSource({repo: repo}, 'HEAD', callback);
-			},
-			function(callback){
-				var project = {
-					repo: repo,
-					version: '3bc6453'
-				};
-				util.getSource(project, '00ce303', function(err, data){
-					if(err) {
-						return callback(err);
-					}
-					try {
-						data.should.be.Array;
-						data.should.have.length(2);
-					} catch(e) {
-						callback(e);
-					}
-					callback();
-				});
-			}
-		], done);
-	});
-
 	it('resolvePath', function(){
 		var from = 'd:/febu/data/src/github.com/test/index.html';
 		var to = 'style/list.css';
