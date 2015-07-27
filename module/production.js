@@ -1,7 +1,7 @@
 var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:production.js');
 var rename = require("gulp-rename");
 var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
@@ -34,7 +34,8 @@ Production.prototype.exist = function(commit, callback) {
 
 	var conditions = {
 		repo: p.project.repo,
-		src: commit
+		src: commit,
+		type: 'production'
 	};
 	p.db.versions.find(conditions, function(err, ret) {
 		if(err) {
@@ -71,13 +72,15 @@ Production.prototype.getSource = function(commit, callback) {
     // 取得上次发布的src版本号
     var getLatestVersion = function(cb) {
     	p.db.versions.find({
-    		repo: p.project.repo
+    		repo: p.project.repo,
+    		type: 'production'
     	}, function(err, ret) {
 		 	if (err) {
                 return cb(err);
             }
     		
     		var srcCommit = ret ? ret.src : null;
+    		debug('上次发布的版本号=%s', srcCommit);
     		cb(null, srcCommit);
     	});
     };
@@ -266,6 +269,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var destRoot = common.getCwd(p.project.repo, 'production');
 	var destStatic = path.join(destRoot, 'static');
 	var build = common.getCwd(p.project.repo, 'build');
+	debug('build=%s', build);
 
 	/**
 	 * 1. 除js, css的静态资源rev后输出到dest目录
@@ -279,7 +283,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
 		var filter = gulpFilter(filterList);
-
+		debug('img filterList=%o', filterList);
 		gulp.task('img', function() {
 			gulp.src(files, {
 					base: base
@@ -298,7 +302,9 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	};
 
 	gulp.task('clean', function(cb) {
-		del(build, cb);
+		del(build, {
+			force: true
+		}, cb);
 	});
 
 	/**
@@ -317,15 +323,16 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				})
 				.pipe(filter)
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
-				.pipe(gulp.dest(build));
+				.pipe(gulp.dest(build))
 		});
 
-		gulp.task('css', 'build', function() {
+		gulp.task('css', ['build'], function() {
 			gulp.src('**/*', {
 					base: build
 				})
-				.pipe(minifyCss())
+				// .pipe(minifyCss())
 				.pipe(rev())
+				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
 				.pipe(gulp.dest(destStatic))
@@ -357,6 +364,27 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	});
 };
 
+Production.prototype.replaceUrl = function(match, sub, file) {
+	var p = this;
+	sub = sub.trim();
+	var isDataURI = sub.slice(0, 5) === 'data:';
+	var protocol = url.parse(sub).protocol;
+	if(isDataURI || protocol) {
+		return match;
+	} else {
+		var subPath = util.relPath(file, sub);
+		var doc = _.find(p.manifest, function(item) {
+			return item.src[0] == subPath;
+		});
+		if(!doc) {
+			return match;
+		}
+		var newSrc = doc.dest;
+		debug('replaceUrl: %s => %s', sub, newSrc);
+		return ':url(' + newSrc + ')';
+	}
+};
+
 // 处理模板文件
 Production.prototype.compileVmFiles = function(files, callback) {
 	// TODO
@@ -376,6 +404,27 @@ Production.prototype.commit = function(message, callback) {
 		type: 'production'
 	});
 
+	var commit = function(cb) {
+		git.diff(function(err, data) {
+			if(err) {
+				return cb(err);
+			}
+
+			if(data.length == 1 && data[0] == '') {
+				debug('本次无提交');
+				return cb();
+			}
+
+			git.addAll(function(err) {
+				if(err) {
+					return cb(data);
+				}
+				debug('本次提交=%o', data);
+				git.commit(message, cb);
+			});
+		});
+	};
+
 	var tasks = [
 		function(cb) {
 			// 首先确保已初始化仓库
@@ -383,11 +432,10 @@ Production.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
-		git.addAll.bind(git),
-		git.commit.bind(git, message)
+		commit
 	];
 
-	async.waterfall(tasks, callback);
+	async.series(tasks, callback);
 };
 
 Production.prototype.run = function(commit, callback) {
