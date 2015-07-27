@@ -211,7 +211,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	try {
 		manifest = JSON.parse(file.contents.toString());
-		debug('manifest=%s', file.contents.toString());
+		// debug('manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err);
 	}
@@ -269,7 +269,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var destRoot = common.getCwd(p.project.repo, 'production');
 	var destStatic = path.join(destRoot, 'static');
 	var build = common.getCwd(p.project.repo, 'build');
-	debug('build=%s', build);
 
 	/**
 	 * 1. 除js, css的静态资源rev后输出到dest目录
@@ -283,9 +282,9 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
 		var filter = gulpFilter(filterList);
-		debug('img filterList=%o', filterList);
+
 		gulp.task('img', function() {
-			gulp.src(files, {
+			return gulp.src(files, {
 					base: base
 				})
 				.pipe(filter)
@@ -301,10 +300,10 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		gulp.start('img');
 	};
 
-	gulp.task('clean', function(cb) {
-		del(build, {
+	gulp.task('clean', function() {		
+		return del(build, {
 			force: true
-		}, cb);
+		});
 	});
 
 	/**
@@ -318,19 +317,20 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		var filter = gulpFilter(['**/*.css']);
 
 		gulp.task('build', ['clean'], function() {
-			gulp.src(files, {
+			return gulp.src(files, {
 					base: base
 				})
 				.pipe(filter)
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
-				.pipe(gulp.dest(build))
+				.pipe(gulp.dest(build));
 		});
 
 		gulp.task('css', ['build'], function() {
-			gulp.src('**/*', {
-					base: build
+			return gulp.src('**/*.css', {
+					base: build,
+					cwd: build
 				})
-				// .pipe(minifyCss())
+				.pipe(minifyCss())
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
@@ -380,7 +380,7 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 			return match;
 		}
 		var newSrc = doc.dest;
-		debug('replaceUrl: %s => %s', sub, newSrc);
+		// debug('replaceUrl: %s => %s', sub, newSrc);
 		return ':url(' + newSrc + ')';
 	}
 };
@@ -405,12 +405,13 @@ Production.prototype.commit = function(message, callback) {
 	});
 
 	var commit = function(cb) {
-		git.diff(function(err, data) {
+		git.status(function(err, data) {
+			debug('git.status=', data);
 			if(err) {
 				return cb(err);
 			}
 
-			if(data.length == 1 && data[0] == '') {
+			if(!data) {
 				debug('本次无提交');
 				return cb();
 			}
@@ -508,9 +509,13 @@ Production.prototype.run = function(commit, callback) {
 			};
 
 			var mark = function(data) {
-				debug('mark', arguments);
 				var next = arguments[arguments.length - 1];
-				util.mark(p.db, data, next);
+				if(data.dest) {
+					debug('mark', arguments);
+					util.mark(p.db, data, next);
+				} else {
+					next();
+				}
 			};
 
 			var tasks = [p.initManifest.bind(p), checkAMD, checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
