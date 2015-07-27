@@ -3,6 +3,7 @@ var debug = require('debug')('febu:' + __filename);
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
+var async = require('async');
 var common = require('../module/common.js');
 var db = require('../module/db.js');
 var Dev = require('../module/development.js');
@@ -25,6 +26,18 @@ describe(__filename, function(){
 	before(function(done){
 		dev.db = db;
 		db.open(done);
+	});
+
+	it('getSource', function(done) {
+		var dev = new Dev({
+			repo: 'https://github.com/holyzfy/trygit'
+		});
+		dev.db = db;
+
+		dev.getSource('HEAD', function(err, ret) {
+			should.deepEqual(ret, ['**/*']);
+			done();
+		});
 	});
 
 	it('exist', function(done) {

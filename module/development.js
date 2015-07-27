@@ -40,7 +40,8 @@ Dev.prototype.exist = function(commit, callback) {
 				}
 				var conditions = {
 					repo: dev.project.repo,
-					src: commit
+					src: commit,
+					type: 'development'
 				};
 				dev.db.versions.find(conditions, function(err, ret) {
 					if(err) {
@@ -53,6 +54,52 @@ Dev.prototype.exist = function(commit, callback) {
 			callback(null, ret);
 		}
 	});
+};
+
+// 收集要处理的文件列表
+Dev.prototype.getSource = function(commit, callback) {
+	var dev = this;
+    var source = [];
+    var git = new Git(dev.project.repo);
+    var src = common.getCwd(dev.project.repo, 'src');
+
+    // 取得上次发布的src版本号
+    var getLatestVersion = function(cb) {
+    	dev.db.versions.find({
+    		repo: dev.project.repo,
+    		type: 'development'
+    	}, function(err, ret) {
+		 	if (err) {
+                return cb(err);
+            }
+    		
+    		var srcCommit = ret ? ret.src : null;
+    		debug('上次发布的版本号=%s', srcCommit);
+    		cb(null, srcCommit);
+    	});
+    };
+
+    getLatestVersion(function(err, srcCommit) {
+    	if (err) {
+            return callback(err);
+        }
+
+    	if(!srcCommit) {
+    		return callback(null, ['**/*']);
+    	}
+
+    	git.diff(srcCommit, commit, function(err, ret) {
+            if (err) {
+                return callback(err);
+            }
+
+            ret.forEach(function(item) {
+                item = path.join(src, item);
+                source.push(item)
+            });
+            callback(null, source);
+        });
+    });
 };
 
 // 收集静态资源
@@ -314,7 +361,7 @@ Dev.prototype.run = function(commit, callback) {
 							cb();
 						});
 					},
-					util.getSource.bind(null, dev.project, commit)
+					dev.getSource.bind(dev, commit)
 				], next);
 			};
 
