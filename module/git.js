@@ -1,6 +1,6 @@
 var url = require('url');
 var path = require('path');
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:git.js');
 var async = require('async');
 var fs = require('fs-extra');
 var shell = require('shelljs');
@@ -159,6 +159,33 @@ Git.prototype.diff = function(from, to, callback) {
     });
 
     return git;
+};
+
+Git.prototype.status = function(callback) {
+    var git = this;
+    var args = ['--porcelain'];
+    git.exec('status', args, function(err, data){
+        if(err) {
+            return callback(err);
+        }
+
+        data = data.trim();
+
+        if(!data) {
+            return callback();
+        }
+
+        var list = data.split(/\r?\n/);
+        var ret = [];
+        list.forEach(function(item) {
+            var pair = item.trim().split(/\s+/);
+            ret.push({
+                status: pair[0],
+                path: pair[1]
+            });
+        });
+        callback(null, ret);
+    });
 };
 
 /**
