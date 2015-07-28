@@ -2,7 +2,6 @@ var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:production.js');
-var rename = require("gulp-rename");
 var gulpFilter = require('gulp-filter');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
@@ -162,8 +161,10 @@ Production.prototype.initManifest = function(callback) {
 		if(err) {
 			return callback(err);
 		}
-		
-		p.manifest = docs;
+		docs.forEach(function(item) {
+			delete item._id;
+		});
+		p.manifest = docs || [];
 		callback(null, p.manifest);
 	});
 };
@@ -518,7 +519,15 @@ Production.prototype.run = function(commit, callback) {
 				}
 			};
 
-			var tasks = [p.initManifest.bind(p), checkAMD, checkout, compileStaticFiles, compileVmFiles, save, getHeadCommit, mark];
+			var tasks = [
+				p.initManifest.bind(p), 
+				checkAMD, checkout, compileStaticFiles, compileVmFiles,
+				function() {
+					var next = arguments[arguments.length - 1];
+					p.serializeManifest(next);
+				},
+				save, getHeadCommit, mark
+			];
 			async.waterfall(tasks, function(err, data){
 				callback(err, data);
 			});
