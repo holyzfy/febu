@@ -347,9 +347,11 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var js = function(cb) {
 		debug('js');
 		// TODO
-		// 1. AMD -> build目录（如果有amd）
-		// 2. build目录 -> min + rev -> dest目录
-		// 3. 更新manifest
+		// 1. AMD -> build目录：optimize: 'uglify', optimizeCss: 'none'
+		// 2.1 build目录(**/*.js) -> rev -> dest目录
+		// 2.2 更新manifest
+		// 3.1 AMD config.js替换paths值 -> build目录 -> min + rev -> dest目录
+		// 3.2 更新manifest
 		cb();
 	};
 
