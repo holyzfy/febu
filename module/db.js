@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var async = require('async');
 var config = require('../config.js');
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:db.js');
 
 var db = {};
 db.projects = {};
@@ -68,7 +68,16 @@ var ResourceSchema = new Schema({
 db.resources.find = function(conditions, callback) {
 	debug('resource conditions=', conditions);
 	var Resource = mongoose.model('Resource', ResourceSchema);
-	Resource.find(conditions, callback);
+	Resource.find(conditions, function(err, docs) {
+		if(err) {
+			return callback(err);
+		}
+		var ret = [];
+		docs.forEach(function(doc) {
+			ret.push(doc.toObject());
+		});
+		callback(null, ret);
+	});
 };
 
 db.resources.save = function(data, callback){
