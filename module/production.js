@@ -12,9 +12,11 @@ var through2 = require('through2');
 var gulp = require('gulp');
 var del = require('del');
 var plumber = require('gulp-plumber');
+var File = require('vinyl');
+var exec = require('child_process').exec;
 var util = require('./util.js');
 var common = require('./common.js');
-var Git = require('../module/git.js');
+var Git = require('./git.js');
 var config = require('../config.js');
 
 // 项目里有requirejs的构建脚本吗
@@ -299,7 +301,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-				.pipe(gulp.dest(destStatic))
 				.on('end', cb);
 		});
 
@@ -345,7 +346,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-				.pipe(gulp.dest(destStatic))
 				.on('end', cb);
 		});
 
@@ -354,7 +354,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 
 	/**
 	 * AMD
-	 * 1. build目录：optimize: 'uglify', optimizeCss: 'none'
+	 * 1. build目录：optimize=uglify, optimizeCss=none
 	 * 2.1 build目录(所有.js) -> rev -> dest目录
 	 * 2.2 更新manifest
 	 * 3.1 config.js替换paths值 -> build目录 -> min + rev -> dest目录
@@ -366,10 +366,91 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	 */
 	var js = function(cb) {
 		debug('js');
-		if(hasAMD) {
-			// TODO
-			cb();
-		} else {
+
+		var amdAction = function(done) {
+			var optimize = function(_cb) {
+				var next = arguments[arguments.length - 1];
+				var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
+				var buildPath = path.join(config.amd.tools, config.amd.config);
+				var command = ['node', optimizerPath, '-o', buildPath, 'optimize=uglify', 'optimizeCss=none'].join(' ');
+		        exec(command, {cwd: src}, next);
+		    };
+
+		    var copy = function() {
+		    	var next = arguments[arguments.length - 1];
+
+		    	gulp.task('copy', function() {
+		    		return gulp.src('**/*.js', {
+			    			cwd: path.join(src, config.amd.build)
+			    		})
+		    			.pipe(plumber(function (err) {
+				            debug('出错 第%d行: %s', err.lineNumber, err.message);
+				            this.emit('end');
+				        }))
+	    				.pipe(rev())
+						.pipe(gulp.dest(destStatic))
+						.pipe(rev.manifest())
+						.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+						.on('end', next);
+		    	});
+
+		    	gulp.start('copy');
+		    };
+
+		    var getConfigPath = function() {
+		    	var next = arguments[arguments.length - 1];
+		    	util.getConfigPath(p.project, next);
+		    }
+
+		    var updateConfig = function(configPath) {
+		    	debug('updateConfig');
+		    	var next = arguments[arguments.length - 1];
+
+		    	var jsMap = _.filter(p.manifest, function(item) {
+		    		var isJsFile = item.src[0].slice(-3) === '.js';
+		    		return isJsFile;
+		    	});
+
+		    	var newPaths = _.map(jsMap, function(item) {
+		    		var one = {};
+		    		var file = new File({
+		    			path: item.src[0]
+		    		});
+		    		var key = file.basename.slice(0, 0 - file.extname.length);
+		    		var dest = item.dest.slice(0, -3); // 去掉扩展名
+		    		one[key] = dest;
+		    		return one;
+		    	});
+
+		    	return gulp.src(configPath, {
+			    		base: base
+			    	})
+			    	.pipe(plumber(function (err) {
+			            debug('出错 第%d行: %s', err.lineNumber, err.message);
+			            this.emit('end');
+			        }))
+					.pipe(through2.obj(function (file, enc, cb) {
+						var contents = file.contents.toString();
+						util.replaceConfigPaths(contents, newPaths);
+						cb();
+					}))
+					.pipe(uglify())
+					.pipe(rev())
+					.pipe(gulp.dest(destStatic))
+					.pipe(rev.manifest())
+					.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+					.pipe(gulp.dest(destStatic))
+					.on('end', next);
+		    };
+
+		    var tasks = [optimize, copy, getConfigPath, updateConfig];
+		    async.waterfall(tasks, function(err) {
+		    	debug('amdAction done');
+		    	done();
+		    });
+		};
+
+		var otherAction = function(done) {
 			var filter = gulpFilter(['**/*.js']);
 
 			gulp.task('js', function() {
@@ -386,12 +467,13 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					.pipe(gulp.dest(destStatic))
 					.pipe(rev.manifest())
 					.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-					.pipe(gulp.dest(destStatic))
-					.on('end', cb);
+					.on('end', done);
 			});
 
 			gulp.start('js');
-		}
+		};
+
+		hasAMD ? amdAction(cb) : otherAction(cb);
 	};
 
 	async.series([img, css, js], function(err, results) {
