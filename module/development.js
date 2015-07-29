@@ -4,7 +4,6 @@ var url = require('url');
 var fs = require('fs');
 var async = require('async');
 var gulp = require('gulp');
-var replace = require('gulp-replace');
 var gulpFilter = require('gulp-filter');
 var dir = require('node-dir');
 var through2 = require('through2');
@@ -293,10 +292,10 @@ Dev.prototype.buildConfigFile = function(callback) {
 			gulp.src(configPath, {
 					base: path.join(src, config.amd.www)
 				})
-				.pipe(replace(/^[\s\S]*$/g, function(match) {
-					return util.replaceConfigPaths(match, newPaths);
-				}, {
-					skipBinary: true
+				.pipe(through2.obj(function (file, enc, cb) {
+					var contents = file.contents.toString();
+					util.replaceConfigPaths(contents, newPaths);
+					cb();
 				}))
 				.pipe(gulp.dest(dest))
 				.on('end', callback)
