@@ -11,6 +11,7 @@ var url = require('url');
 var through2 = require('through2');
 var gulp = require('gulp');
 var del = require('del');
+var plumber = require('gulp-plumber');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('../module/git.js');
@@ -62,8 +63,8 @@ Production.prototype.checkout = function(commit, callback) {
  * @param  callback(err, files)
  */
 Production.prototype.getSource = function(commit, callback) {
-	debug('getSource', arguments);
-	
+	debug('getSource: %s', commit);
+
 	var p = this;
 	var git = new Git(p.project.repo);
     var src = common.getCwd(p.project.repo, 'src');
@@ -262,6 +263,7 @@ Production.prototype.getBasename = function(filepath) {
 
 // 处理静态资源
 Production.prototype.compileStaticFiles = function(files, callback) {
+	// return callback(new Error('test compileStaticFiles error'));
 	debug('处理静态资源');
 	var p = this;
 
@@ -288,14 +290,17 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return gulp.src(files, {
 					base: base
 				})
+				.pipe(plumber(function (err) {
+		            debug('出错: %s', err.message);
+		            this.emit('end');
+		        }))
 				.pipe(filter)
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
 				.pipe(gulp.dest(destStatic))
-				.on('end', cb)
-				.on('error', cb);
+				.on('end', cb);
 		});
 
 		gulp.start('img');
@@ -331,28 +336,62 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					base: build,
 					cwd: build
 				})
+				.pipe(plumber(function (err) {
+		            debug('出错: %s', err.message);
+		            this.emit('end');
+		        }))
 				.pipe(minifyCss())
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
 				.pipe(through2.obj(p.updateManifestHelper.bind(p)))
 				.pipe(gulp.dest(destStatic))
-				.on('end', cb)
-				.on('error', cb);
+				.on('end', cb);
 		});
 
 		gulp.start('css');
 	};
 
+	/**
+	 * AMD
+	 * 1. build目录：optimize: 'uglify', optimizeCss: 'none'
+	 * 2.1 build目录(所有.js) -> rev -> dest目录
+	 * 2.2 更新manifest
+	 * 3.1 config.js替换paths值 -> build目录 -> min + rev -> dest目录
+	 * 3.2 更新manifest
+	 *
+	 * 非AMD
+	 * 1. files -> rev -> dest目录
+	 * 2. 更新manifest
+	 */
 	var js = function(cb) {
 		debug('js');
-		// TODO
-		// 1. AMD -> build目录：optimize: 'uglify', optimizeCss: 'none'
-		// 2.1 build目录(**/*.js) -> rev -> dest目录
-		// 2.2 更新manifest
-		// 3.1 AMD config.js替换paths值 -> build目录 -> min + rev -> dest目录
-		// 3.2 更新manifest
-		cb();
+		if(hasAMD) {
+			// TODO
+			cb();
+		} else {
+			var filter = gulpFilter(['**/*.js']);
+
+			gulp.task('js', function() {
+				return gulp.src(files, {
+						base: base
+					})
+					.pipe(plumber(function (err) {
+			            debug('出错 第%d行: %s', err.lineNumber, err.message);
+			            this.emit('end');
+			        }))
+					.pipe(filter)
+					.pipe(uglify())
+					.pipe(rev())
+					.pipe(gulp.dest(destStatic))
+					.pipe(rev.manifest())
+					.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+					.pipe(gulp.dest(destStatic))
+					.on('end', cb);
+			});
+
+			gulp.start('js');
+		}
 	};
 
 	async.series([img, css, js], function(err, results) {
