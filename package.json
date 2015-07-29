@@ -21,6 +21,7 @@
     "gulp": "^3.9.0",
     "gulp-filter": "^2.0.2",
     "gulp-minify-css": "^1.1.0",
+    "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.5.3",
     "gulp-rev": "^5.1.0",
