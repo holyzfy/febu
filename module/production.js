@@ -444,10 +444,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		    };
 
 		    var tasks = [optimize, copy, getConfigPath, updateConfig];
-		    async.waterfall(tasks, function(err) {
-		    	debug('amdAction done');
-		    	done();
-		    });
+		    async.waterfall(tasks, done);
 		};
 
 		var otherAction = function(done) {
@@ -480,8 +477,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		if(err) {
 			return callback(err);
 		}
-
-		debug('compileStaticFiles done');
 
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
 		callback(null, files);
