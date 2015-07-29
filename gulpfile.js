@@ -1,5 +1,5 @@
 var gulp = require('gulp');
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:gulpfile.js');
 var minifyCss = require('gulp-minify-css');
 var argv = require('yargs').argv;
 var del = require('del');
@@ -92,27 +92,23 @@ var fixPath = function(href) {
 };
 
 // 发布到测试环境
-gulp.task('development', ['before'], function(callback){
+gulp.task('development', ['before'], function(){
 	var dev = new Development(project);
 	dev.db = db;
 	debug('发布到测试环境 src commit=%s', commit);
 	dev.run(commit, function(err) {
-		if(err) {
-			console.trace(err);
-		}
+		err && debug('出错: %s', err.message);
 		closeDb();
 	});
 });
 
 // 发布到正式环境
-gulp.task('production', ['before'], function(callback){
+gulp.task('production', ['before'], function(){
 	var p = new Production(project);
 	p.db = db;
 	debug('发布到正式环境 src commit=%s', commit);
 	p.run(commit, function(err) {
-		if(err) {
-			console.trace(err);
-		}
+		err && debug('出错: %s', err.message);
 		closeDb();
 	});
 });
