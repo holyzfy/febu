@@ -185,8 +185,11 @@ util.runAMD = function(project, dest, callback) {
             return callback();
         }
 
-        var command = 'node tools/' + config.amd.optimizer + ' -o tools/' + config.amd.config;
         var src = common.getCwd(project.repo, 'src');
+        
+        var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
+        var buildPath = path.join(config.amd.tools, config.amd.config);
+        var command = ['node', optimizerPath, '-o', buildPath].join(' ');
 
         exec(command, {
             cwd: src
