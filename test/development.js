@@ -168,28 +168,4 @@ describe(__filename, function(){
 		objectActual.should.equal(objectExpected);
 	});
 
-	it('buildConfigFile', function(done) {
-		var project = {
-				"repo" : "https://bitbucket.org/holyzfy/tianchuang",
-				"production" : {
-				"web" : "//img1.cache.yeepay.com/f2e/"
-			},
-				"development" : {
-				"web" : "//dev.f2e.yeepay.com/f2e/"
-			}
-		};
-		var git = new Git(project.repo);
-		git.clone(function() {
-			var dev = new Dev(project);
-			dev.buildConfigFile(function() {
-				var destRoot = common.getCwd(dev.project.repo, 'development');
-				var dest = path.join(destRoot, 'static');
-				var configFile = path.join(dest, 'js/config.js');
-				fs.exists(configFile, function(exist) {
-					exist.should.be.true;
-					done();
-				});
-			});
-		});
-	});
 });
