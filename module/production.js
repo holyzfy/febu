@@ -326,6 +326,10 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return gulp.src(files, {
 					base: base
 				})
+				.pipe(plumber(function (err) {
+		            debug('task build 出错: %s', err.message);
+		            this.emit('end');
+		        }))
 				.pipe(filter)
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
 				.pipe(gulp.dest(build));
@@ -337,7 +341,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					cwd: build
 				})
 				.pipe(plumber(function (err) {
-		            debug('出错: %s', err.message);
+		            debug('task css 出错: %s', err.message);
 		            this.emit('end');
 		        }))
 				.pipe(minifyCss())
@@ -482,13 +486,108 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	};
 
 	async.series([img, css, js], function(err, results) {
-		if(err) {
-			return callback(err);
-		}
-
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
-		callback(null, files);
+		callback(err, files);
 	});
+};
+
+Production.prototype.replaceHref = function(attrs, match, file) {
+	var p = this;
+	var href = attrs.filter(function(item){
+		return /^href=/i.test(item);
+	})[0];
+
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol) {
+			return match;
+		} else {
+			var subPath = util.relPath(file, sub);
+			var doc = _.find(p.manifest, function(item) {
+				return item.src[0] == subPath;
+			});
+			if(!doc) {
+				return match;
+			}
+			var newHref = doc.dest;
+			return 'href="' + newHref + '"';
+		}
+	};
+
+	if(/^href="/i.test(href)) {
+		match = match.replace(/\bhref="([^"]+)"/i, replacement);
+	} else if(/^href='/i.test(href)) {
+		match = match.replace(/\bhref='([^']+)'/i, replacement);
+	} else if(/^href=(?!["'])/i.test(href)) {
+		match = match.replace(/\bhref=([^\s\\>]+)/i, replacement);
+	}
+	return match;
+};
+
+Production.prototype.replaceSrc = function(attrs, match, file) {
+	var p = this;
+	var src = attrs.filter(function(item){
+		return /^src=/i.test(item);
+	})[0];
+
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol) {
+			return match;
+		} else {
+			var subPath = util.relPath(file, sub);
+			var doc = _.find(p.manifest, function(item) {
+				return item.src[0] == subPath;
+			});
+			if(!doc) {
+				return match;
+			}
+			var newSrc = doc.dest;
+			return 'src="' + newSrc + '"';
+		}
+	};
+
+	if(/^src="/i.test(src)) {
+		match = match.replace(/\bsrc="([^"]+)"/i, replacement);
+	} else if(/^src='/i.test(src)) {
+		match = match.replace(/\bsrc='([^']+)'/i, replacement);
+	} else if(/^src=(?!["'])/i.test(src)) {
+		match = match.replace(/\bsrc=([^\s\\>]+)/i, replacement);
+	}
+	return match;
+};
+
+Production.prototype.replaceData = function(attrs, match, file) {
+	var p = this;
+	var data = attrs.filter(function(item){
+		return /^data=/i.test(item);
+	})[0];
+
+	var replacement = function(match, sub) {
+		var protocol = url.parse(sub).protocol;
+		if(protocol) {
+			return match;
+		} else {
+			var subPath = util.relPath(file, sub);
+			var doc = _.find(p.manifest, function(item) {
+				return item.src[0] == subPath;
+			});
+			if(!doc) {
+				return match;
+			}
+			var newData = doc.dest;
+			return 'data="' + newData + '"';
+		}
+	};
+
+	if(/^data="/i.test(data)) {
+		match = match.replace(/\bdata="([^"]+)"/i, replacement);
+	} else if(/^data='/i.test(data)) {
+		match = match.replace(/\bdata='([^']+)'/i, replacement);
+	} else if(/^data=(?!["'])/i.test(data)) {
+		match = match.replace(/\bdata=([^\s\\>]+)/i, replacement);
+	}
+	return match;
 };
 
 Production.prototype.replaceUrl = function(match, sub, file) {
@@ -514,12 +613,28 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 
 // 处理模板文件
 Production.prototype.compileVmFiles = function(files, callback) {
-	// TODO
 	debug('处理模板文件');
 	var p = this;
+	var src = common.getCwd(p.project.repo, 'src');
+	var base = hasAMD ? path.join(src, config.amd.www) : src;
+	var destRoot = common.getCwd(p.project.repo, 'production');
+	var destVm = path.join(destRoot, 'vm');
 
-	// 把files参数传递下去，方便async.waterfall的下个阶段使用
-	callback(null, files);
+	var filter = gulpFilter(util.getVmFileType());
+	return gulp.src(files, {
+			base: base
+		})
+		.pipe(plumber(function (err) {
+            debug('出错: %s', err.message);
+            this.emit('end');
+        }))
+        .pipe(filter)
+        .pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
+		.pipe(gulp.dest(destVm))
+		.on('end', function(err) {
+			// 把files参数传递下去，方便async.waterfall的下个阶段使用
+			callback(err, files);
+		});
 };
 
 // 把发布好的文件提交到目标仓库
@@ -546,7 +661,7 @@ Production.prototype.commit = function(message, callback) {
 				if(err) {
 					return cb(data);
 				}
-				debug('本次提交=%o', data);
+				debug('本次提交=', data);
 				git.commit(message, cb);
 			});
 		});
@@ -637,7 +752,7 @@ Production.prototype.run = function(commit, callback) {
 			var mark = function(data) {
 				var next = arguments[arguments.length - 1];
 				if(data.dest) {
-					debug('mark', arguments);
+					debug('mark', data);
 					util.mark(p.db, data, next);
 				} else {
 					next();
