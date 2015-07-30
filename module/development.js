@@ -1,4 +1,4 @@
-var debug = require('debug')('febu:' + __filename);
+var debug = require('debug')('febu:development.js');
 var path = require('path');
 var url = require('url');
 var fs = require('fs');
@@ -7,6 +7,10 @@ var gulp = require('gulp');
 var gulpFilter = require('gulp-filter');
 var dir = require('node-dir');
 var through2 = require('through2');
+var _ = require('underscore');
+var plumber = require('gulp-plumber');
+var exec = require('child_process').exec;
+var File = require('vinyl');
 var config = require('../config.js');
 var Git = require('./git.js');
 var util = require('./util.js');
@@ -27,38 +31,35 @@ function Dev(project) {
 Dev.prototype.exist = function(commit, callback) {
 	var dev = this;
 
+	var conditions = {
+		repo: dev.project.repo,
+		src: commit,
+		type: 'development'
+	};
+	dev.db.versions.find(conditions, function(err, ret) {
+		if(err) {
+			return callback(err);
+		}
+
+		var dest = ret ? ret.dest : null;
+		callback(null, !!ret, dest);
+	});
+};
+
+// 从测试环境的仓库里检出指定版本
+Dev.prototype.checkout = function(commit, callback) {
+	debug('checkout ', commit);
+	var dev = this;
 	var git = new Git(dev.project.repo, {
 		type: 'development'
 	});
-	var gitDir = path.join(git.options.cwd, '.git');
-	fs.exists(gitDir, function(ret) {
-		if(ret) {
-			dev.checkout('master', function(err, cb){
-				if(err) {
-					return callback(err);
-				}
-				var conditions = {
-					repo: dev.project.repo,
-					src: commit,
-					type: 'development'
-				};
-				dev.db.versions.find(conditions, function(err, ret) {
-					if(err) {
-						return callback(err);
-					}
-					callback(null, !!ret);
-				});
-			});
-		} else {
-			callback(null, ret);
-		}
-	});
+	git.checkout(commit, callback);
 };
 
 // 收集要处理的文件列表
 Dev.prototype.getSource = function(commit, callback) {
 	var dev = this;
-    var source = [];
+    var files = [];
     var git = new Git(dev.project.repo);
     var src = common.getCwd(dev.project.repo, 'src');
 
@@ -94,29 +95,33 @@ Dev.prototype.getSource = function(commit, callback) {
 
             ret.forEach(function(item) {
                 item = path.join(src, item);
-                source.push(item)
+                files.push(item)
             });
-            callback(null, source);
+            callback(null, files);
         });
     });
 };
 
 // 收集静态资源
-Dev.prototype.resource = function(source, callback) {
+Dev.prototype.resource = function(files, callback) {
 	debug('resource');
 	var dev = this;
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
 		src = hasAMD ? path.join(src, 'www') : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
-		var dest = path.join(destRoot, 'static');
-		gulp.src(source, {
+		var destStatic = path.join(destRoot, 'static');
+		console.log('输出静态资源：%s', destStatic);
+		gulp.src(files, {
 			base: src
 		})
+		.pipe(plumber(function (err) {
+            debug('出错 第%d行: %s', err.lineNumber, err.message);
+            this.emit('end');
+        }))
 		.pipe(gulpFilter(util.getStaticFileType()))
-		.pipe(gulp.dest(dest))
-		.on('end', callback)
-		.on('error', callback);
+		.pipe(gulp.dest(destStatic))
+		.on('end', callback);
 	});
 	gulp.start('resource');
 };
@@ -218,8 +223,97 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	}
 };
 
+Dev.prototype.js = function(files, callback) {
+	var dev = this;
+	var src = common.getCwd(dev.project.repo, 'src');
+	var base = hasAMD ? path.join(src, 'www') : src;
+	var destRoot = common.getCwd(dev.project.repo, 'development');
+	var destStatic = path.join(destRoot, 'static');
+
+	var amdAction = function(done) {
+		// 本次发布有变更的js文件吗
+		var hasJsFiles = _.some(files, function(item) {
+			return (item === '**/*') || (item.slice(-3) === '.js');
+		});
+		if(!hasJsFiles) {
+			debug('本次无变更的js');
+			return done();
+		}
+
+		var newPaths = {};
+
+		var optimize = function() {
+			var next = arguments[arguments.length - 1];
+			var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
+			var buildPath = path.join(config.amd.tools, config.amd.config);
+			var command = ['node', optimizerPath, '-o', buildPath, 'optimize=none', 'optimizeCss=none'].join(' ');
+	        exec(command, {cwd: src}, next);
+	    };
+
+	    var copy = function() {
+	    	var next = arguments[arguments.length - 1];
+
+    		var build = path.join(src, config.amd.build);
+    		gulp.src('**/*.js', {
+	    			cwd: build
+	    		})
+    			/*.pipe(plumber(function (err) {
+		            debug('出错 第%d行: %s', err.lineNumber, err.message);
+		            this.emit('end');
+		        }))*/
+		        .pipe(through2.obj(function (file, enc, cb) {
+					file = new File({
+						path: file.path,
+						contents: file.contents
+					});
+					var filePath = path.relative(build, file.path);
+					var newFilePath = url.resolve(dev.project.development.web, filePath);
+					newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
+					newPaths[file.basename] = newFilePath;
+					cb();
+				}))
+				.pipe(gulp.dest(destStatic))
+				.on('end', next);
+	    };
+
+	    var getConfigPath = function() {
+	    	var next = arguments[arguments.length - 1];
+	    	util.getConfigPath(dev.project, next);
+	    }
+
+	    var updateConfig = function(configPath) {
+	    	debug('updateConfig');
+	    	var next = arguments[arguments.length - 1];
+
+	    	return gulp.src(configPath, {
+		    		base: base
+		    	})
+		    	.pipe(plumber(function (err) {
+		            debug('出错 第%d行: %s', err.lineNumber, err.message);
+		            this.emit('end');
+		        }))
+				.pipe(through2.obj(function (file, enc, cb) {
+					var contents = file.contents.toString();
+					var result = util.replaceConfigPaths(contents, newPaths);
+					file.contents = new Buffer(result);
+					cb(null, file);
+				}))
+				.pipe(gulp.dest(destStatic))
+				.on('end', next);
+	    };
+
+		var tasks = [optimize, copy, getConfigPath, updateConfig];
+	    async.waterfall(tasks, done);
+	};
+
+	var otherAction = function(done) {
+		done();
+	};
+	hasAMD ? amdAction(callback) : otherAction(callback);
+};
+
 // 处理html文件
-Dev.prototype.html = function(source, callback) {
+Dev.prototype.html = function(files, callback) {
 	debug('html');
 	var dev = this;
 		
@@ -229,7 +323,7 @@ Dev.prototype.html = function(source, callback) {
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
 		console.log('输出模板：%s', dest);
-		gulp.src(source, {
+		gulp.src(files, {
 			base: src
 		})
 		.pipe(gulpFilter(util.getVmFileType()))
@@ -240,16 +334,6 @@ Dev.prototype.html = function(source, callback) {
 	});
 	gulp.start('html');
 }
-
-// 从测试环境的仓库里检出指定版本
-Dev.prototype.checkout = function(commit, callback) {
-	debug('checkout ', commit);
-	var dev = this;
-	var git = new Git(dev.project.repo, {
-		type: 'development'
-	});
-	git.checkout(commit, callback);
-};
 
 /**
  * 把发布好的文件提交到目标仓库
@@ -262,6 +346,27 @@ Dev.prototype.commit = function(message, callback) {
 		type: 'development'
 	});
 
+	var commit = function(cb) {
+		git.status(function(err, data) {
+			if(err) {
+				return cb(err);
+			}
+
+			if(!data) {
+				debug('本次无提交');
+				return cb();
+			}
+
+			git.addAll(function(err) {
+				if(err) {
+					return cb(data);
+				}
+				debug('本次提交：', data);
+				git.commit(message, cb);
+			});
+		});
+	};
+
 	var tasks = [
 		function(cb) {
 			// 首先确保已初始化仓库
@@ -269,75 +374,21 @@ Dev.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
-		git.addAll.bind(git),
-		git.commit.bind(git, message)
+		commit
 	];
 
-	async.waterfall(tasks, callback);
-};
-
-// 替换config.js里的paths
-Dev.prototype.buildConfigFile = function(callback) {
-	var dev = this;
-	util.getConfigPath(dev.project, function(err, configPath) {
-		if(err) {
-			return callback(err);
-		}
-
-		var newPaths = {};
-
-		gulp.task('build', function() {
-			var destRoot = common.getCwd(dev.project.repo, 'development');
-			var dest = path.join(destRoot, 'static');
-			gulp.src(configPath, {
-					base: path.join(src, config.amd.www)
-				})
-				.pipe(through2.obj(function (file, enc, cb) {
-					var contents = file.contents.toString();
-					util.replaceConfigPaths(contents, newPaths);
-					cb();
-				}))
-				.pipe(gulp.dest(dest))
-				.on('end', callback)
-				.on('error', callback);
-		});
-
-		var src = common.getCwd(dev.project.repo, 'src');
-		var www = path.join(src, config.amd.www);
-		dir.readFiles(www,
-			{ match: /.js$/ }, 
-			function(err, content, next) {
-				if(err) throw err;
-				next();
-			},
-			function(err, files) {
-				if(err) {
-					return callback(err);
-				}
-
-				var webRoot = dev.project.development.web;
-				files.forEach(function(file) {
-					var fileName = path.parse(file).name;
-					var filePath = path.relative(www, file);
-					var newFilePath = url.resolve(webRoot, filePath);
-					newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
-					newPaths[fileName] = newFilePath;
-				});
-				gulp.start('build');	
-			}
-		);
-	});
+	async.series(tasks, callback);
 };
 
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
-	dev.exist(commit, function(err, exist) {
+	dev.exist(commit, function(err, exist, destCommit) {
 		if(err) {
 			return callback(err);
 		}
 		if(exist) {
-			debug('该版本已发布过，直接签出');
-			return dev.checkout(commit, callback);
+			debug('该版本%s已发布过，直接签出%s', commit, destCommit);
+			return dev.checkout(destCommit, callback);
 		} else {
 			debug('开始发布...');
 			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布
@@ -346,13 +397,13 @@ Dev.prototype.run = function(commit, callback) {
 				var next = arguments[arguments.length - 1];
 				util.hasAMD(dev.project, function(err, ret){
 					hasAMD = ret;
-					debug('hasAMD=', ret);
+					debug('hasAMD=%o', ret);
 					next(err, ret);
 				});
 			};
 
 			var checkout = function() {
-				debug('checkout ', arguments);
+				debug('checkout:%s', commit);
 				var next = arguments[arguments.length - 1];
 				async.waterfall([
 					function(cb) {
@@ -364,26 +415,15 @@ Dev.prototype.run = function(commit, callback) {
 				], next);
 			};
 
-			var compile = function(source) {
-				debug('compile ', arguments);
+			var compile = function(files) {
+				debug('compile', files);
 				var next = arguments[arguments.length - 1];
-				var destRoot = common.getCwd(dev.project.repo, 'development');
-				var dest = path.join(destRoot, 'static');
-				console.log('输出静态资源：%s', dest);
-				async.series([
-					function(cb) {
-						dev.resource(source, cb);
-					},
-					function(cb) {
-						util.runAMD(dev.project, dest, cb);
-					},
-					function(cb) {
-						dev.buildConfigFile(cb);
-					},
-					function(cb){
-						dev.html(source, cb);
-					}
-				], next);
+				var tasks = [
+					dev.resource.bind(dev, files),
+					dev.js.bind(dev, files),
+					dev.html.bind(dev, files)
+				];
+				async.series(tasks, next);
 			};
 
 			var save = function(){
