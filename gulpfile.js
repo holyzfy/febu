@@ -97,7 +97,7 @@ gulp.task('development', ['before'], function(){
 	dev.db = db;
 	debug('发布到测试环境 src commit=%s', commit);
 	dev.run(commit, function(err) {
-		err && debug('出错: %s', err.message);
+		err && debug('出错: %s', err.message || err);
 		closeDb();
 	});
 });
@@ -108,7 +108,7 @@ gulp.task('production', ['before'], function(){
 	p.db = db;
 	debug('发布到正式环境 src commit=%s', commit);
 	p.run(commit, function(err) {
-		err && debug('出错: %s', err.message);
+		err && debug('出错: %s', err.message || err);
 		closeDb();
 	});
 });
