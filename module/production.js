@@ -29,7 +29,7 @@ function Production(project) {
 /**
  * 是否发布过此版本
  * @param  commit
- * @param  callback(err, boolean)
+ * @param  callback(err, {Boolean} exist, destCommit)
  */
 Production.prototype.exist = function(commit, callback) {
 	var p = this;
@@ -419,16 +419,14 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		    		var isJsFile = item.src[0].slice(-3) === '.js';
 		    		return isJsFile;
 		    	});
-
-		    	var newPaths = _.map(jsMap, function(item) {
-		    		var one = {};
+		    	var newPaths = {};
+		    	_.each(jsMap, function(item) {
 		    		var file = new File({
 		    			path: item.src[0]
 		    		});
 		    		var key = file.basename.slice(0, 0 - file.extname.length);
 		    		var dest = item.dest.slice(0, -3); // 去掉扩展名
-		    		one[key] = dest;
-		    		return one;
+		    		newPaths[key] = dest;
 		    	});
 
 		    	return gulp.src(configPath, {
@@ -535,7 +533,6 @@ Production.prototype.commit = function(message, callback) {
 
 	var commit = function(cb) {
 		git.status(function(err, data) {
-			debug('git.status=', data);
 			if(err) {
 				return cb(err);
 			}
