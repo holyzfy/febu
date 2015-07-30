@@ -368,6 +368,16 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		debug('js');
 
 		var amdAction = function(done) {
+
+			// 本次发布有变更的js文件吗
+			var hasJsFiles = _.some(files, function(item) {
+				return (item === '**/*') || (item.slice(-3) === '.js');
+			});
+			if(!hasJsFiles) {
+				debug('本次无变更的js');
+				return done();
+			}
+
 			var optimize = function(_cb) {
 				var next = arguments[arguments.length - 1];
 				var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
@@ -431,8 +441,9 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			        }))
 					.pipe(through2.obj(function (file, enc, cb) {
 						var contents = file.contents.toString();
-						util.replaceConfigPaths(contents, newPaths);
-						cb();
+						var result = util.replaceConfigPaths(contents, newPaths);
+						file.contents = new Buffer(result);
+						cb(null, file);
 					}))
 					.pipe(uglify())
 					.pipe(rev())
