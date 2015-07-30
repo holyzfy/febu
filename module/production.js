@@ -378,7 +378,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				return done();
 			}
 
-			var optimize = function(_cb) {
+			var optimize = function() {
 				var next = arguments[arguments.length - 1];
 				var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
 				var buildPath = path.join(config.amd.tools, config.amd.config);
