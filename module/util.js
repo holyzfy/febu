@@ -109,15 +109,6 @@ util.mark = function(db, data, callback) {
     db.versions.save(data, callback);
 };
 
-/**
- * 查找被引用的文件
- * @param  {Array}    source 相对于仓库根目录的文件列表
- * @param  {Function} callback(err, data)
- */
-util.getRelatedFiles = function(source, callback) {
-    // TODO 查找，去重
-};
-
 util.resolvePath = function(from, to, base) {
     var dir = path.dirname(from);
     var thisPath = path.resolve(dir, to);
@@ -307,7 +298,6 @@ util.relPath = function(fromFile, filepath) {
     var inc = path.sep + 'inc' + path.sep;
     var hasInc = fromFile.path.lastIndexOf(inc) > 0;
     if(hasInc) {
-        debug('hasInc=', hasInc);
         return filepath;
     }
 
