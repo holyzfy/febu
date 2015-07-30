@@ -265,7 +265,6 @@ Production.prototype.getBasename = function(filepath) {
 
 // 处理静态资源
 Production.prototype.compileStaticFiles = function(files, callback) {
-	// return callback(new Error('test compileStaticFiles error'));
 	debug('处理静态资源');
 	var p = this;
 
