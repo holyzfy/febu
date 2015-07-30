@@ -102,11 +102,11 @@ gulp.task('development', ['before'], function(){
 	});
 });
 
-// 发布到正式环境
+// 发布到生产环境
 gulp.task('production', ['before'], function(){
 	var p = new Production(project);
 	p.db = db;
-	debug('发布到正式环境 src commit=%s', commit);
+	debug('发布到生产环境 src commit=%s', commit);
 	p.run(commit, function(err) {
 		err && debug('出错: %s', err.message || err);
 		closeDb();
