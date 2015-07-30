@@ -11,7 +11,7 @@ var Git = require('../module/git.js');
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
 
-	it('isEmpty: 文件存在', function(done) {
+	/*it('isEmpty: 文件存在', function(done) {
 		var local = common.getCwd(repo, 'src');
 		util.isEmpty(local, function(ret){
 			ret.should.be.false;
@@ -98,31 +98,36 @@ describe(__filename, function(){
 			exist.should.be.true;
 			done(err);
 		});
-	});
-
-	it('runAMD', function(done) {
-		var project = {
-			repo: 'https://bitbucket.org/holyzfy/tianchuang'
-		};		
-		var dest = './test_amd_dest';
-		var commonjsPath = path.join(dest, 'js/common.js');
-		util.runAMD(project, dest, function(err) {
-			fs.exists(commonjsPath, function(exist) {
-				exist.should.be.true;
-				fs.remove(dest, done);
-			});
-		});
-	});
+	});*/
 
 	it('relPath', function() {
-		var cssFile = new File({
-			base: 'D:/febu/data_temp/test_project',
-			path: 'D:/febu/data_temp/test_project/style/sub_xxx/login.css'
+		var css = new File({
+			base: '/febu/data_temp/test_project',
+			path: '/febu/data_temp/test_project/style/sub_xxx/login.css'
 		});
 		var imagePath = '../../images/sub_xxx/btn.png';
-		var ret = util.relPath(cssFile, imagePath);
-		var expected = ['images', 'sub_xxx', 'btn.png'].join(path.sep);
-		ret.should.equal(expected);
+		var cssRet = util.relPath(css, imagePath);
+		var cssExpected = ['images', 'sub_xxx', 'btn.png'].join(path.sep);
+		cssRet.should.equal(cssExpected);
+
+		var html = new File({
+			base: '/febu/data_temp/test_project',
+			path: '/febu/data_temp/test_project/www/inc/head_static.html'
+		});
+		var jsPath = 'js/config.js';
+		var htmlRet = util.relPath(html, jsPath);
+		var htmlExpected = ['js', 'config.js'].join(path.sep);
+		htmlRet.should.equal(htmlExpected);
+
+		var html2 = new File({
+			base: '/febu/data_temp/test_project',
+			path: '/febu/data_temp/test_project/www/module/nav.html'
+		});
+		var jsPath2 = '../js/nav.js';
+		var htmlRet2 = util.relPath(html2, jsPath2);
+		var htmlExpected2 = ['www', 'js', 'nav.js'].join(path.sep);
+		htmlRet2.should.equal(htmlExpected2);
+
 	});
 
 });

@@ -65,7 +65,6 @@ util.formatCommit = function(repo, commit, callback) {
 util.getProject = function(project, commit, callback) {
     var repo = project.repo;
     var git = new Git(repo);
-    debug('检出版本库相应的版本:%s', commit);
     var tasks = [
         function(cb) {
             var src = common.getCwd(repo, 'src');
@@ -164,53 +163,6 @@ util.hasAMD = function(project, callback) {
         } else {
             callback(null, false);
         }
-    });
-};
-
-/**
- * 运行requirejs的构建脚本
- * @param {Object}  project 
- * @param {String}  dest     把生成的脚本复制到dest目录
- * @param {Function}  callback
- */
-util.runAMD = function(project, dest, callback) {
-    callback = arguments[arguments.length - 1];
-    var util = this;
-    util.hasAMD(project, function(err, exist) {
-        if(err) {
-            return callback(err);
-        }
-
-        if(!exist) {
-            return callback();
-        }
-
-        var src = common.getCwd(project.repo, 'src');
-        
-        var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
-        var buildPath = path.join(config.amd.tools, config.amd.config);
-        var command = ['node', optimizerPath, '-o', buildPath].join(' ');
-
-        exec(command, {
-            cwd: src
-        }, function(err, stdout, stderr) {
-            if(err) {
-                return callback(err);
-            }
-            if(dest) {
-                gulp.task('copy', function() {
-                    // 构建后的目录路径
-                    var source = config.amd.build + '/**/*.js';
-                    gulp.src(source, {
-                        cwd: src
-                    })
-                    .pipe(gulp.dest(dest))
-                    .on('end', callback)
-                    .on('error', callback);
-                });
-                gulp.start('copy');
-            }
-        });
     });
 };
 
@@ -347,8 +299,18 @@ util.replacePath = function (obj, env) {
     return fn;
 };
 
-// 求filepath的相对路径（相对于fromFile.base）
+/**
+ * 求filepath的相对路径（相对于fromFile.base）
+ * 约定：不处理inc目录
+ */
 util.relPath = function(fromFile, filepath) {
+    var inc = path.sep + 'inc' + path.sep;
+    var hasInc = fromFile.path.lastIndexOf(inc) > 0;
+    if(hasInc) {
+        debug('hasInc=', hasInc);
+        return filepath;
+    }
+
     var dirname = path.dirname(fromFile.path);
     var thisFile = new File({
         base: fromFile.base,
