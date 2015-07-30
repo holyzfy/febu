@@ -124,7 +124,7 @@ var VersionSchema = new Schema({
 });
 
 db.versions.find = function(conditions, callback) {
-	debug('versioins conditions=%o', conditions);
+	// debug('versioins conditions=%o', conditions);
 	var Version = mongoose.model('Version', VersionSchema);
 	Version.findOne({
 		'$query': conditions,
