@@ -211,6 +211,10 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 		return cb();
 	}
 
+	if(file.isNull()) {
+        return cb(null, file);
+    }
+
 	var manifest;
 
 	try {
@@ -269,7 +273,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var p = this;
 
 	var src = common.getCwd(p.project.repo, 'src');
-	var base = hasAMD ? path.join(src, 'www') : src;
+	var base = hasAMD ? path.join(src, config.amd.www) : src;
 	var destRoot = common.getCwd(p.project.repo, 'production');
 	var destStatic = path.join(destRoot, 'static');
 	var build = common.getCwd(p.project.repo, 'build');
@@ -441,6 +445,10 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			            this.emit('end');
 			        }))
 					.pipe(through2.obj(function (file, enc, cb) {
+						if(file.isNull()) {
+				            return cb(null, file);
+				        }
+
 						var contents = file.contents.toString();
 						var result = util.replaceConfigPaths(contents, newPaths);
 						file.contents = new Buffer(result);
@@ -491,14 +499,14 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	});
 };
 
-function replaceHelper = function(doc, file) {
+function replaceHelper(doc, file) {
 	var relExisted = _.contains(doc.rel, file.relative);
 	if(!relExisted) {
 		doc.rel = doc.rel || [];
 		doc.rel.push(file.relative);
 		doc._status = 'dirty';
 	}
-};
+}
 
 Production.prototype.replaceHref = function(attrs, match, file) {
 	var p = this;
@@ -713,7 +721,7 @@ Production.prototype.run = function(commit, callback) {
 				var next = arguments[arguments.length - 1];
 				util.hasAMD(p.project, function(err, ret){
 					hasAMD = ret;
-					debug('hasAMD=', ret);
+					debug('hasAMD=%o', ret);
 					next(err, ret);
 				});
 			};
