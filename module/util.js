@@ -272,13 +272,8 @@ util.getReplacements = function(obj, env, file) {
 
 util.replacePath = function (obj, env) {
     var fn = function(file, enc, cb) {
-        if (file.isNull()) {
+        if(file.isNull()) {
             cb(null, file);
-            return;
-        }
-
-        if (file.isStream()) {
-            cb(new gutil.PluginError('febu replacePath', 'Streaming not supported'));
             return;
         }
 
