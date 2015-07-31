@@ -509,6 +509,13 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 			if(!doc) {
 				return match;
 			}
+			
+			var relExisted = _.contains(doc.rel, file.relative);
+			if(!relExisted) {
+				doc.rel = doc.rel || [];
+				doc.rel.push(file.relative);
+			}
+
 			var newHref = doc.dest;
 			return 'href="' + newHref + '"';
 		}
@@ -542,6 +549,13 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			if(!doc) {
 				return match;
 			}
+
+			var relExisted = _.contains(doc.rel, file.relative);
+			if(!relExisted) {
+				doc.rel = doc.rel || [];
+				doc.rel.push(file.relative);
+			}
+
 			var newSrc = doc.dest;
 			return 'src="' + newSrc + '"';
 		}
@@ -575,6 +589,13 @@ Production.prototype.replaceData = function(attrs, match, file) {
 			if(!doc) {
 				return match;
 			}
+
+			var relExisted = _.contains(doc.rel, file.relative);
+			if(!relExisted) {
+				doc.rel = doc.rel || [];
+				doc.rel.push(file.relative);
+			}
+
 			var newData = doc.dest;
 			return 'data="' + newData + '"';
 		}
@@ -605,6 +626,13 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 		if(!doc) {
 			return match;
 		}
+
+		var relExisted = _.contains(doc.rel, file.relative);
+		if(!relExisted) {
+			doc.rel = doc.rel || [];
+			doc.rel.push(file.relative);
+		}
+
 		var newSrc = doc.dest;
 		// debug('replaceUrl: %s => %s', sub, newSrc);
 		return ':url(' + newSrc + ')';
