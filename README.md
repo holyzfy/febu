@@ -27,7 +27,7 @@
 
 	gulp development --repo https://github.com/holyzfy/trygit
 
-### 发布到正式环境
+### 发布到生产环境
 
 	gulp production --repo repo [--commit commitid]
 
