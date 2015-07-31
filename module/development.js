@@ -26,7 +26,7 @@ function Dev(project) {
 /**
  * 是否发布过此版本
  * @param  commit
- * @param  callback(err, boolean)
+ * @param  callback(err, Boolean)
  */
 Dev.prototype.exist = function(commit, callback) {
 	var dev = this;
@@ -343,9 +343,7 @@ Dev.prototype.html = function(files, callback) {
 	gulp.start('html');
 }
 
-/**
- * 把发布好的文件提交到目标仓库
- */
+// 把发布好的文件提交到目标仓库
 Dev.prototype.commit = function(message, callback) {
 	debug('commit');
 	var dev = this;

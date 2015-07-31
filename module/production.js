@@ -175,7 +175,7 @@ Production.prototype.initManifest = function(callback) {
 /**
  * 更新manifest属性
  * @param  {Object.<[repo], src, [dest], [rel]>} doc
- *                  src和rel的路径都是相对于仓库根目录
+ *                  src和rel的路径都是相对于项目根目录
  * @return {Production}
  */
 Production.prototype.updateManifest = function(doc) {
