@@ -3,6 +3,7 @@ var path = require('path');
 var should = require('should');
 var async = require('async');
 var File = require('vinyl');
+var fs = require('fs-extra')
 var util = require('../module/util.js');
 var common = require('../module/common.js');
 var config = require('../config.js');
@@ -11,11 +12,24 @@ var Git = require('../module/git.js');
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
 
-	/*it('isEmpty: 文件存在', function(done) {
-		var local = common.getCwd(repo, 'src');
-		util.isEmpty(local, function(ret){
+	before(function() {
+		var repo, git;
+		repo = 'https://github.com/holyzfy/trygit';
+		git = new Git(repo);
+		fs.removeSync(git.options.cwd);
+
+		repo = 'https://github.com/requirejs/example-multipage';
+		git = new Git(repo);
+		fs.removeSync(git.options.cwd);
+	});
+
+	it('isEmpty: 文件存在', function(done) {
+		var src = './_a_test_path/';
+		fs.mkdirsSync(src);
+		fs.writeFileSync('./_a_test_path/test.txt', 'hello');
+		util.isEmpty(src, function(ret){
 			ret.should.be.false;
-			done();
+			fs.remove(src, done);
 		});
 	});
 
@@ -30,12 +44,13 @@ describe(__filename, function(){
 	it('formatCommit', function(done) {
 		async.series([
 			function(callback){
-				var commit = '3bc6453';
+				var commit = '3bc6453272bdf9e0acfc8099a0f9cd3c07d3a8e4';
+				var commitExpected = '3bc6453';
 				util.formatCommit(repo, commit, function(err, data) {
 					if(err) {
 						return callback(err);
 					}
-					commit.should.equal(data);
+					data.should.equal(commitExpected);
 					callback();
 				});
 			},
@@ -61,18 +76,18 @@ describe(__filename, function(){
 
 	it('getConfigPath', function(done) {
 		var project = {
-			repo: 'https://bitbucket.org/holyzfy/tianchuang'
+			repo: 'https://github.com/requirejs/example-multipage'
 		};
 		var git = new Git(project.repo);
 		git.clone(function() {
 			var src = common.getCwd(project.repo, 'src');
-			var configPath = path.join(src, 'www/js/config.js');
+			var configPath = path.join(src, 'www/js/common.js');
 
 			util.getConfigPath(project, function(err, path) {
 				if(err) {
 					return done(err);
 				}
-				path.should.be.equal(configPath);
+				should.equal(path, configPath);
 				done();
 			});
 		});
@@ -92,13 +107,13 @@ describe(__filename, function(){
 	
 	it('hasAMD', function(done) {
 		var project = {
-			repo: 'https://bitbucket.org/holyzfy/tianchuang'
+			repo: 'https://github.com/requirejs/example-multipage'
 		};
 		util.hasAMD(project, function(err, exist){
 			exist.should.be.true;
 			done(err);
 		});
-	});*/
+	});
 
 	it('relPath', function() {
 		var css = new File({

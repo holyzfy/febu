@@ -57,6 +57,7 @@ util.formatCommit = function(repo, commit, callback) {
             callback(null, data);
         });
     } else {
+        commit = commit.slice(0, 7);
         callback(null, commit);
     }
 };
@@ -273,8 +274,7 @@ util.getReplacements = function(obj, env, file) {
 util.replacePath = function (obj, env) {
     var fn = function(file, enc, cb) {
         if(file.isNull()) {
-            cb(null, file);
-            return;
+            return cb(null, file);
         }
 
         var replacements = util.getReplacements(obj, env, file);
