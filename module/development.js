@@ -108,7 +108,7 @@ Dev.prototype.resource = function(files, callback) {
 	var dev = this;
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = hasAMD ? path.join(src, 'www') : src;
+		src = hasAMD ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var destStatic = path.join(destRoot, 'static');
 		console.log('输出静态资源：%s', destStatic);
@@ -226,7 +226,7 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 Dev.prototype.js = function(files, callback) {
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
-	var base = hasAMD ? path.join(src, 'www') : src;
+	var base = hasAMD ? path.join(src, config.amd.www) : src;
 	var destRoot = common.getCwd(dev.project.repo, 'development');
 	var destStatic = path.join(destRoot, 'static');
 
@@ -253,27 +253,35 @@ Dev.prototype.js = function(files, callback) {
 	    var copy = function() {
 	    	var next = arguments[arguments.length - 1];
 
-    		var build = path.join(src, config.amd.build);
-    		gulp.src('**/*.js', {
-	    			cwd: build
-	    		})
-    			/*.pipe(plumber(function (err) {
-		            debug('出错 第%d行: %s', err.lineNumber, err.message);
-		            this.emit('end');
-		        }))*/
-		        .pipe(through2.obj(function (file, enc, cb) {
-					file = new File({
-						path: file.path,
-						contents: file.contents
-					});
-					var filePath = path.relative(build, file.path);
-					var newFilePath = url.resolve(dev.project.development.web, filePath);
-					newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
-					newPaths[file.basename] = newFilePath;
-					cb();
-				}))
-				.pipe(gulp.dest(destStatic))
-				.on('end', next);
+    		gulp.task('copy', function() {
+	    		var build = path.join(src, config.amd.build);
+	    		return gulp.src('**/*.js', {
+		    			cwd: build
+		    		})
+	    			.pipe(plumber(function (err) {
+			            debug('出错 第%d行: %s', err.lineNumber, err.message);
+			            this.emit('end');
+			        }))
+			        .pipe(through2.obj(function (file, enc, cb) {
+			        	if(file.isNull()) {
+				            return cb(null, file);
+				        }
+
+						file = new File({
+							path: file.path,
+							contents: file.contents
+						});
+						var filePath = path.relative(build, file.path);
+						var newFilePath = url.resolve(dev.project.development.web, filePath);
+						newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
+						newPaths[file.basename] = newFilePath;
+						cb();
+					}))
+					.pipe(gulp.dest(destStatic))
+					.on('end', next);
+    		});
+    		
+    		gulp.start('copy');
 	    };
 
 	    var getConfigPath = function() {
@@ -319,7 +327,7 @@ Dev.prototype.html = function(files, callback) {
 		
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = hasAMD ? path.join(src, 'www') : src;
+		src = hasAMD ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
 		console.log('输出模板：%s', dest);
