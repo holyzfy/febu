@@ -5,7 +5,7 @@
 ## 安装
 
 0. 命令行窗口需要能执行`git`命令
-0. 安装MongoDB
+0. 安装MongoDB，并[初始化一个项目](https://github.com/holyzfy/febu/wiki/init_project)
 0. 配置config.js
 0. 安装依赖
 	* `npm install -g gulp`
