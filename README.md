@@ -1,6 +1,6 @@
 # febu
 
-前端部署系统
+[前端部署系统](http://holyzfy.github.io/febu/)
 
 ## 安装
 
