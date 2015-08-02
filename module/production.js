@@ -494,6 +494,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	};
 
 	async.series([img, css, js], function(err, results) {
+		console.log('输出静态资源：%s', destStatic);
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
 		callback(err, files);
 	});
@@ -657,6 +658,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
         .pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
 		.pipe(gulp.dest(destVm))
 		.on('end', function(err) {
+			console.log('输出模板：%s', destVm);
 			// 把files参数传递下去，方便async.waterfall的下个阶段使用
 			callback(err, files);
 		});
