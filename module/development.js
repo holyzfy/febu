@@ -263,10 +263,12 @@ Dev.prototype.js = function(files, callback) {
 			            this.emit('end');
 			        }))
 			        .pipe(through2.obj(function (file, enc, cb) {
-						file = new File({
-							path: file.path,
-							contents: file.contents
-						});
+						file = new File(file);
+
+						if(file.isNull()) {		
+				            return cb(null, file);		
+				        }
+
 						var filePath = path.relative(build, file.path);
 						var newFilePath = url.resolve(dev.project.development.web, filePath);
 						newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
@@ -297,6 +299,12 @@ Dev.prototype.js = function(files, callback) {
 		            this.emit('end');
 		        }))
 				.pipe(through2.obj(function (file, enc, cb) {
+					file = new File(file);
+
+					if(file.isNull()) {		
+			            return cb(null, file);		
+			        }
+			        
 					var contents = file.contents.toString();
 					var result = util.replaceConfigPaths(contents, newPaths);
 					file.contents = new Buffer(result);

@@ -207,6 +207,12 @@ Production.prototype.updateManifest = function(doc) {
 Production.prototype.updateManifestHelper = function (file, enc, cb) {
 	var p = this;
 
+	file = new File(file);
+
+	if(file.isNull()) {		
+        return cb(null, file);		
+    }
+    
 	if(file.path !== 'rev-manifest.json') {
 		return cb();
 	}
@@ -441,6 +447,12 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			            this.emit('end');
 			        }))
 					.pipe(through2.obj(function (file, enc, cb) {
+						file = new File(file);
+
+						if(file.isNull()) {		
+				            return cb(null, file);		
+				        }
+				        
 						var contents = file.contents.toString();
 						var result = util.replaceConfigPaths(contents, newPaths);
 						file.contents = new Buffer(result);
