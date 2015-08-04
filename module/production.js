@@ -211,10 +211,6 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 		return cb();
 	}
 
-	if(file.isNull()) {
-        return cb(null, file);
-    }
-
 	var manifest;
 
 	try {
@@ -445,10 +441,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			            this.emit('end');
 			        }))
 					.pipe(through2.obj(function (file, enc, cb) {
-						if(file.isNull()) {
-				            return cb(null, file);
-				        }
-
 						var contents = file.contents.toString();
 						var result = util.replaceConfigPaths(contents, newPaths);
 						file.contents = new Buffer(result);

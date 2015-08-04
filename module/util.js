@@ -273,10 +273,6 @@ util.getReplacements = function(obj, env, file) {
 
 util.replacePath = function (obj, env) {
     var fn = function(file, enc, cb) {
-        if(file.isNull()) {
-            return cb(null, file);
-        }
-
         var replacements = util.getReplacements(obj, env, file);
         file.contents = new Buffer(frep.strWithArr(file.contents.toString(), replacements));
         cb(null, file);

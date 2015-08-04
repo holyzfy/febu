@@ -263,10 +263,6 @@ Dev.prototype.js = function(files, callback) {
 			            this.emit('end');
 			        }))
 			        .pipe(through2.obj(function (file, enc, cb) {
-			        	if(file.isNull()) {
-				            return cb(null, file);
-				        }
-
 						file = new File({
 							path: file.path,
 							contents: file.contents
