@@ -56,11 +56,11 @@ describe(__filename, function(){
 
 	var urlRoot = '//qa.developer.test.com/f2e/test_project/';
 	var headStaticFile = new File({
-		path: '/test_project/inc/head_static.html' 
+		path: '/test_project/inc/head_static.html'.replace(/\//g, path.sep)
 	});
 	var patterns = util.getReplacements(dev, 'development', headStaticFile);
 	
-	it('getReplacements css', function(){
+	it('replaceHref', function(){
 		var link = '<link rel="stylesheet" href="css/common.css" _group="all">';
 		var linkExpected = '<link rel="stylesheet" href="//qa.developer.test.com/f2e/test_project/css/common.css" _group="all">';
 		var linkActual = replace.strWithArr(link, patterns);
@@ -99,7 +99,7 @@ describe(__filename, function(){
 		link8Actual.should.equal(link8Expected);
 	});
 	
-	it('getReplacements js', function(){
+	it('replaceSrc script', function(){
 		var script = '<script src="js/arttemplate.js"></script>';
 		var scriptExpected = '<script src="//qa.developer.test.com/f2e/test_project/js/arttemplate.js"></script>';
 		var scriptActual = replace.strWithArr(script, patterns);
@@ -125,7 +125,7 @@ describe(__filename, function(){
 		script5Actual.should.equal(script5Expected);
 	});
 
-	it('getReplacements media', function(){
+	it('replaceSrc media', function(){
 		var img = '<img src="images/logo.jpg" alt="">';
 		var imgExpected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg" alt="">';
 		var imgActual = replace.strWithArr(img, patterns);
@@ -171,7 +171,7 @@ describe(__filename, function(){
 		flashActual.should.equal(flashExpected);
 	});
 	
-	it('getReplacements object', function(){
+	it('replaceData object', function(){
 		var object = '<object data="bookmark.swf"></object>';
 		var objectExpected = '<object data="//qa.developer.test.com/f2e/test_project/bookmark.swf"></object>';
 		var objectActual = replace.strWithArr(object, patterns);
