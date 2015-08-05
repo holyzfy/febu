@@ -1,16 +1,21 @@
 var path = require('path');
 var Git = require('../module/git.js');
-var debug = require('debug')('febu:' + __filename);
 var fs = require('fs-extra')
 var should = require('should');
+var async = require('async');
 
 describe(__filename, function(){
 	var repo = 'https://github.com/holyzfy/trygit';
 	var git = new Git(repo);
-	var p = '__test_init';
+	var p = path.join(__dirname, '__test_init');
 
 	before(function(done){
-		fs.mkdirs(p, done);
+		var tasks = [
+			fs.remove.bind(fs, git.options.cwd),
+			fs.remove.bind(fs, p),
+			fs.mkdirs.bind(fs, p)
+		];
+		async.series(tasks, done);
 	});
 
 	after(function(done) {
@@ -25,10 +30,11 @@ describe(__filename, function(){
 		var git = new Git(repo, {
 			cwd: p
 		});
-		git.init(function(error){
-			if(error) {
-				return done(error);
+		git.init(function(err){
+			if(err) {
+				return done(err);
 			}
+
 			var gitDir = path.join(p, '.git');
 			fs.exists(gitDir, function(ret) {
 				should.exist(ret);
@@ -58,13 +64,9 @@ describe(__filename, function(){
 				message: '添加images'
 			};
 
-			try {
-				should.not.exist(err);
-				should.deepEqual(ret, expected);
-				done();
-			} catch(err) {
-				done(err);
-			}
+			should.not.exist(err);
+			should.deepEqual(ret, expected);
+			done();
 		});
 	});
 
@@ -87,24 +89,15 @@ describe(__filename, function(){
 		    'list.html'
 		];
 		git.diff(from, to, function(err, data){
-			try {
-				// debug(data);
-				should.deepEqual(data, expected);
-				done();
-			} catch(e) {
-				done(e);
-			}
+			should.deepEqual(data, expected);
+			done();
 		});
 	});
 
 	it('getHeadCommit', function(done) {
 		git.getHeadCommit(function(err, data) {
-			try {
-				should.exist(data);
-				done();
-			} catch(e) {
-				done(e);
-			}
+			should.exist(data);
+			done();
 		});
 	});
 

@@ -26,9 +26,9 @@ describe(__filename, function(){
 		db.open(done);
 	});
 
-	after(function(done) {
+	/*after(function(done) {
 		db.close(done);
-	});
+	});*/
 
 	it('exist', function(done) {
 		p.exist('_a_commit_id', function(err, data) {
@@ -125,7 +125,7 @@ describe(__filename, function(){
 		}
 		var file = {
 			path: 'rev-manifest.json',
-			contents: JSON.stringify(manifest)
+			contents: new Buffer(JSON.stringify(manifest))
 		};
 		var expected = [
 			{
@@ -148,19 +148,6 @@ describe(__filename, function(){
 			var ret = p.updateManifestHelper(file, 'utf-8');
 			should.deepEqual(ret, expected);
 		});
-	});
-
-	it('compileStaticFiles', function(done) {
-		// TODO
-		
-
-
-		done();
-	});
-
-	it('compileVmFiles', function(done) {
-		// TODO
-		done();
 	});
 
 });

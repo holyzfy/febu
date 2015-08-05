@@ -4,19 +4,21 @@ var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
+var File = require('vinyl');
 var common = require('../module/common.js');
 var db = require('../module/db.js');
 var Dev = require('../module/development.js');
 var Git = require('../module/git.js');
+var util = require('../module/util.js');
 
 describe(__filename, function(){
 	var project = {
 		repo: 'http://github.com/holyzfy/test_repo_url',
 		development: {
-			web: '//qa.developer.test.com/'
+			web: '//qa.developer.test.com/f2e/test_project/'
 		},
 		production: {
-			web: '//img1.cache.test.com/f2e/'
+			web: '//img1.cache.test.com/f2e/test_project/'
 		},
 		version: '3bc6453'
 	};
@@ -30,11 +32,12 @@ describe(__filename, function(){
 
 	it('getSource', function(done) {
 		var dev = new Dev({
-			repo: 'https://github.com/holyzfy/trygit'
+			repo: 'https://github.com/holyzfy/_a_test_project'
 		});
 		dev.db = db;
 
 		dev.getSource('HEAD', function(err, ret) {
+			console.log('getSource ret=', ret);
 			should.deepEqual(ret, ['**/*']);
 			done();
 		});
@@ -47,12 +50,15 @@ describe(__filename, function(){
 		});
 	});
 
-	var urlRoot = 'http://static.test.febu.com/';
-	var patterns = dev.getReplacements(urlRoot);
+	var urlRoot = '//qa.developer.test.com/f2e/test_project/';
+	var headStaticFile = new File({
+		path: '/test_project/inc/head_static.html' 
+	});
+	var patterns = util.getReplacements(dev, 'development', headStaticFile);
 	
 	it('getReplacements css', function(){
 		var link = '<link rel="stylesheet" href="css/common.css" _group="all">';
-		var linkExpected = '<link rel="stylesheet" href="http://static.test.febu.com/css/common.css" _group="all">';
+		var linkExpected = '<link rel="stylesheet" href="//qa.developer.test.com/f2e/test_project/css/common.css" _group="all">';
 		var linkActual = replace.strWithArr(link, patterns);
 		linkActual.should.equal(linkExpected);
 
@@ -69,34 +75,34 @@ describe(__filename, function(){
 		link4Actual.should.equal(linkExpected);
 
 		var link5 = '<link rel="stylesheet" _group="all" href="css/common.css" />';
-		var link5Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link5Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css" />';
 		var link5Actual = replace.strWithArr(link5, patterns);
 		link5Actual.should.equal(link5Expected);
 
 		var link6 = '<link rel="stylesheet" _group="all" href="css/common.css">';
-		var link6Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css">';
+		var link6Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css">';
 		var link6Actual = replace.strWithArr(link6, patterns);
 		link6Actual.should.equal(link6Expected);
 
 		var link7 = '<link rel="stylesheet" _group="all" href=css/common.css />';
-		var link7Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link7Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css" />';
 		var link7Actual = replace.strWithArr(link7, patterns);
 		link7Actual.should.equal(link7Expected);
 
-		var link8 = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
-		var link8Expected = '<link rel="stylesheet" _group="all" href="http://static.test.febu.com/css/common.css" />';
+		var link8 = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css" />';
+		var link8Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css" />';
 		var link8Actual = replace.strWithArr(link8, patterns);
 		link8Actual.should.equal(link8Expected);
 	});
 	
 	it('getReplacements js', function(){
 		var script = '<script src="js/arttemplate.js"></script>';
-		var scriptExpected = '<script src="http://static.test.febu.com/js/arttemplate.js"></script>';
+		var scriptExpected = '<script src="//qa.developer.test.com/f2e/test_project/js/arttemplate.js"></script>';
 		var scriptActual = replace.strWithArr(script, patterns);
 		scriptActual.should.equal(scriptExpected);
 
 		var script2 = '<script SRC="js/arttemplate.js" _group="all"></script>';
-		var script2Expected = '<script src="http://static.test.febu.com/js/arttemplate.js" _group="all"></script>';
+		var script2Expected = '<script src="//qa.developer.test.com/f2e/test_project/js/arttemplate.js" _group="all"></script>';
 		var script2Actual = replace.strWithArr(script2, patterns);
 		script2Actual.should.equal(script2Expected);
 
@@ -105,7 +111,7 @@ describe(__filename, function(){
 		script3Actual.should.equal(script3);
 
 		var script4 = '<script src=\'js/arttemplate.js\'></script>';
-		var script4Expected = '<script src="http://static.test.febu.com/js/arttemplate.js"></script>';
+		var script4Expected = '<script src="//qa.developer.test.com/f2e/test_project/js/arttemplate.js"></script>';
 		var script4Actual = replace.strWithArr(script4, patterns);
 		script4Actual.should.equal(script4Expected);
 
@@ -117,7 +123,7 @@ describe(__filename, function(){
 
 	it('getReplacements media', function(){
 		var img = '<img src="images/logo.jpg" alt="">';
-		var imgExpected = '<img src="http://static.test.febu.com/images/logo.jpg" alt="">';
+		var imgExpected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg" alt="">';
 		var imgActual = replace.strWithArr(img, patterns);
 		imgActual.should.equal(imgExpected);
 
@@ -126,44 +132,44 @@ describe(__filename, function(){
 		img2Actual.should.equal(img2);
 
 		var img3 = '<img src=\'images/logo.jpg\' alt="">';
-		var img3Expected = '<img src="http://static.test.febu.com/images/logo.jpg" alt="">';
+		var img3Expected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg" alt="">';
 		var img3Actual = replace.strWithArr(img3, patterns);
 		img3Actual.should.equal(img3Expected);
 
 		var img4 = '<img src="images/logo.jpg" alt="" />';
-		var img4Expected = '<img src="http://static.test.febu.com/images/logo.jpg" alt="" />';
+		var img4Expected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg" alt="" />';
 		var img4Actual = replace.strWithArr(img4, patterns);
 		img4Actual.should.equal(img4Expected);
 
 		var img5 = '<img src="images/logo.jpg"/>';
-		var img5Expected = '<img src="http://static.test.febu.com/images/logo.jpg"/>';
+		var img5Expected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg"/>';
 		var img5Actual = replace.strWithArr(img5, patterns);
 		img5Actual.should.equal(img5Expected);
 
 		var audio = '<audio src="song.ogg" controls="controls"> Your browser does not support the audio tag. </audio>';
-		var audioExpected = '<audio src="http://static.test.febu.com/song.ogg" controls="controls"> Your browser does not support the audio tag. </audio>';
+		var audioExpected = '<audio src="//qa.developer.test.com/f2e/test_project/song.ogg" controls="controls"> Your browser does not support the audio tag. </audio>';
 		var audioActual = replace.strWithArr(audio, patterns);
 		audioActual.should.equal(audioExpected);
 
 		var audio2 = '<audio controls="controls"> <source src="song.ogg" type="audio/ogg"> <source src="song.mp3" type="audio/mpeg"> Your browser does not support the audio tag. </audio>';
-		var audio2Expected = '<audio controls="controls"> <source src="http://static.test.febu.com/song.ogg" type="audio/ogg"> <source src="http://static.test.febu.com/song.mp3" type="audio/mpeg"> Your browser does not support the audio tag. </audio>';
+		var audio2Expected = '<audio controls="controls"> <source src="//qa.developer.test.com/f2e/test_project/song.ogg" type="audio/ogg"> <source src="//qa.developer.test.com/f2e/test_project/song.mp3" type="audio/mpeg"> Your browser does not support the audio tag. </audio>';
 		var audio2Actual = replace.strWithArr(audio, patterns);
 		audio2Actual.should.equal(audioExpected);
 
 		var video = '<video src="movie.ogg" controls="controls"> </video>';
-		var videoExpected = '<video src="http://static.test.febu.com/movie.ogg" controls="controls"> </video>';
+		var videoExpected = '<video src="//qa.developer.test.com/f2e/test_project/movie.ogg" controls="controls"> </video>';
 		var videoActual = replace.strWithArr(video, patterns);
 		videoActual.should.equal(videoExpected);
 
 		var flash = '<embed src="helloworld.swf">';
-		var flashExpected = '<embed src="http://static.test.febu.com/helloworld.swf">';
+		var flashExpected = '<embed src="//qa.developer.test.com/f2e/test_project/helloworld.swf">';
 		var flashActual = replace.strWithArr(flash, patterns);
 		flashActual.should.equal(flashExpected);
 	});
 	
 	it('getReplacements object', function(){
 		var object = '<object data="bookmark.swf"></object>';
-		var objectExpected = '<object data="http://static.test.febu.com/bookmark.swf"></object>';
+		var objectExpected = '<object data="//qa.developer.test.com/f2e/test_project/bookmark.swf"></object>';
 		var objectActual = replace.strWithArr(object, patterns);
 		objectActual.should.equal(objectExpected);
 	});

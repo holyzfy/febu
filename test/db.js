@@ -9,9 +9,9 @@ describe(__filename, function(){
 		db.open(done);
 	});
 
-	after(function(done) {
+	/*after(function(done) {
 		db.close(done);
-	});
+	});*/
 
 	it('db.projects.save', function(done){
 		var project = {

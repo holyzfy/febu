@@ -24,9 +24,9 @@ describe(__filename, function(){
 	});
 
 	it('isEmpty: 文件存在', function(done) {
-		var src = './_a_test_path/';
+		var src = path.join(__dirname, '_a_test_path');
 		fs.mkdirsSync(src);
-		fs.writeFileSync('./_a_test_path/test.txt', 'hello');
+		fs.writeFileSync(path.join(src, 'note.txt'), 'hello');
 		util.isEmpty(src, function(ret){
 			ret.should.be.false;
 			fs.remove(src, done);
@@ -39,6 +39,11 @@ describe(__filename, function(){
 			ret.should.be.true;
 			done();
 		});
+	});
+
+	it('getProject', function(done) {
+		var commit = 'HEAD';
+		util.getProject({repo: repo}, commit, done);
 	});
 
 	it('formatCommit', function(done) {
@@ -55,14 +60,12 @@ describe(__filename, function(){
 				});
 			},
 			function(callback) {
-				util.formatCommit(repo, 'HEAD', callback);
+				util.formatCommit(repo, 'HEAD', function(err, commit) {
+					commit.should.have.length(7);
+					callback(err);
+				});
 			}
 		], done);
-	});
-
-	it('getProject', function(done) {
-		var commit = 'HEAD';
-		util.getProject({repo: repo}, commit, done);
 	});
 
 	it('resolvePath', function(){
@@ -142,7 +145,6 @@ describe(__filename, function(){
 		var htmlRet2 = util.relPath(html2, jsPath2);
 		var htmlExpected2 = ['www', 'js', 'nav.js'].join(path.sep);
 		htmlRet2.should.equal(htmlExpected2);
-
 	});
 
 });
