@@ -4,8 +4,10 @@ var fs = require('fs');
 var path = require('path');
 var async = require('async');
 var File = require('vinyl');
+var mongoose = require('mongoose');
+var mockgoose = require('mockgoose');
+var proxyquire = require('proxyquire');
 var common = require('../module/common.js');
-var db = require('../module/db.js');
 var Dev = require('../module/development.js');
 var Git = require('../module/git.js');
 var util = require('../module/util.js');
@@ -21,10 +23,13 @@ describe(__filename, function(){
 		},
 		version: '3bc6453'
 	};
-	
-	var dev = new Dev(project);
 
+	var dev = new Dev(project);
+	var db;
+	
 	before(function(done){
+		mockgoose(mongoose);
+		db = proxyquire('../module/db.js', { 'mongoose': mongoose });
 		dev.db = db;
 		db.open(done);
 	});

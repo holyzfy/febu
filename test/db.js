@@ -1,10 +1,15 @@
-var db = require('../module/db.js');
 var should = require('should');
+var mongoose = require('mongoose');
+var mockgoose = require('mockgoose');
+var proxyquire = require('proxyquire');
 
 describe(__filename, function(){
 	var repo = 'test_repo_url';
+	var db;
 
 	before(function(done){
+		mockgoose(mongoose);
+		db = proxyquire('../module/db.js', { 'mongoose': mongoose });
 		db.open(done);
 	});
 

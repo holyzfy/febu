@@ -2,8 +2,10 @@ var should = require('should');
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
+var mongoose = require('mongoose');
+var mockgoose = require('mockgoose');
+var proxyquire = require('proxyquire');
 var common = require('../module/common.js');
-var db = require('../module/db.js');
 var P = require('../module/production.js');
 var Git = require('../module/git.js');
 
@@ -19,6 +21,9 @@ describe(__filename, function(){
 	};
 	
 	var p = new P(project);
+
+	mockgoose(mongoose);
+	var db = proxyquire('../module/db.js', { 'mongoose': mongoose });
 	p.db = db;
 
 	before(function(done){

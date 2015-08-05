@@ -10,17 +10,13 @@ var config = require('../config.js');
 var Git = require('../module/git.js');
 
 describe(__filename, function(){
-	var repo = 'https://github.com/holyzfy/trygit';
+	var project = {
+		repo: 'https://github.com/requirejs/example-multipage'
+	};
+	var git = new Git(project.repo);
 
-	before(function() {
-		var repo, git;
-		repo = 'https://github.com/holyzfy/trygit';
-		git = new Git(repo);
-		fs.removeSync(git.options.cwd);
-
-		repo = 'https://github.com/requirejs/example-multipage';
-		git = new Git(repo);
-		fs.removeSync(git.options.cwd);
+	before(function(done) {	
+		fs.remove(git.options.cwd, done);
 	});
 
 	it('isEmpty: 文件存在', function(done) {
@@ -43,7 +39,7 @@ describe(__filename, function(){
 
 	it('getProject', function(done) {
 		var commit = 'HEAD';
-		util.getProject({repo: repo}, commit, done);
+		util.getProject(project, commit, done);
 	});
 
 	it('formatCommit', function(done) {
@@ -51,7 +47,7 @@ describe(__filename, function(){
 			function(callback){
 				var commit = '3bc6453272bdf9e0acfc8099a0f9cd3c07d3a8e4';
 				var commitExpected = '3bc6453';
-				util.formatCommit(repo, commit, function(err, data) {
+				util.formatCommit(project.repo, commit, function(err, data) {
 					if(err) {
 						return callback(err);
 					}
@@ -60,7 +56,7 @@ describe(__filename, function(){
 				});
 			},
 			function(callback) {
-				util.formatCommit(repo, 'HEAD', function(err, commit) {
+				util.formatCommit(project.repo, 'HEAD', function(err, commit) {
 					commit.should.have.length(7);
 					callback(err);
 				});
@@ -78,10 +74,6 @@ describe(__filename, function(){
 	});
 
 	it('getConfigPath', function(done) {
-		var project = {
-			repo: 'https://github.com/requirejs/example-multipage'
-		};
-		var git = new Git(project.repo);
 		git.clone(function() {
 			var src = common.getCwd(project.repo, 'src');
 			var configPath = path.join(src, 'www/js/common.js');
@@ -109,9 +101,6 @@ describe(__filename, function(){
 	});
 	
 	it('hasAMD', function(done) {
-		var project = {
-			repo: 'https://github.com/requirejs/example-multipage'
-		};
 		util.hasAMD(project, function(err, exist){
 			exist.should.be.true;
 			done(err);
