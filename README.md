@@ -2,6 +2,8 @@
 
 [前端部署系统](https://github.com/holyzfy/febu/wiki)
 
+[![Build Status](https://travis-ci.org/holyzfy/febu.svg?branch=master)](https://travis-ci.org/holyzfy/febu)
+
 ## 安装
 
 0. 命令行窗口需要能执行`git`命令

@@ -11,6 +11,9 @@
     "url": "https://github.com/holyzfy/febu/issues"
   },
   "homepage": "https://github.com/holyzfy/febu",
+  "scripts": {
+    "test": "mocha test --no-timeouts"
+  },
   "dependencies": {
     "async": "^0.9.0",
     "debug": "^2.1.3",
