@@ -89,13 +89,16 @@ Dev.prototype.getSource = function(commit, callback) {
     	}
 
     	git.diff(srcCommit, commit, function(err, ret) {
+    		debug('diff ret=', ret);
             if (err) {
                 return callback(err);
             }
 
             ret.forEach(function(item) {
-                item = path.join(src, item);
-                files.push(item)
+            	if(item && item.length > 0) {
+	                item = path.join(src, item);
+	                files.push(item);
+            	}
             });
             callback(null, files);
         });
