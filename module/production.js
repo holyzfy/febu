@@ -164,8 +164,10 @@ Production.prototype.initManifest = function(callback) {
 		if(err) {
 			return callback(err);
 		}
+
+		var keys = ['src', 'repo', 'dest', 'rel'];
 		docs.forEach(function(item) {
-			delete item._id;
+			item = _.pick(item, keys);
 		});
 		p.manifest = docs || [];
 		callback(null, p.manifest);
@@ -244,9 +246,10 @@ Production.prototype.serializeManifest = function(callback) {
 	var p = this;
 	
 	// 把_status: 'dirty'的doc保存到数据库db.febu.resources里
+	var keys = ['src', 'repo', 'dest', 'rel'];
 	var todo = _.filter(p.manifest, function(item) {
 		var isDirty = item._status === 'dirty';
-		delete item._status;
+		item = isDirty ? _.pick(item, keys) : item;
 		return isDirty;
 	});
 	p.db.resources.save(todo, callback);
