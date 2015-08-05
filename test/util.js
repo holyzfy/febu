@@ -114,7 +114,7 @@ describe(__filename, function(){
 		});
 		var imagePath = '../../images/sub_xxx/btn.png';
 		var cssRet = util.relPath(css, imagePath);
-		var cssExpected = ['images', 'sub_xxx', 'btn.png'].join(path.sep);
+		var cssExpected = 'images/sub_xxx/btn.png';
 		cssRet.should.equal(cssExpected);
 
 		var html = new File({
@@ -123,7 +123,7 @@ describe(__filename, function(){
 		});
 		var jsPath = 'js/config.js';
 		var htmlRet = util.relPath(html, jsPath);
-		var htmlExpected = ['js', 'config.js'].join(path.sep);
+		var htmlExpected = 'js/config.js';
 		htmlRet.should.equal(htmlExpected);
 
 		var html2 = new File({
@@ -132,7 +132,7 @@ describe(__filename, function(){
 		});
 		var jsPath2 = '../js/nav.js';
 		var htmlRet2 = util.relPath(html2, jsPath2);
-		var htmlExpected2 = ['www', 'js', 'nav.js'].join(path.sep);
+		var htmlExpected2 = 'www/js/nav.js';
 		htmlRet2.should.equal(htmlExpected2);
 	});
 
