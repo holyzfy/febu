@@ -72,12 +72,12 @@ Git.prototype.clone = function(callback) {
 	var urlMap = url.parse(git.url);
 	var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
 	var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
-	async.each([dataPath, local], fs.mkdirs, function(err) {
-		if(err) {
-			return callback(err);
-		}
-		git.exec('clone', [git.url, local], callback);
-	});
+    fs.mkdirs(local, function(err) {
+        if(err) {
+            return callback(err);
+        }
+        git.exec('clone', [git.url, local], callback);
+    });
 	return git;
 }
 
