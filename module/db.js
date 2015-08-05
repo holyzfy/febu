@@ -23,6 +23,14 @@ var ProjectSchema = new Schema({
 	busy: Boolean
 });
 
+var getModel = function(model) {
+	var hasDefined = mongoose.modelNames().some(function(item) {
+		return item === model;
+	});
+
+	return mongoose.model(model, hasDefined ? null : eval(model + 'Schema'));
+};
+
 /**
  * 读取项目配置
  * @param  repo 
@@ -30,7 +38,7 @@ var ProjectSchema = new Schema({
  * @return {Query} @link http://mongoosejs.com/docs/queries.html
  */
 db.projects.find = function(repo, callback) {
-	var Project = mongoose.model('Project', ProjectSchema);
+	var Project = getModel('Project');
 	// debug('repo=', repo);
 	return Project.findOne({
 		repo: repo
@@ -42,13 +50,13 @@ db.projects.find = function(repo, callback) {
 
 // 新建或更新项目配置
 db.projects.save = function(data, callback){
-	var Project = mongoose.model('Project', ProjectSchema);
+	var Project = getModel('Project');
 	// debug('projects.save', data);
 	return Project.update({repo: data.repo}, data, {upsert: true}, callback);
 };
 
 db.projects.remove = function(conditions, callback) {
-	var Project = mongoose.model('Project', ProjectSchema);
+	var Project = getModel('Project');
 	return Project.remove(conditions, callback);
 };
 
@@ -66,8 +74,8 @@ var ResourceSchema = new Schema({
  * @return {Query}  @link http://mongoosejs.com/docs/queries.html
  */
 db.resources.find = function(conditions, callback) {
-	debug('resource conditions=', conditions);
-	var Resource = mongoose.model('Resource', ResourceSchema);
+	// debug('resource conditions=', conditions);
+	var Resource = getModel('Resource');
 	Resource.find(conditions, function(err, docs) {
 		if(err) {
 			return callback(err);
@@ -82,7 +90,7 @@ db.resources.find = function(conditions, callback) {
 
 db.resources.save = function(data, callback){
 	data = [].concat(data);
-	var Resource = mongoose.model('Resource', ResourceSchema);
+	var Resource = getModel('Resource');
 	
 	var saveOne = function(one, cb) {
 		var conditions = {
@@ -103,7 +111,7 @@ db.resources.save = function(data, callback){
 };
 
 db.resources.remove = function(conditions, callback) {
-	var Resource = mongoose.model('Resource', ResourceSchema);
+	var Resource = getModel('Resource');
 	return Resource.remove(conditions, callback);
 };
 
@@ -125,7 +133,7 @@ var VersionSchema = new Schema({
 
 db.versions.find = function(conditions, callback) {
 	// debug('versioins conditions=%o', conditions);
-	var Version = mongoose.model('Version', VersionSchema);
+	var Version = getModel('Version');
 	Version.findOne({
 		'$query': conditions,
 		'$orderby':{
@@ -138,7 +146,7 @@ db.versions.find = function(conditions, callback) {
 };
 
 db.versions.save = function(data, callback) {
-	var Version = mongoose.model('Version', VersionSchema);
+	var Version = getModel('Version');
 	var conditions = {
 		repo: data.repo,
 		src: data.src
@@ -147,7 +155,7 @@ db.versions.save = function(data, callback) {
 };
 
 db.versions.remove = function(conditions, callback) {
-	var Version = mongoose.model('Version', VersionSchema);
+	var Version = getModel('Version');
 	return Version.remove(conditions, callback);
 }
 
