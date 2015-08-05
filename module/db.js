@@ -164,11 +164,20 @@ conn.on('error', function(err){
 });
 
 db.open = function(callback) {
-	return mongoose.connect(config.database, callback);
+	// @link http://mongoosejs.com/docs/api.html#connection_Connection-readyState
+	if(conn.readyState === 0) {
+		mongoose.connect(config.database, callback);
+	} else {
+		callback();
+	}
 };
 
 db.close = function(callback) {
-	return conn.close(callback);
+	if(conn.readyState !== 0) {
+		conn.close(callback);
+	} else {
+		callback();
+	}
 };
 
 module.exports = db;
