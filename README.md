@@ -37,7 +37,6 @@
 ## 测试
 
 0. 增加环境变量
-	* `NODE_ENV=development`
 	* `DEBUG=febu*`
 0. 安装依赖 `npm install -g mocha`
-0. 运行 `mocha --no-timeouts`
+0. 运行 `npm test`
