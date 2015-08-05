@@ -33,10 +33,8 @@
 
 	gulp production --repo repo [--commit commitid]
 
-
 ## 测试
 
-0. 增加环境变量
-	* `DEBUG=febu*`
+0. 增加环境变量 `DEBUG=febu*`
 0. 安装依赖 `npm install -g mocha`
 0. 运行 `npm test`
