@@ -1,5 +1,4 @@
 var should = require('should');
-var debug = require('debug')('febu:' + __filename);
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');

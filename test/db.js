@@ -1,6 +1,5 @@
 var db = require('../module/db.js');
 var should = require('should');
-var debug = require('debug')('febu:' + __filename);
 
 describe(__filename, function(){
 	var repo = 'test_repo_url';
