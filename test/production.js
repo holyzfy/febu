@@ -5,9 +5,12 @@ var path = require('path');
 var mongoose = require('mongoose');
 var mockgoose = require('mockgoose');
 var proxyquire = require('proxyquire');
+var File = require('vinyl');
+var _ = require('underscore');
 var common = require('../module/common.js');
 var P = require('../module/production.js');
 var Git = require('../module/git.js');
+var util = require('../module/util.js');
 
 describe(__filename, function(){
 	var project = {
@@ -90,12 +93,27 @@ describe(__filename, function(){
 			dest: '//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png',
 			rel: ['list.shtml']
 		};
+
+		var script1 = {
+			src: 'js/arttemplate.js',
+			dest: '//img1.cache.test.com/f2e/test_project/js/arttemplate-32889a76ed.js',
+			rel: ['list.shtml']
+		};
+
+		var script3 = {
+			src: 'js/help.js',
+			dest: '//img1.cache.test.com/f2e/test_project/js/help-0ff25a49f4.js',
+			rel: ['help.shtml']
+		};
 		
 		p.updateManifest(resource2);
 		p.manifest.should.matchAny(function(item) {
 			item.rel.length.should.equal(3);
 			item.rel.should.matchAny('list.shtml');
 		});
+
+		p.updateManifest(script1);
+		p.updateManifest(script3);
 	});
 
 	it('serializeManifest', function(done) {
@@ -152,6 +170,52 @@ describe(__filename, function(){
 			var ret = p.updateManifestHelper(file, 'utf-8');
 			should.deepEqual(ret, expected);
 		});
+	});
+
+	it('getGroup', function() {
+		var group = '_group="all"';
+		var ret = p.getGroup(group);
+		should.equal(ret, 'all');
+	});
+
+	var headStaticFile = new File({
+		path: 'test_project/inc/head_static.html'
+	});
+	var patterns = util.getReplacements(p, 'production', headStaticFile);
+	
+	it('replaceSrc script', function(){
+		var script = '<script src="js/arttemplate.js"></script>';
+		var scriptActual = replace.strWithArr(script, patterns);
+		scriptActual.should.equal('<script src="//img1.cache.test.com/f2e/test_project/js/arttemplate-32889a76ed.js"></script>');
+
+		var script2 = '<script SRC="js/product.js" _group="all_product"></script>';
+		var script2Expected = '<script src="//img1.cache.test.com/f2e/test_project/js/all-77fc0b9010.js"></script>';
+		var script2Actual = replace.strWithArr(script2, patterns);
+
+		var script2b = '<script SRC="js/product_two.js" _group="all_product"></script>';
+		var script2bActual = replace.strWithArr(script2b, patterns);
+
+		var doc = _.find(p.manifest, function(item) {
+			return item._group === 'all_product';
+		});
+
+		// console.log('p.manifest=', p.manifest);
+
+		should.equal(doc._group, 'all_product');
+		should.deepEqual(doc.src, ['js/product.js', 'js/product_two.js']);
+
+		var script3 = '<script>alert("test");</script>';
+		var script3Actual = replace.strWithArr(script3, patterns);
+		script3Actual.should.equal(script3);
+
+		var script4 = '<script src=\'js/arttemplate.js\'></script>';
+		var script4Actual = replace.strWithArr(script4, patterns);
+		script4Actual.should.equal('<script src="//img1.cache.test.com/f2e/test_project/js/arttemplate-32889a76ed.js"></script>');
+
+		var script5 = '<script src=""></script>';
+		var script5Expected = '<script src=""></script>';
+		var script5Actual = replace.strWithArr(script5, patterns);
+		script5Actual.should.equal(script5Expected);
 	});
 
 });

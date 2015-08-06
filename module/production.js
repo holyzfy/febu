@@ -182,6 +182,8 @@ Production.prototype.initManifest = function(callback) {
  */
 Production.prototype.updateManifest = function(doc) {
 	var p = this;
+
+	var findIt;
 	
 	_.extend(doc, {
 		repo: p.project.repo,
@@ -189,15 +191,23 @@ Production.prototype.updateManifest = function(doc) {
 	});
 
 	doc.src = [].concat(doc.src);
+
+	if(doc._group) {
+		findIt = _.find(p.manifest, function(item) {
+			return item._group === doc._group;
+		});
+	} else {
+		findIt = _.find(p.manifest, function(item) {
+			return _.isEqual(item.src, doc.src)
+		});
+	}
 	
-	var findIt = _.find(p.manifest, function(item) {
-		return _.isEqual(item.src, doc.src);
-	});
 	if(findIt) {
 		if(doc.rel) {
 			doc.rel = [].concat(doc.rel);
 			doc.rel = _.union(findIt.rel, doc.rel);
 		}
+		doc.src = _.union(findIt.src, doc.src);
 		_.extend(findIt, doc);
 	} else {
 		p.manifest.push(doc);
@@ -253,18 +263,6 @@ Production.prototype.serializeManifest = function(callback) {
 		return isDirty;
 	});
 	p.db.resources.save(todo, callback);
-};
-
-/**
- * 取得一个静态资源的线上路径
- * @param {String | Array} filepath 文件路径（相对于项目根目录）
- * @return {String}
- */
-Production.prototype.getFilePath = function(filepath) {
-	var filepath = [].concat(filepath);
-	var p = this;
-
-	// TODO
 };
 
 Production.prototype.getBasename = function(filepath) {
@@ -518,9 +516,34 @@ function replaceHelper(doc, file) {
 
 Production.prototype.replaceHref = function(attrs, match, file) {
 	var p = this;
+	
 	var href = attrs.filter(function(item){
 		return /^href=/i.test(item);
 	})[0];
+
+	if(!href) {
+		return match;
+	}
+
+	var hrefValue = (href.match(/^href='?"?([^'"]+)'?"?$/i) || '')[1];
+	if(!hrefValue) {
+		return match;
+	}
+
+	var group = attrs.filter(function(item) {
+		return /^_group=/i.test(item);
+	})[0];
+
+	if(group && !p._initGroup) {
+		var groupValue = p.getGroup(group);
+		var doc = {
+			src: hrefValue,
+			_group: groupValue
+		};
+		replaceHelper(doc, file);
+		p.updateManifest(doc);
+		return match;
+	}
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
@@ -546,16 +569,45 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 	} else if(/^href='/i.test(href)) {
 		match = match.replace(/\bhref='([^']+)'/i, replacement);
 	} else if(/^href=(?!["'])/i.test(href)) {
-		match = match.replace(/\bhref=([^\s\\>]+)/i, replacement);
+		match = match.replace(/\bhref=([^\s\>]+)/i, replacement);
 	}
 	return match;
 };
 
+Production.prototype.getGroup = function(group) {
+	return group.match(/^_group='?"?([^'"]+)'?"?$/i)[1];
+};
+
 Production.prototype.replaceSrc = function(attrs, match, file) {
 	var p = this;
+
 	var src = attrs.filter(function(item){
 		return /^src=/i.test(item);
 	})[0];
+
+	if(!src) {
+		return match;
+	}
+
+	var srcValue = (src.match(/^src='?"?([^'"]+)'?"?$/i) || '')[1];
+	if(!srcValue) {
+		return match;
+	}
+
+	var group = attrs.filter(function(item) {
+		return /^_group=/i.test(item);
+	})[0];
+
+	if(group && !p._initGroup) {
+		var groupValue = p.getGroup(group);
+		var doc = {
+			src: srcValue,
+			_group: groupValue
+		};
+		replaceHelper(doc, file);
+		p.updateManifest(doc);
+		return match;
+	}
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
@@ -662,7 +714,13 @@ Production.prototype.compileVmFiles = function(files, callback) {
             this.emit('end');
         }))
         .pipe(filter)
-        .pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
+        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
+        	p._initGroup = true; // 完成收集group信息
+        	debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
+        		return !!item._group;
+        	}));
+        	cb();
+        })) // 替换静态资源链接
 		.pipe(gulp.dest(destVm))
 		.on('end', function(err) {
 			console.log('输出模板：%s', destVm);
