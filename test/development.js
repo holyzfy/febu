@@ -97,6 +97,12 @@ describe(__filename, function(){
 		var link8Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css" />';
 		var link8Actual = replace.strWithArr(link8, patterns);
 		link8Actual.should.equal(link8Expected);
+
+		var link9 = '<link rel="stylesheet" _group="all" href=css/common.css>';
+		var link9Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css">';
+		var link9Actual = replace.strWithArr(link9, patterns);
+		link9Actual.should.equal(link9Expected);
+
 	});
 	
 	it('replaceSrc script', function(){
