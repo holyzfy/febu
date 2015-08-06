@@ -208,7 +208,7 @@ util.getReplacements = function(obj, env, file) {
                     return match;
                 }
 
-                var attrs = (match.match(/<link\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<link\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 
                 var css = attrs.some(function(item) {
                     return item === 'rel="stylesheet"' || item === "rel='stylesheet'"
@@ -227,7 +227,7 @@ util.getReplacements = function(obj, env, file) {
                 if(!obj.replaceSrc) {
                     return match;
                 }
-                var attrs = (match.match(/<script\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<script\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceSrc(attrs, match, file);
             }
         },
@@ -238,7 +238,7 @@ util.getReplacements = function(obj, env, file) {
                 if(!obj.replaceSrc) {
                     return match;
                 }
-                var attrs = (match.match(/<(?:img|video|audio|source|embed)\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<(?:img|video|audio|source|embed)\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceSrc(attrs, match, file);
             }
         },
@@ -249,7 +249,7 @@ util.getReplacements = function(obj, env, file) {
                 if(!obj.replaceData) {
                     return match;
                 }
-                var attrs = (match.match(/<object\b(.+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<object\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceData(attrs, match, file);
             }
         },
