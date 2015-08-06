@@ -514,6 +514,10 @@ function replaceHelper(doc, file) {
 	}
 }
 
+Production.prototype.getGroup = function(group) {
+	return group.match(/^_group='?"?([^'"]+)'?"?$/i)[1];
+};
+
 Production.prototype.replaceHref = function(attrs, match, file) {
 	var p = this;
 	
@@ -572,10 +576,6 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		match = match.replace(/\bhref=([^\s\>]+)/i, replacement);
 	}
 	return match;
-};
-
-Production.prototype.getGroup = function(group) {
-	return group.match(/^_group='?"?([^'"]+)'?"?$/i)[1];
 };
 
 Production.prototype.replaceSrc = function(attrs, match, file) {
@@ -706,27 +706,53 @@ Production.prototype.compileVmFiles = function(files, callback) {
 	var destVm = path.join(destRoot, 'vm');
 
 	var filter = gulpFilter(util.getVmFileType());
-	return gulp.src(files, {
-			base: base
-		})
-		.pipe(plumber(function (err) {
-            debug('出错: %s', err.message);
-            this.emit('end');
-        }))
-        .pipe(filter)
-        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
-        	p._initGroup = true; // 完成收集group信息
-        	debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
-        		return !!item._group;
-        	}));
-        	cb();
-        })) // 替换静态资源链接
-		.pipe(gulp.dest(destVm))
-		.on('end', function(err) {
-			console.log('输出模板：%s', destVm);
-			// 把files参数传递下去，方便async.waterfall的下个阶段使用
-			callback(err, files);
+
+	// 处理单个静态外链
+	var single = function(done) {
+		gulp.task('single', function() {
+			return gulp.src(files, {
+					base: base
+				})
+				.pipe(plumber(function (err) {
+		            debug('出错: %s', err.message);
+		            this.emit('end');
+		        }))
+		        .pipe(filter)
+		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
+		        	p._initGroup = true; // 完成收集group信息
+		        	debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
+		        		return !!item._group;
+		        	}));
+		        	cb();
+		        }))
+				.pipe(gulp.dest(destVm))
+				.on('end', done);
 		});
+
+		gulp.start('single');
+	};
+
+	// 处理_group
+	var group = function(done) {
+		// TODO
+		
+		done();
+	};
+
+
+	// 处理_inline
+	var inline = function(done) {
+		// TODO
+		done();
+	};
+
+	var tasks = [single, group, inline];
+	async.series(tasks, function(err) {
+		console.log('输出模板：%s', destVm);
+		// 把files参数传递下去，方便async.waterfall的下个阶段使用
+		callback(err, files);
+	});
+
 };
 
 // 把发布好的文件提交到目标仓库
