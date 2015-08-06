@@ -3,6 +3,7 @@ var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:production.js');
 var gulpFilter = require('gulp-filter');
+var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var rev = require('gulp-rev');
@@ -10,6 +11,7 @@ var _ = require('underscore');
 var url = require('url');
 var through2 = require('through2');
 var gulp = require('gulp');
+var gulpif = require('gulp-if');
 var del = require('del');
 var plumber = require('gulp-plumber');
 var File = require('vinyl');
@@ -194,7 +196,7 @@ Production.prototype.updateManifest = function(doc) {
 
 	if(doc._group) {
 		findIt = _.find(p.manifest, function(item) {
-			return item._group === doc._group;
+			return (item._group === doc._group) && (item._type === doc._type) && _.isEqual(item.rel, doc.rel);
 		});
 	} else {
 		findIt = _.find(p.manifest, function(item) {
@@ -542,7 +544,8 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		var groupValue = p.getGroup(group);
 		var doc = {
 			src: hrefValue,
-			_group: groupValue
+			_group: groupValue,
+			_type: 'css'
 		};
 		replaceHelper(doc, file);
 		p.updateManifest(doc);
@@ -602,7 +605,8 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		var groupValue = p.getGroup(group);
 		var doc = {
 			src: srcValue,
-			_group: groupValue
+			_group: groupValue,
+			_type: 'js'
 		};
 		replaceHelper(doc, file);
 		p.updateManifest(doc);
@@ -703,6 +707,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 	var src = common.getCwd(p.project.repo, 'src');
 	var base = hasAMD ? path.join(src, config.amd.www) : src;
 	var destRoot = common.getCwd(p.project.repo, 'production');
+	var destStatic = path.join(destRoot, 'static');
 	var destVm = path.join(destRoot, 'vm');
 
 	var filter = gulpFilter(util.getVmFileType());
@@ -720,9 +725,9 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		        .pipe(filter)
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
 		        	p._initGroup = true; // 完成收集group信息
-		        	debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
+		        	/*debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
 		        		return !!item._group;
-		        	}));
+		        	}));*/
 		        	cb();
 		        }))
 				.pipe(gulp.dest(destVm))
@@ -734,9 +739,61 @@ Production.prototype.compileVmFiles = function(files, callback) {
 
 	// 处理_group
 	var group = function(done) {
-		// TODO
-		
-		done();
+		var doGroup = function(item, cb) {
+			gulp.task('group', function() {
+				var groupPath;
+				if(item._type === 'css') {
+					groupPath = path.join('style', item._group + '.css');
+				} else if(item._type === 'js') {
+					groupPath = path.join('js', item._group + '.js');
+				}
+
+				return gulp.src(item.src, {
+						cwd: base
+					})
+					.pipe(plumber(function (err) {
+			            debug('出错: %s', err.message);
+			            this.emit('end');
+			            cb(err);
+			        }))
+					.pipe(concat(groupPath))
+					.pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
+					.pipe(rev())
+					.pipe(through2.obj(function(file, enc, _cb) {
+						file = new File(file);
+
+						if(file.isNull()) {		
+					        return _cb(null, file);		
+					    }
+
+					    var filePath;
+					    if(item._type === 'css') {
+					    	file.extname = '.group.css';
+					    } else if(item._type === 'js') {
+						    file.extname = '.group.js';
+					    }
+
+					    debug('one group=%o \npath=%s \nrelative=%s', item, file.path, file.relative);
+					    
+					    var doc = {
+					    	src: item.src,
+					    	dest: url.resolve(p.project.production.web, file.relative)
+					    };
+					    p.updateManifest(doc);
+					    _cb(null, file);
+					}))
+					.pipe(gulp.dest(destStatic))
+					.on('end', cb);
+			});
+			
+			gulp.start('group');
+		};
+
+		var list = _.filter(p.manifest, function(item) {
+    		return !!item._group;
+    	});
+
+    	async.each(list, doGroup, done);
 	};
 
 
@@ -752,7 +809,6 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
 		callback(err, files);
 	});
-
 };
 
 // 把发布好的文件提交到目标仓库

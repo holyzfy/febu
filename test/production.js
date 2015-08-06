@@ -183,25 +183,40 @@ describe(__filename, function(){
 	});
 	var patterns = util.getReplacements(p, 'production', headStaticFile);
 	
+	it('replaceHref', function() {
+		var link = '<link rel="stylesheet" href="style/common.css" _group="all" />';
+		var linkActual = replace.strWithArr(link, patterns);
+
+		var link2 = '<link rel="stylesheet" href="style/index.css" _group="all" />';
+		var link2Actual = replace.strWithArr(link2, patterns);
+
+		var doc = _.find(p.manifest, function(item) {
+			return (item._group === 'all') && (item._type === 'css') && _.isEqual(item.rel, [headStaticFile.path.replace(/\//g, path.sep)]);
+		});
+
+		should.equal(doc._group, 'all');
+		should.deepEqual(doc.src, ['style/common.css', 'style/index.css']);
+	});
+
 	it('replaceSrc script', function(){
 		var script = '<script src="js/arttemplate.js"></script>';
 		var scriptActual = replace.strWithArr(script, patterns);
 		scriptActual.should.equal('<script src="//img1.cache.test.com/f2e/test_project/js/arttemplate-32889a76ed.js"></script>');
 
-		var script2 = '<script SRC="js/product.js" _group="all_product"></script>';
+		var script2 = '<script SRC="js/product.js" _group="all"></script>';
 		var script2Expected = '<script src="//img1.cache.test.com/f2e/test_project/js/all-77fc0b9010.js"></script>';
 		var script2Actual = replace.strWithArr(script2, patterns);
 
-		var script2b = '<script SRC="js/product_two.js" _group="all_product"></script>';
+		var script2b = '<script SRC="js/product_two.js" _group="all"></script>';
 		var script2bActual = replace.strWithArr(script2b, patterns);
 
+		console.log('p.manifest=', p.manifest);
+
 		var doc = _.find(p.manifest, function(item) {
-			return item._group === 'all_product';
+			return (item._group === 'all') && (item._type == 'js') && _.isEqual(item.rel, [headStaticFile.path.replace(/\//g, path.sep)]);
 		});
 
-		// console.log('p.manifest=', p.manifest);
-
-		should.equal(doc._group, 'all_product');
+		should.equal(doc._group, 'all');
 		should.deepEqual(doc.src, ['js/product.js', 'js/product_two.js']);
 
 		var script3 = '<script>alert("test");</script>';
