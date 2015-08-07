@@ -228,7 +228,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
     }
     
 	if(file.path !== 'rev-manifest.json') {
-		return cb();
+		return cb(null, file);
 	}
 
 	var manifest;
@@ -237,7 +237,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 		manifest = JSON.parse(file.contents.toString());
 		// debug('manifest=%s', file.contents.toString());
 	} catch(err) {
-		return cb(err);
+		return cb(err, file);
 	}
 
 	var docs = []; // 方便做单元测试
@@ -250,7 +250,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 		docs.push(doc);
 		p.updateManifest(doc);
 	});
-	cb && cb();
+	cb && cb(null, file);
 	return docs;
 };
 

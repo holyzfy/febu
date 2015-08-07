@@ -276,7 +276,7 @@ Dev.prototype.js = function(files, callback) {
 						var newFilePath = url.resolve(dev.project.development.web, filePath);
 						newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
 						newPaths[file.basename] = newFilePath;
-						cb();
+						cb(null, file);
 					}))
 					.pipe(gulp.dest(destStatic))
 					.on('end', next);
