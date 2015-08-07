@@ -508,10 +508,11 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 };
 
 function replaceHelper(doc, file) {
-	var relExisted = _.contains(doc.rel, file.relative);
+	doc.rel = doc.rel || [];
+	var relative = file.relative.replace(new RegExp('\\' + path.sep, 'g'), '/');
+	var relExisted = _.contains(doc.rel, relative);
 	if(!relExisted) {
-		doc.rel = doc.rel || [];
-		doc.rel.push(file.relative);
+		doc.rel.push(relative);
 		doc._status = 'dirty';
 	}
 }
@@ -773,7 +774,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 						    file.extname = '.group.js';
 					    }
 
-					    debug('one group=%o \npath=%s \nrelative=%s', item, file.path, file.relative);
+					    // debug('one group=%o \npath=%s \nrelative=%s', item, file.path, file.relative);
 					    
 					    var doc = {
 					    	src: item.src,
