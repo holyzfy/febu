@@ -179,7 +179,8 @@ describe(__filename, function(){
 	});
 
 	var headStaticFile = new File({
-		path: 'test_project/inc/head_static.html'
+		base: '/test_project',
+		path: '/test_project/inc/head_static.html'
 	});
 	var patterns = util.getReplacements(p, 'production', headStaticFile);
 	
@@ -191,7 +192,7 @@ describe(__filename, function(){
 		var link2Actual = replace.strWithArr(link2, patterns);
 
 		var doc = _.find(p.manifest, function(item) {
-			return (item._group === 'all') && (item._type === 'css') && _.isEqual(item.rel, [headStaticFile.path.replace(/\//g, path.sep)]);
+			return (item._group === 'all') && (item._type === 'css') && _.contains(item.rel, headStaticFile.relative);
 		});
 
 		should.equal(doc._group, 'all');
@@ -213,7 +214,7 @@ describe(__filename, function(){
 		// console.log('p.manifest=', p.manifest);
 
 		var doc = _.find(p.manifest, function(item) {
-			return (item._group === 'all') && (item._type == 'js') && _.isEqual(item.rel, [headStaticFile.path.replace(/\//g, path.sep)]);
+			return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, headStaticFile.relative);
 		});
 
 		should.equal(doc._group, 'all');

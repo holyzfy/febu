@@ -258,13 +258,18 @@ Production.prototype.serializeManifest = function(callback) {
 	var p = this;
 	
 	// 把_status: 'dirty'的doc保存到数据库db.febu.resources里
+	var list = [];
 	var keys = ['src', 'repo', 'dest', 'rel'];
-	var todo = _.filter(p.manifest, function(item) {
-		var isDirty = item._status === 'dirty';
-		item = isDirty ? _.pick(item, keys) : item;
-		return isDirty;
+
+	p.manifest.forEach(function(item) {
+		var isDirty = (item._status === 'dirty');
+		var one = _.pick(item, keys);
+		isDirty && list.push(one);
 	});
-	p.db.resources.save(todo, callback);
+
+	// debug('serializeManifest=', list);
+	
+	p.db.resources.save(list, callback);
 };
 
 Production.prototype.getBasename = function(filepath) {
@@ -301,8 +306,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					base: base
 				})
 				.pipe(plumber(function (err) {
-		            debug('出错: %s', err.message);
-		            this.emit('end');
+		            debug('task img出错: %s', err.message);
+		            this.emit('end', err);
 		        }))
 				.pipe(filter)
 				.pipe(rev())
@@ -336,8 +341,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					base: base
 				})
 				.pipe(plumber(function (err) {
-		            debug('task build 出错: %s', err.message);
-		            this.emit('end');
+		            debug('task build出错: %s', err.message);
+		            this.emit('end', err);
 		        }))
 				.pipe(filter)
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
@@ -350,8 +355,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 					cwd: build
 				})
 				.pipe(plumber(function (err) {
-		            debug('task css 出错: %s', err.message);
-		            this.emit('end');
+		            debug('task css出错: %s', err.message);
+		            this.emit('end', err);
 		        }))
 				.pipe(minifyCss())
 				.pipe(rev())
@@ -406,8 +411,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			    			cwd: path.join(src, config.amd.build)
 			    		})
 		    			.pipe(plumber(function (err) {
-				            debug('出错 第%d行: %s', err.lineNumber, err.message);
-				            this.emit('end');
+				            debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
+				            this.emit('end', err);
 				        }))
 	    				.pipe(rev())
 						.pipe(gulp.dest(destStatic))
@@ -442,32 +447,36 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		    		newPaths[key] = dest;
 		    	});
 
-		    	return gulp.src(configPath, {
-			    		base: base
-			    	})
-			    	.pipe(plumber(function (err) {
-			            debug('出错 第%d行: %s', err.lineNumber, err.message);
-			            this.emit('end');
-			        }))
-					.pipe(through2.obj(function (file, enc, cb) {
-						file = new File(file);
+		    	gulp.task('updateConfig', function() {
+			    	return gulp.src(configPath, {
+				    		base: base
+				    	})
+				    	.pipe(plumber(function (err) {
+				            debug('task updateConfig出错 第%d行: %s', err.lineNumber, err.message);
+				            this.emit('end', err);
+				        }))
+						.pipe(through2.obj(function (file, enc, cb) {
+							file = new File(file);
 
-						if(file.isNull()) {		
-				            return cb(null, file);		
-				        }
-				        
-						var contents = file.contents.toString();
-						var result = util.replaceConfigPaths(contents, newPaths);
-						file.contents = new Buffer(result);
-						cb(null, file);
-					}))
-					.pipe(uglify())
-					.pipe(rev())
-					.pipe(gulp.dest(destStatic))
-					.pipe(rev.manifest())
-					.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-					.pipe(gulp.dest(destStatic))
-					.on('end', next);
+							if(file.isNull()) {		
+					            return cb(null, file);		
+					        }
+					        
+							var contents = file.contents.toString();
+							var result = util.replaceConfigPaths(contents, newPaths);
+							file.contents = new Buffer(result);
+							cb(null, file);
+						}))
+						.pipe(uglify())
+						.pipe(rev())
+						.pipe(gulp.dest(destStatic))
+						.pipe(rev.manifest())
+						.pipe(through2.obj(p.updateManifestHelper.bind(p)))
+						.pipe(gulp.dest(destStatic))
+						.on('end', next);
+		    	});
+
+		    	gulp.start('updateConfig');
 		    };
 
 		    var tasks = [optimize, copy, getConfigPath, updateConfig];
@@ -482,8 +491,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 						base: base
 					})
 					.pipe(plumber(function (err) {
-			            debug('出错 第%d行: %s', err.lineNumber, err.message);
-			            this.emit('end');
+			            debug('task js出错 第%d行: %s', err.lineNumber, err.message);
+			            this.emit('end', err);
 			        }))
 					.pipe(filter)
 					.pipe(uglify())
@@ -509,12 +518,16 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 
 function replaceHelper(doc, file) {
 	doc.rel = doc.rel || [];
-	var relative = file.relative.replace(new RegExp('\\' + path.sep, 'g'), '/');
+	var relative = getRelative(file);
 	var relExisted = _.contains(doc.rel, relative);
 	if(!relExisted) {
 		doc.rel.push(relative);
 		doc._status = 'dirty';
 	}
+}
+
+function getRelative(file) {
+	return file.relative.replace(new RegExp('\\' + path.sep, 'g'), '/');
 }
 
 Production.prototype.getGroup = function(group) {
@@ -541,16 +554,42 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return /^_group=/i.test(item);
 	})[0];
 
-	if(group && !p._initGroup) {
+	if(group) {
 		var groupValue = p.getGroup(group);
-		var doc = {
-			src: hrefValue,
-			_group: groupValue,
-			_type: 'css'
-		};
-		replaceHelper(doc, file);
-		p.updateManifest(doc);
-		return match;
+
+		if(!p._initGroup) {
+			// 收集_group信息
+			var doc = {
+				src: hrefValue,
+				_group: groupValue,
+				_type: 'css'
+			};
+			replaceHelper(doc, file);
+			p.updateManifest(doc);
+			return match;
+		} else {
+			// 替换_group
+			var relative = getRelative(file);
+			var findIt = _.find(p.manifest, function(item) {
+				return (item._group === groupValue) && (item._type === 'css') && _.contains(item.rel, relative);
+			});
+
+			if(!findIt) {
+				return match;
+			}
+			
+			findIt._groupDone = findIt._groupDone || {};
+
+			if(findIt._groupDone[relative]) { // 已替换过
+				return '';
+			} else {
+				findIt._groupDone[relative] = true; // 标记为已替换
+				var link = '<link rel="stylesheet" href="' + findIt.dest + '" />';
+				return link;
+			}
+
+			return match;
+		}
 	}
 
 	var replacement = function(match, sub) {
@@ -598,20 +637,48 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		return match;
 	}
 
+	var isScript = /^<script\s/i.test(match);
+
 	var group = attrs.filter(function(item) {
 		return /^_group=/i.test(item);
 	})[0];
 
-	if(group && !p._initGroup) {
+	if(isScript && group) {
 		var groupValue = p.getGroup(group);
-		var doc = {
-			src: srcValue,
-			_group: groupValue,
-			_type: 'js'
-		};
-		replaceHelper(doc, file);
-		p.updateManifest(doc);
-		return match;
+
+		if(!p._initGroup) {
+			// 收集_group信息
+			var doc = {
+				src: srcValue,
+				_group: groupValue,
+				_type: 'js'
+			};
+			replaceHelper(doc, file);
+			p.updateManifest(doc);
+			return match;
+		} else {
+			// 替换_group
+			var relative = getRelative(file);
+			var findIt = _.find(p.manifest, function(item) {
+				return (item._group === groupValue) && (item._type === 'js') && _.contains(item.rel, relative);
+			});
+
+			if(!findIt) {
+				return match;
+			}
+			
+			findIt._groupDone = findIt._groupDone || {};
+
+			if(findIt._groupDone[relative]) { // 已替换过
+				return '';
+			} else {
+				findIt._groupDone[relative] = true; // 标记为已替换
+				var script = '<script src="' + findIt.dest + '"></script>';
+				return script;
+			}
+
+			return match;
+		}
 	}
 
 	var replacement = function(match, sub) {
@@ -711,24 +778,46 @@ Production.prototype.compileVmFiles = function(files, callback) {
 	var destStatic = path.join(destRoot, 'static');
 	var destVm = path.join(destRoot, 'vm');
 
-	var filter = gulpFilter(util.getVmFileType());
-
 	// 处理单个静态外链
 	var single = function(done) {
+		var filter = gulpFilter(util.getVmFileType());
+
 		gulp.task('single', function() {
 			return gulp.src(files, {
 					base: base
 				})
 				.pipe(plumber(function (err) {
-		            debug('出错: %s', err.message);
-		            this.emit('end');
+		            debug('task single出错: %s', err.message);
+		            this.emit('end', err);
 		        }))
 		        .pipe(filter)
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
 		        	p._initGroup = true; // 完成收集group信息
+
+		        	// p.manifest去重
+		        	var unique = function() {
+		        		var list = [];
+
+						p.manifest.forEach(function(item) {
+							var findIt = _.find(list, function(one) {
+								return _.isEqual(item.src, one.src) && _.isEqual(item.repo, one.repo);
+							});
+
+							if(findIt) {
+								findIt.rel = _.union(findIt.rel, item.rel);
+							} else {
+								list.push(item);
+							}
+						});
+						return list;
+		        	};
+
+					p.manifest = unique();
+
 		        	/*debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
 		        		return !!item._group;
 		        	}));*/
+
 		        	cb();
 		        }))
 				.pipe(gulp.dest(destVm))
@@ -738,8 +827,8 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		gulp.start('single');
 	};
 
-	// 处理_group
-	var group = function(done) {
+	// 生成group文件
+	var groupFile = function(done) {
 		var doGroup = function(item, cb) {
 			gulp.task('group', function() {
 				var groupPath;
@@ -750,12 +839,12 @@ Production.prototype.compileVmFiles = function(files, callback) {
 				}
 
 				return gulp.src(item.src, {
+						base: base,
 						cwd: base
 					})
 					.pipe(plumber(function (err) {
-			            debug('出错: %s', err.message);
-			            this.emit('end');
-			            cb(err);
+			            debug('task group出错: %s', err.message);
+			            this.emit('end', err);
 			        }))
 					.pipe(concat(groupPath))
 					.pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
@@ -797,6 +886,26 @@ Production.prototype.compileVmFiles = function(files, callback) {
     	async.each(list, doGroup, done);
 	};
 
+	// 替换_group
+	var groupReplace = function(done) {
+		var filter = gulpFilter(util.getVmFileType());
+
+		gulp.task('groupReplace', function() {
+			return gulp.src(files, {
+					base: base
+				})
+				.pipe(plumber(function (err) {
+		            debug('task groupReplace出错: %s', err.message);
+		            this.emit('end', err);
+		        }))
+		        .pipe(filter)
+		        .pipe(through2.obj(util.replacePath(p, 'production')))
+				.pipe(gulp.dest(destVm))
+				.on('end', done);
+		});
+
+		gulp.start('groupReplace');
+	};
 
 	// 处理_inline
 	var inline = function(done) {
@@ -804,7 +913,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		done();
 	};
 
-	var tasks = [single, group, inline];
+	var tasks = [single, groupFile, groupReplace, inline];
 	async.series(tasks, function(err) {
 		console.log('输出模板：%s', destVm);
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
@@ -951,4 +1060,3 @@ Production.prototype.run = function(commit, callback) {
 };
 
 module.exports = Production;
-
