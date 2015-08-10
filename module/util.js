@@ -292,8 +292,10 @@ util.replacePath = function (obj, env) {
  * 约定：不处理inc目录
  */
 util.relPath = function(fromFile, filepath) {
+    var fromFilePath = fromFile.path.replace(new RegExp('\\' + path.sep, 'g'), '/');
     var inc = '/inc/';
-    var hasInc = fromFile.path.lastIndexOf(inc) > 0;
+    var hasInc = fromFilePath.lastIndexOf(inc) > 0;
+
     if(hasInc) {
         return filepath;
     }
