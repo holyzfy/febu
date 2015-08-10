@@ -472,7 +472,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 						.pipe(gulp.dest(destStatic))
 						.pipe(rev.manifest())
 						.pipe(through2.obj(p.updateManifestHelper.bind(p)))
-						.pipe(gulp.dest(destStatic))
 						.on('end', next);
 		    	});
 
