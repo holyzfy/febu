@@ -15,7 +15,7 @@ var gulpif = require('gulp-if');
 var del = require('del');
 var plumber = require('gulp-plumber');
 var File = require('vinyl');
-var read = require('read-file');
+var file = require('read-file');
 var exec = require('child_process').exec;
 var util = require('./util.js');
 var common = require('./common.js');
@@ -550,6 +550,21 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return match;
 	}
 
+	var inline = attrs.filter(function(item) {
+		return /^_inline=?$/i.test(item);
+	})[0];
+
+	if(inline) {
+		if(p._singleDone) {
+			var compress = attrs.filter(function(item){
+				return /^_compress=?$/i.test(item);
+			})[0];
+			return p.styleInline(hrefValue, compress);
+		} else {
+			return match;
+		}
+	}
+
 	var group = attrs.filter(function(item) {
 		return /^_group=/i.test(item);
 	})[0];
@@ -622,7 +637,42 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 };
 
 /**
- * 处理脚本_inline和_compress标记
+ * 处理<link>样式表的_inline和_compress标记
+ * @param cssPath 相对于项目根目录的路径
+ * @param {Boolean} compress 是否要压缩
+ * @return 返回替换后的内容（含style标签）
+ */
+Production.prototype.styleInline = function(cssPath, compress) {
+	var p = this;
+	var src = common.getCwd(p.project.repo, 'src');
+	var base = hasAMD ? path.join(src, config.amd.www) : src;
+	var fullPath;
+	if(compress) {
+		var findIt = _.find(p.manifest, function(item) {
+			return _.isEqual(item.src, [cssPath]);
+		});
+		if(findIt) {
+			var minCssPath = findIt.dest.slice(p.project.production.web.length);
+			var destRoot = common.getCwd(p.project.repo, 'production');
+			fullPath = path.join(destRoot, 'static', minCssPath);
+		} else {
+			console.error('出错：未找到%s对应的压缩文件', cssPath);
+		}
+	} else {
+		fullPath = path.join(base, cssPath);
+	}
+
+	var content = '';
+	try {
+		content = file.readFileSync(fullPath, 'utf8');
+	} catch(err) {
+		console.error('处理<link>样式表的_inline和_compress标记出错：', err.message);
+	}
+	return '<style>' + content + '</style>';
+};
+
+/**
+ * 处理<script>的_inline和_compress标记
  * @param jsPath 相对于项目根目录的路径
  * @param {Boolean} compress 是否要压缩
  * @return 返回替换后的内容（含script标签）
@@ -631,13 +681,22 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 	var p = this;
 	var src = common.getCwd(p.project.repo, 'src');
 	var base = hasAMD ? path.join(src, config.amd.www) : src;
+	var fullPath;
 	if(compress) {
-		jsPath = _.find(p.manifest, function(item) {
-			return _.isEqual(item.src, [src]);
+		var findIt = _.find(p.manifest, function(item) {
+			return _.isEqual(item.src, [jsPath]);
 		});
+		if(findIt) {
+			var minJsPath = findIt.dest.slice(p.project.production.web.length);
+			var destRoot = common.getCwd(p.project.repo, 'production');
+			fullPath = path.join(destRoot, 'static', minJsPath);
+		} else {
+			console.error('出错：未找到%s对应的压缩文件', jsPath);
+		}
+	} else {
+		fullPath = path.join(base, jsPath);
 	}
-	var fullPath = path.join(base, jsPath);
-	debug('fullPath=%s', fullPath);
+
 	var content = '';
 	try {
 		content = file.readFileSync(fullPath, 'utf8');
@@ -664,7 +723,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 	}
 
 	var inline = attrs.filter(function(item) {
-		return /^_inline=/i.test(item);
+		return /^_inline=?$/i.test(item);
 	})[0];
 
 	var isScript = /^<script\s/i.test(match);
@@ -672,7 +731,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 	if(isScript && inline) {
 		if(p._singleDone) {
 			var compress = attrs.filter(function(item){
-				return /^_compress=/i.test(item);
+				return /^_compress=?$/i.test(item);
 			})[0];
 			return p.scriptInline(srcValue, compress);
 		} else {
@@ -736,6 +795,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			}
 
 			replaceHelper(doc, file);
+
 			var newSrc = doc.dest;
 			return 'src="' + newSrc + '"';
 		}
@@ -748,6 +808,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 	} else if(/^src=(?!["'])/i.test(src)) {
 		match = match.replace(/\bsrc=([^\s\\>]+)/i, replacement);
 	}
+
 	return match;
 };
 
@@ -833,7 +894,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		        }))
 		        .pipe(filter)
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
-		        	p._singleDone = true; // 完成收集group信息
+		        	p._singleDone = true;
 
 		        	// p.manifest去重
 		        	var unique = function() {
@@ -855,9 +916,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 
 					p.manifest = unique();
 
-		        	/*debug('完成收集group信息 manifest=\n', _.filter(p.manifest, function(item) {
-		        		return !!item._group;
-		        	}));*/
+		        	// debug('完成收集manifest=\n', p.manifest);
 
 		        	cb();
 		        }))
@@ -903,8 +962,6 @@ Production.prototype.compileVmFiles = function(files, callback) {
 					    } else if(item._type === 'js') {
 						    file.extname = '.group.js';
 					    }
-
-					    // debug('one group=%o \npath=%s \nrelative=%s', item, file.path, file.relative);
 					    
 					    var doc = {
 					    	src: item.src,
@@ -927,11 +984,11 @@ Production.prototype.compileVmFiles = function(files, callback) {
     	async.each(list, doGroup, done);
 	};
 
-	// 替换_group
-	var groupReplace = function(done) {
+	// 处理_group和_inline
+	var groupAndInline = function(done) {
 		var filter = gulpFilter(util.getVmFileType());
 
-		gulp.task('groupReplace', function() {
+		gulp.task('groupAndInline', function() {
 			return gulp.src(files, {
 					base: base
 				})
@@ -945,31 +1002,10 @@ Production.prototype.compileVmFiles = function(files, callback) {
 				.on('end', done);
 		});
 
-		gulp.start('groupReplace');
+		gulp.start('groupAndInline');
 	};
 
-	// 处理_inline
-	var inline = function(done) {
-		var filter = gulpFilter(util.getVmFileType());
-
-		gulp.task('inline', function() {
-			return gulp.src(files, {
-					base: base
-				})
-				.pipe(plumber(function (err) {
-		            debug('task inline出错: %s', err.message);
-		            this.emit('end', err);
-		        }))
-		        .pipe(filter)
-		        .pipe(through2.obj(util.replacePath(p, 'production')))
-		        .pipe(gulp.dest(destVm))
-				.on('end', done);
-		});
-
-		task.start('inline');
-	};
-
-	var tasks = [single, groupFile, groupReplace, inline];
+	var tasks = [single, groupFile, groupAndInline];
 	async.series(tasks, function(err) {
 		console.log('输出模板：%s', destVm);
 		// 把files参数传递下去，方便async.waterfall的下个阶段使用
