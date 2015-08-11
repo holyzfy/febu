@@ -7,6 +7,11 @@
     "url": "https://github.com/holyzfy/febu.git"
   },
   "author": "holyzfy <zhaofuyun202@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "febu",
+    "automated frontend tools"
+  ],
   "bugs": {
     "url": "https://github.com/holyzfy/febu/issues"
   },
