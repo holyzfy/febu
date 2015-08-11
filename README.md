@@ -8,14 +8,14 @@
 
 0. 命令行窗口需要能执行`git`命令
 0. 安装MongoDB，并[初始化一个项目](https://github.com/holyzfy/febu/wiki/init_project)
-0. 配置config.js
+0. 编辑config_sample.js，并另存为config.js
 0. 安装依赖
 	* `npm install -g gulp`
 	* `npm install`
 
 ## 发布
 
-仅支持发布 master 分支的代码
+仅支持发布git项目的master分支代码
 
 ### 参数
 * **repo** 仓库地址
