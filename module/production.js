@@ -1063,8 +1063,15 @@ Production.prototype.run = function(commit, callback) {
 			return callback(err);
 		}
 		if(exist) {
-			debug('该版本%s已发布过，直接签出%s', commit, destCommit);
-			return p.checkout(destCommit, callback);
+			console.log('版本%s已发布过，直接签出%s', commit, destCommit);
+			return p.checkout(destCommit, function(err) {
+				var destRoot = common.getCwd(p.project.repo, 'production');
+				var destVm = path.join(destRoot, 'vm');
+
+				console.log('输出静态资源：生产环境已多版本并存，本次不再处理');
+				console.log('输出模板：%s', destVm);
+				callback();
+			});
 		} else {
 			debug('开始发布...');
 

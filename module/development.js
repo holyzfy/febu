@@ -400,8 +400,21 @@ Dev.prototype.run = function(commit, callback) {
 			return callback(err);
 		}
 		if(exist) {
-			debug('该版本%s已发布过，直接签出%s', commit, destCommit);
-			return dev.checkout(destCommit, callback);
+			console.log('版本%s已发布过，直接签出%s', commit, destCommit);
+			return dev.checkout(destCommit, function(err) {
+				if(err) {
+					return callback(err);
+				}
+
+				var destRoot = common.getCwd(dev.project.repo, 'development');
+				var destStatic = path.join(destRoot, 'static');
+				var destVm = path.join(destRoot, 'vm');
+
+				console.log('输出静态资源：%s', destStatic);
+				console.log('输出模板：%s', destVm);
+
+				callback();
+			});
 		} else {
 			debug('开始发布...');
 			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布

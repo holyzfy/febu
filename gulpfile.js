@@ -95,7 +95,7 @@ var fixPath = function(href) {
 gulp.task('development', ['before'], function(){
 	var dev = new Development(project);
 	dev.db = db;
-	debug('发布到测试环境 src commit=%s', commit);
+	console.log('发布到测试环境 src commit=%s', commit);
 	dev.run(commit, function(err) {
 		err && debug('出错: %s', err.message || err);
 		closeDb();
@@ -106,7 +106,7 @@ gulp.task('development', ['before'], function(){
 gulp.task('production', ['before'], function(){
 	var p = new Production(project);
 	p.db = db;
-	debug('发布到生产环境 src commit=%s', commit);
+	console.log('发布到生产环境 src commit=%s', commit);
 	p.run(commit, function(err) {
 		err && debug('出错: %s', err.message || err);
 		closeDb();
