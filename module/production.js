@@ -1050,6 +1050,7 @@ Production.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
+		git.checkout.bind(git, 'master'),
 		commit
 	];
 
