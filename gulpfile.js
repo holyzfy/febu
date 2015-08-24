@@ -21,12 +21,12 @@ var source = [];
 var project;
 var timer;
 
-var cleanup = function() {
-	if(cleanup.busy) {
+var handleError = function(err) {
+	if(handleError.busy) {
 		return;
 	}
-
-	cleanup.busy = true;
+	handleError.busy = true;
+	console.error('发布失败: %s', err.message || err);
 	closeDb(function() {
 		process.exit(1);
 	});
@@ -84,9 +84,9 @@ gulp.task('before', function(callback){
 
 	timer = setTimeout(function() {
 		callback('发布超时，请稍后重试');
-	}, 300000);
+	}, 240000);
 })
-.on('task_err', cleanup);
+.on('task_err', handleError);
 
 gulp.task('clean', ['before'], function(){
 	del([build], {force: true});
@@ -111,25 +111,23 @@ var fixPath = function(href) {
 };
 
 // 发布到测试环境
-gulp.task('development', ['before'], function(){
+gulp.task('development', ['before'], function(callback){
+	console.log('发布到测试环境 src commit=%s', commit);
 	var dev = new Development(project);
 	dev.db = db;
-	console.log('发布到测试环境 src commit=%s', commit);
 	dev.run(commit, function(err) {
-		err && debug('出错: %s', err.message || err);
-		closeDb();
+		err ? callback(err) : closeDb(callback);
 	});
 })
-.on('task_err', cleanup);
+.on('task_err', handleError);
 
 // 发布到生产环境
-gulp.task('production', ['before'], function(){
+gulp.task('production', ['before'], function(callback){
+	console.log('发布到生产环境 src commit=%s', commit);
 	var p = new Production(project);
 	p.db = db;
-	console.log('发布到生产环境 src commit=%s', commit);
 	p.run(commit, function(err) {
-		err && debug('出错: %s', err.message || err);
-		closeDb();
+		err ? callback(err) : closeDb(callback);
 	});
 })
-.on('task_err', cleanup);
+.on('task_err', handleError);
