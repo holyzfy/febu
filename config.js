@@ -10,7 +10,7 @@ module.exports = {
 	dataPath: defaultDataPath,
 
 	// 约定requirejs项目的目录结构
-	// 示例 @link https://github.com/requirejs/example-multipage
+	// 示例 @link https://github.com/holyzfy/amd_template
 	amd: {
 		tools: 'tools', // 构建目录
 		optimizer: 'r.js', // 构建脚本
