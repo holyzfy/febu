@@ -17,9 +17,20 @@ var commit = argv.commit || 'HEAD';  // 检出相应版本
 var release;
 var src;
 var build;
-
 var source = [];
 var project;
+var timer;
+
+var cleanup = function() {
+	if(cleanup.busy) {
+		return;
+	}
+
+	cleanup.busy = true;
+	closeDb(function() {
+		process.exit(1);
+	});
+};
 
 gulp.task('before', function(callback){
 	if(!argv.repo) {
@@ -66,8 +77,16 @@ gulp.task('before', function(callback){
 		});
 	};
 
-	async.series([initDB, clone, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit], callback);
-});
+	async.series([initDB, clone, git.checkout.bind(git, 'master'), git.pull.bind(git), formatCommit], function(err) {
+		clearTimeout(timer);
+		callback(err);
+	});
+
+	timer = setTimeout(function() {
+		callback('发布超时，请稍后重试');
+	}, 300000);
+})
+.on('task_err', cleanup);
 
 gulp.task('clean', ['before'], function(){
 	del([build], {force: true});
@@ -79,7 +98,7 @@ var closeDb = function(callback) {
 			return callback(err);
 		}
 		data.busy = false;
-		db.projects.save(data, db.close.bind(db));
+		db.projects.save(data, db.close.bind(db, callback));
 	});
 };
 
@@ -100,7 +119,8 @@ gulp.task('development', ['before'], function(){
 		err && debug('出错: %s', err.message || err);
 		closeDb();
 	});
-});
+})
+.on('task_err', cleanup);
 
 // 发布到生产环境
 gulp.task('production', ['before'], function(){
@@ -111,4 +131,5 @@ gulp.task('production', ['before'], function(){
 		err && debug('出错: %s', err.message || err);
 		closeDb();
 	});
-});
+})
+.on('task_err', cleanup);
