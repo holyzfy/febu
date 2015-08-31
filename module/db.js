@@ -149,7 +149,8 @@ db.versions.save = function(data, callback) {
 	var Version = getModel('Version');
 	var conditions = {
 		repo: data.repo,
-		src: data.src
+		src: data.src,
+		type: data.type
 	};
 	return Version.update(conditions, data, {upsert: true}, callback);
 };
