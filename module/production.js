@@ -288,6 +288,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var destRoot = common.getCwd(p.project.repo, 'production');
 	var destStatic = path.join(destRoot, 'static');
 	var build = common.getCwd(p.project.repo, 'build');
+	var ignoreList = util.getIgnore(base);
+	var filterList = util.getStaticFileType().concat(ignoreList);
 
 	/**
 	 * 1. 除js, css的静态资源rev后输出到dest目录
@@ -296,11 +298,9 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var img = function(cb) {
 		debug('img');
 
-		var filterList = util.getStaticFileType();
 		filterList = _.filter(filterList, function(item) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
-		var filter = gulpFilter(filterList);
 
 		gulp.task('img', function() {
 			return gulp.src(files, {
@@ -310,7 +310,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		            debug('task img出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-				.pipe(filter)
+				.pipe(gulpFilter(filterList))
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
@@ -335,8 +335,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var css = function(cb) {
 		debug('css');
 
-		var filter = gulpFilter(['**/*.css']);
-
 		gulp.task('build', ['clean'], function() {
 			return gulp.src(files, {
 					base: base
@@ -345,7 +343,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		            debug('task build出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-				.pipe(filter)
+				.pipe(gulpFilter('**/*.css'))
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
 				.pipe(gulp.dest(build));
 		});
@@ -359,6 +357,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		            debug('task css出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
+		        .pipe(gulpFilter(filterList))
 				.pipe(minifyCss())
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
@@ -415,6 +414,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 				            debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
 				            this.emit('end', err);
 				        }))
+				        .pipe(gulpFilter(filterList))
 	    				.pipe(rev())
 						.pipe(gulp.dest(destStatic))
 						.pipe(rev.manifest())
@@ -484,7 +484,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		};
 
 		var otherAction = function(done) {
-			var filter = gulpFilter(['**/*.js']);
+			var filterList = ['**/*.js'].concat(ignoreList);
 
 			gulp.task('js', function() {
 				return gulp.src(files, {
@@ -494,7 +494,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			            debug('task js出错 第%d行: %s', err.lineNumber, err.message);
 			            this.emit('end', err);
 			        }))
-					.pipe(filter)
+					.pipe(gulpFilter(filterList))
 					.pipe(uglify())
 					.pipe(rev())
 					.pipe(gulp.dest(destStatic))
@@ -880,9 +880,11 @@ Production.prototype.compileVmFiles = function(files, callback) {
 	var destStatic = path.join(destRoot, 'static');
 	var destVm = path.join(destRoot, 'vm');
 
+	var ignoreList = util.getIgnore(base);
+	var filterList = util.getVmFileType().concat(ignoreList);
+
 	// 处理单个静态外链
 	var single = function(done) {
-		var filter = gulpFilter(util.getVmFileType());
 
 		gulp.task('single', function() {
 			return gulp.src(files, {
@@ -892,7 +894,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		            debug('task single出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-		        .pipe(filter)
+		        .pipe(gulpFilter(filterList))
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
 		        	p._singleDone = true;
 
@@ -986,7 +988,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 
 	// 处理_group和_inline
 	var groupAndInline = function(done) {
-		var filter = gulpFilter(util.getVmFileType());
+		var filter = gulpFilter(filterList);
 
 		gulp.task('groupAndInline', function() {
 			return gulp.src(files, {
@@ -1050,7 +1052,12 @@ Production.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
-		git.checkout.bind(git, 'master'),
+		function(cb) {
+			// 忽略空仓库时checkout的报错
+			git.checkout('master', function() {
+				cb();
+			});
+		},
 		commit
 	];
 

@@ -19,7 +19,7 @@ describe(__filename, function(){
 		fs.remove(git.options.cwd, done);
 	});
 
-	it('isEmpty: 文件存在', function(done) {
+	/*it('isEmpty: 文件存在', function(done) {
 		var src = path.join(__dirname, '_a_test_path');
 		fs.mkdirsSync(src);
 		fs.writeFileSync(path.join(src, 'note.txt'), 'hello');
@@ -134,6 +134,30 @@ describe(__filename, function(){
 		var htmlRet2 = util.relPath(html2, jsPath2);
 		var htmlExpected2 = 'www/js/nav.js';
 		htmlRet2.should.equal(htmlExpected2);
+	});*/
+
+	it('getIgnore', function() {
+		var data = {
+		    "ignore": [
+		        "mock/",
+		        "selenium/",
+		        "templates/**/*",
+		        "test/",
+		        "licence"
+		    ]
+		};
+		var expected = [
+	        "!mock/**/*",
+	        "!selenium/**/*",
+	        "!templates/**/*",
+	        "!test/**/*",
+	        '!licence'
+	    ];
+		var configFile = 'febu.json';
+		fs.writeJsonSync(configFile, data);
+		var ret = util.getIgnore('./');
+		fs.removeSync(configFile);
+		should.deepEqual(ret, expected);
 	});
 
 });

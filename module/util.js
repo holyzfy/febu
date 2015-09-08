@@ -309,4 +309,27 @@ util.relPath = function(fromFile, filepath) {
     return thisPath;
 };
 
+/**
+ * 取得忽略列表：读取febu.json的ignore字段
+ * @param src 项目根目录
+ */
+util.getIgnore = function(src) {
+    var ret = [];
+    var configFile = path.join(src, config.project);
+    try {
+        var data = fs.readJsonSync(configFile);
+        ret = data.ignore || [];
+    } catch(err) {
+        console.error('配置文件%s格式错误%s：', configFile, err.message);
+    }
+
+    ret = ret.map(function(item) {
+        // 如果是目录，结尾需要增加**/*
+        item = (item.slice(-1) === '/') ? (item + '**/*') : item;
+        return '!' + item;
+    });
+
+    return ret;
+};
+
 module.exports = util;

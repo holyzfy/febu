@@ -114,6 +114,8 @@ Dev.prototype.resource = function(files, callback) {
 		src = hasAMD ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var destStatic = path.join(destRoot, 'static');
+		var ignoreList = util.getIgnore(src);
+		var filterList = util.getStaticFileType().concat(ignoreList);
 		console.log('输出静态资源：%s', destStatic);
 		gulp.src(files, {
 			base: src
@@ -122,7 +124,7 @@ Dev.prototype.resource = function(files, callback) {
             debug('出错 第%d行: %s', err.lineNumber, err.message);
             this.emit('end');
         }))
-		.pipe(gulpFilter(util.getStaticFileType()))
+		.pipe(gulpFilter(filterList))
 		.pipe(gulp.dest(destStatic))
 		.on('end', callback);
 	});
@@ -232,6 +234,8 @@ Dev.prototype.js = function(files, callback) {
 	var base = hasAMD ? path.join(src, config.amd.www) : src;
 	var destRoot = common.getCwd(dev.project.repo, 'development');
 	var destStatic = path.join(destRoot, 'static');
+	var ignoreList = util.getIgnore(base);
+	var filterList = util.getStaticFileType().concat(ignoreList);
 
 	var amdAction = function(done) {
 		// 本次发布有变更的js文件吗
@@ -265,6 +269,7 @@ Dev.prototype.js = function(files, callback) {
 			            debug('出错 第%d行: %s', err.lineNumber, err.message);
 			            this.emit('end');
 			        }))
+			        .pipe(gulpFilter(filterList))
 			        .pipe(through2.obj(function (file, enc, cb) {
 						file = new File(file);
 
@@ -337,11 +342,13 @@ Dev.prototype.html = function(files, callback) {
 		src = hasAMD ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
+		var ignoreList = util.getIgnore(src);
+		var filterList = util.getVmFileType().concat(ignoreList);
 		console.log('输出模板：%s', dest);
 		gulp.src(files, {
 			base: src
 		})
-		.pipe(gulpFilter(util.getVmFileType()))
+		.pipe(gulpFilter(filterList))
 		.pipe(through2.obj(util.replacePath(dev, 'development'))) // 替换静态资源链接
 		.pipe(gulp.dest(dest))
 		.on('end', callback)
@@ -387,7 +394,12 @@ Dev.prototype.commit = function(message, callback) {
 				cb();
 			});
 		},
-		git.checkout.bind(git, 'master'),
+		function(cb) {
+			// 忽略空仓库时checkout的报错
+			git.checkout('master', function() {
+				cb();
+			});
+		},
 		commit
 	];
 
