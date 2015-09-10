@@ -298,7 +298,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var img = function(cb) {
 		debug('img');
 
-		filterList = _.filter(filterList, function(item) {
+		var filterList = _.filter(filterList, function(item) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
 
@@ -335,6 +335,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var css = function(cb) {
 		debug('css');
 
+		var filterList = ['**/*.css'].concat(ignoreList);
+		
 		gulp.task('build', ['clean'], function() {
 			return gulp.src(files, {
 					base: base
@@ -343,7 +345,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		            debug('task build出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-				.pipe(gulpFilter('**/*.css'))
+				.pipe(gulpFilter(filterList))
 				.pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
 				.pipe(gulp.dest(build));
 		});
@@ -405,7 +407,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 
 		    var copy = function() {
 		    	var next = arguments[arguments.length - 1];
-
 		    	gulp.task('copy', function() {
 		    		return gulp.src('**/*.js', {
 			    			cwd: path.join(src, config.amd.build)
@@ -586,7 +587,9 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 			// 替换_group
 			var relative = getRelative(file);
 			var findIt = _.find(p.manifest, function(item) {
-				return (item._group === groupValue) && (item._type === 'css') && _.contains(item.rel, relative);
+				var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
+				var groupName = match[1];
+				return (groupName === groupValue) && _.contains(item.rel, relative);
 			});
 
 			if(!findIt) {
@@ -760,7 +763,9 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			// 替换_group
 			var relative = getRelative(file);
 			var findIt = _.find(p.manifest, function(item) {
-				return (item._group === groupValue) && (item._type === 'js') && _.contains(item.rel, relative);
+				var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
+				var groupName = match[1];
+				return (groupName === groupValue) && _.contains(item.rel, relative);
 			});
 
 			if(!findIt) {
@@ -885,7 +890,6 @@ Production.prototype.compileVmFiles = function(files, callback) {
 
 	// 处理单个静态外链
 	var single = function(done) {
-
 		gulp.task('single', function() {
 			return gulp.src(files, {
 					base: base
@@ -988,8 +992,6 @@ Production.prototype.compileVmFiles = function(files, callback) {
 
 	// 处理_group和_inline
 	var groupAndInline = function(done) {
-		var filter = gulpFilter(filterList);
-
 		gulp.task('groupAndInline', function() {
 			return gulp.src(files, {
 					base: base
@@ -998,7 +1000,7 @@ Production.prototype.compileVmFiles = function(files, callback) {
 		            debug('task groupReplace出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-		        .pipe(filter)
+		        .pipe(gulpFilter(filterList))
 		        .pipe(through2.obj(util.replacePath(p, 'production')))
 				.pipe(gulp.dest(destVm))
 				.on('end', done);
