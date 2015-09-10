@@ -302,8 +302,6 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
 
-		debug('imgFilterList=', imgFilterList);
-
 		gulp.task('img', function() {
 			return gulp.src(files, {
 					base: base
