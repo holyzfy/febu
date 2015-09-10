@@ -236,7 +236,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	try {
 		manifest = JSON.parse(file.contents.toString());
-		// debug('manifest=%s', file.contents.toString());
+		// debug('updateManifestHelper manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err, file);
 	}
@@ -298,9 +298,11 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 	var img = function(cb) {
 		debug('img');
 
-		var filterList = _.filter(filterList, function(item) {
+		var imgFilterList = _.filter(filterList, function(item) {
 			return (item !== '**/*.css') && (item !== '**/*.js');
 		});
+
+		debug('imgFilterList=', imgFilterList);
 
 		gulp.task('img', function() {
 			return gulp.src(files, {
@@ -310,7 +312,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		            debug('task img出错: %s', err.message);
 		            this.emit('end', err);
 		        }))
-				.pipe(gulpFilter(filterList))
+				.pipe(gulpFilter(imgFilterList))
 				.pipe(rev())
 				.pipe(gulp.dest(destStatic))
 				.pipe(rev.manifest())
@@ -336,7 +338,7 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		debug('css');
 
 		var filterList = ['**/*.css'].concat(ignoreList);
-		
+
 		gulp.task('build', ['clean'], function() {
 			return gulp.src(files, {
 					base: base
