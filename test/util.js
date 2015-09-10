@@ -137,6 +137,9 @@ describe(__filename, function(){
 	});
 
 	it('getIgnore', function() {
+		var testRet = util.getIgnore('./');
+		should.deepEqual(testRet, []);
+
 		var data = {
 		    "ignore": [
 		        "mock/",

@@ -274,7 +274,6 @@ util.getReplacements = function(obj, env, file) {
 util.replacePath = function (obj, env) {
     var fn = function(file, enc, cb) {
         file = new File(file);
-
         if(file.isNull()) {     
             return cb(null, file);      
         }
@@ -317,8 +316,11 @@ util.getIgnore = function(src) {
     var ret = [];
     var configFile = path.join(src, config.project);
     try {
-        var data = fs.readJsonSync(configFile);
-        ret = data.ignore || [];
+        var exist = fs.existsSync(configFile);
+        if(exist) {
+            var data = fs.readJsonSync(configFile);
+            ret = data.ignore || [];
+        }
     } catch(err) {
         console.error('配置文件%s格式错误%s：', configFile, err.message);
     }
