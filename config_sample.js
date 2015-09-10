@@ -17,5 +17,6 @@ module.exports = {
 		config: 'build.js', // 构建用的配置文件
 		www: 'www', // 项目目录
 		build: 'build' // 构建后的目录
-	}
+	},
+	project: 'febu.json'
 };
