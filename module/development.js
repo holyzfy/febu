@@ -279,8 +279,9 @@ Dev.prototype.js = function(files, callback) {
 
 						var filePath = path.relative(build, file.path);
 						var newFilePath = url.resolve(dev.project.development.web, filePath);
-						newFilePath = newFilePath.match(/(.+).js$/)[1]; // 去掉扩展名
-						newPaths[file.basename] = newFilePath;
+						var key = file.basename.slice(0, -3); // 去掉扩展名
+			    		var dest = newFilePath.slice(0, -3);
+			    		newPaths[key] = dest;
 						cb(null, file);
 					}))
 					.pipe(gulp.dest(destStatic))

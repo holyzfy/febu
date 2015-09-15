@@ -444,8 +444,8 @@ Production.prototype.compileStaticFiles = function(files, callback) {
 		    		var file = new File({
 		    			path: item.src[0]
 		    		});
-		    		var key = file.basename.slice(0, 0 - file.extname.length);
-		    		var dest = item.dest.slice(0, -3); // 去掉扩展名
+		    		var key = file.basename.slice(0, -3); // 去掉扩展名
+		    		var dest = item.dest.slice(0, -3);
 		    		newPaths[key] = dest;
 		    	});
 
