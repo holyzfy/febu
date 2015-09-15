@@ -184,6 +184,8 @@ describe(__filename, function(){
 	});
 	var patterns = util.getReplacements(p, 'production', headStaticFile);
 	
+	console.log('headStaticFile.relative=', headStaticFile.relative);
+
 	it('replaceHref', function() {
 		var link = '<link rel="stylesheet" href="style/common.css" _group="all" />';
 		var linkActual = replace.strWithArr(link, patterns);
@@ -192,7 +194,17 @@ describe(__filename, function(){
 		var link2Actual = replace.strWithArr(link2, patterns);
 
 		var doc = _.find(p.manifest, function(item) {
-			return (item._group === 'all') && (item._type === 'css') && _.contains(item.rel, headStaticFile.relative);
+			var groupName;
+			var isStyle;
+			if(item.dest) {
+				var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
+				 groupName = match[1];
+				 isStyle = true;
+			} else {
+				groupName = item._group;
+				isStyle = item._type === 'css';
+			}
+			return (groupName === 'all') && isStyle && _.contains(item.rel, P._debug.getRelative(headStaticFile));
 		});
 
 		should.equal(doc._group, 'all');
@@ -214,7 +226,17 @@ describe(__filename, function(){
 		// console.log('p.manifest=', p.manifest);
 
 		var doc = _.find(p.manifest, function(item) {
-			return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, headStaticFile.relative);
+			var groupName;
+			var isScript;
+			if(item.dest) {
+				var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
+				groupName = match[1];
+				isScript = true;
+			} else {
+				groupName = item._group;
+				isScript = item._type === 'js';
+			}
+			return (groupName === 'all') && isScript && _.contains(item.rel, P._debug.getRelative(headStaticFile));
 		});
 
 		should.equal(doc._group, 'all');

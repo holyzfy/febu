@@ -1168,4 +1168,8 @@ Production.prototype.run = function(commit, callback) {
 	});
 };
 
+Production._debug = {
+	getRelative: getRelative
+};
+
 module.exports = Production;
