@@ -1,5 +1,4 @@
 node_modules/
 data/
 test.js
-config.js
 npm-debug.log
