@@ -455,7 +455,6 @@ Dev.prototype.run = function(commit, callback) {
 			};
 
 			var compile = function(files) {
-				debug('compile', files);
 				var next = arguments[arguments.length - 1];
 				var tasks = [
 					dev.resource.bind(dev, files),
