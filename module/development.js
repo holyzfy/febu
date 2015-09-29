@@ -89,7 +89,6 @@ Dev.prototype.getSource = function(commit, callback) {
     	}
 
     	git.diff(srcCommit, commit, function(err, ret) {
-    		debug('diff ret=', ret);
             if (err) {
                 return callback(err);
             }
