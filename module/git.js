@@ -4,7 +4,7 @@ var debug = require('debug')('febu:git.js');
 var async = require('async');
 var fs = require('fs-extra');
 var shell = require('shelljs');
-var config = require('../config.js');
+var config = require('config');
 var common = require('./common.js');
 
 /**

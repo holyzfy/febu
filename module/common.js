@@ -1,4 +1,4 @@
-var config = require('../config.js');
+var config = require('config');
 var url = require('url');
 var path = require('path');
 var debug = require('debug')('febu:' + __filename);

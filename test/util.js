@@ -6,7 +6,6 @@ var File = require('vinyl');
 var fs = require('fs-extra')
 var util = require('../module/util.js');
 var common = require('../module/common.js');
-var config = require('../config.js');
 var Git = require('../module/git.js');
 
 describe(__filename, function(){

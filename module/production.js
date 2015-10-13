@@ -20,7 +20,7 @@ var exec = require('child_process').exec;
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('./git.js');
-var config = require('../config.js');
+var config = require('config');
 
 // 项目里有requirejs的构建脚本吗
 var hasAMD;

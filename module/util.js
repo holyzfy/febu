@@ -9,7 +9,7 @@ var exec = require('child_process').exec;
 var file = require('read-file');
 var frep = require('frep');
 var File = require('vinyl');
-var config = require('../config.js');
+var config = require('config');
 var common = require('./common.js');
 var Git = require('./git.js');
 

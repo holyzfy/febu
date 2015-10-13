@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 var async = require('async');
-var config = require('../config.js');
+var config = require('config');
 var debug = require('debug')('febu:db.js');
 
 var db = {};
