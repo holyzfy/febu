@@ -1,6 +1,6 @@
 var path = require('path');
 var Git = require('../module/git.js');
-var fs = require('fs-extra')
+var fs = require('fs-extra');
 var expect = require('expect.js');
 var async = require('async');
 
