@@ -1,7 +1,7 @@
-var should = require('should');
 var mongoose = require('mongoose');
 var mockgoose = require('mockgoose');
 var proxyquire = require('proxyquire');
+var expect = require('expect.js');
 
 describe(__filename, function(){
 	var repo = 'test_repo_url';
@@ -33,8 +33,8 @@ describe(__filename, function(){
 	
 	it('db.projects.find', function(done) {
 		db.projects.find(repo, function(err, ret){
-			should.not.exist(err);
-			should.exist(ret);
+			expect(err).to.be(null);
+			expect(ret).to.be.ok();
 			done();
 		});
 	});
@@ -58,8 +58,8 @@ describe(__filename, function(){
 
 	it('db.versions.find', function(done) {
 		db.versions.find({src: '9bfb77f', repo: repo}, function(err, doc) {
-			should.not.exist(err);
-			// should.exist(doc);
+			expect(err).to.be(null);
+			// expect(doc).to.be.ok();
 			done();
 		});
 	});
@@ -81,9 +81,9 @@ describe(__filename, function(){
 
 	it('db.resources.find', function(done) {
 		db.resources.find(resource, function(err, ret) {
-			should.not.exist(err);
-			ret.should.have.length(1);
-			ret[0].dest.should.equal(resource.dest);
+			expect(err).to.be(null);
+			expect(ret).to.have.length(1);
+			expect(ret[0]).to.eql(resource);
 			done();
 		});
 	});

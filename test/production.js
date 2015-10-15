@@ -1,4 +1,5 @@
-var should = require('should');
+var expect = require('expect.js');
+var expect = require('expect.js');
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
@@ -39,20 +40,23 @@ describe(__filename, function(){
 
     it('exist', function(done) {
         p.exist('_a_commit_id', function(err, data) {
-            data.should.be.false;
+            expect(data).not.to.be.ok();
             done();
         });
     });
 
     it('getBasename', function() {
         var href1 = '//img1.febucache.com/f2e/style/all.1234.group.css';
-        p.getBasename(href1).should.be.equal('all.1234.group');
+        var basename1 = p.getBasename(href1);
+        expect(basename1).to.be('all.1234.group');
 
         var href2 = '//img1.febucache.com/f2e/images/logo.png';
-        p.getBasename(href2).should.be.equal('logo');
+        var basename2 = p.getBasename(href2);
+        expect(basename2).to.be('logo');
 
         var href3 = '//img1.febucache.com/f2e/images/logo.123.png';
-        p.getBasename(href3).should.be.equal('logo.123');
+        var basename3 = p.getBasename(href3);
+        expect(basename3).to.be('logo.123');
     });
 
     it('initManifest', function(done) {
@@ -65,11 +69,12 @@ describe(__filename, function(){
 
         db.resources.save(resource, function(err, newRes) {
             p.initManifest(function(err, docs) {
-                docs.should.matchAny(function(item) {
-                    item.dest.should.be.equal(resource.dest);
-                    p.manifest.length.should.be.above(0);
-                    db.resources.remove(resource, done);
+                var ret = docs.filter(function(item) {
+                    return item.dest == resource.dest;
                 });
+                expect(ret.length).to.above(0);
+                expect(p.manifest.length).to.above(0);
+                db.resources.remove(resource, done);
             });
         });
     });
@@ -81,12 +86,16 @@ describe(__filename, function(){
             rel: ['style/p_common.css', 'detail.shtml']
         };
         p.updateManifest(resource);
-        p.manifest.should.matchAny(function(item) {
-            should.deepEqual(item.src, ['images/p_logo.png']);
-            item.repo.should.equal(p.project.repo);
-            item.dest.should.equal(resource.dest);
-            item._status.should.equal('dirty');
+
+        var manifest1 = p.manifest.filter(function(item) {
+            var hasSrc = item.src.length === 1 && item.src[0] === 'images/p_logo.png';
+            var hasRepo = item.repo === p.project.repo;
+            var hasDest = item.dest === resource.dest;
+            var isDirty = item._status === 'dirty';
+            return hasSrc || hasRepo || hasDest || isDirty;
         });
+
+        expect(manifest1.length).to.above(0);
 
         var resource2 = {
             src: ['images/p_logo.png'],
@@ -107,10 +116,15 @@ describe(__filename, function(){
         };
         
         p.updateManifest(resource2);
-        p.manifest.should.matchAny(function(item) {
-            item.rel.length.should.equal(3);
-            item.rel.should.matchAny('list.shtml');
+        var manifest2 = p.manifest.filter(function(item) {
+            return item.rel.length === 3;
         });
+        expect(manifest2.length).to.above(0);
+
+        var manifest3 = p.manifest.filter(function(item) {
+            return item.rel.indexOf('list.shtml') >= 0;
+        });
+        expect(manifest2.length).to.above(0);
 
         p.updateManifest(script1);
         p.updateManifest(script3);
@@ -126,15 +140,14 @@ describe(__filename, function(){
         p.updateManifest(resource);
 
         p.serializeManifest(function(err){
-            should.not.exist(err);
             var conditions = {
                 src: {
                     '$in': ['images/p_book.png', 'images/p_logo.png']
                 }
             };
             p.db.resources.find(conditions, function(err, docs) {
-                docs.length.should.equal(2);
-                docs[0].should.not.have.property('_status');
+                expect(docs).to.have.length(2);
+                expect(docs[0]).not.to.have.property('_status');
                 db.resources.remove(docs, done);
             });
         });
@@ -166,16 +179,15 @@ describe(__filename, function(){
         ];
 
         p.initManifest(function(err, docs) {
-            should.not.exist(err);
             var ret = p.updateManifestHelper(file, 'utf-8');
-            should.deepEqual(ret, expected);
+            expect(ret).to.eql(expected);
         });
     });
 
     it('getGroup', function() {
         var group = '_group="all"';
         var ret = p.getGroup(group);
-        should.equal(ret, 'all');
+        expect(ret).to.be('all');
     });
 
     var headStaticFile = new File({
@@ -195,8 +207,8 @@ describe(__filename, function(){
             return (item._group === 'all') && (item._type === 'css') && _.contains(item.rel, P._debug.getRelative(headStaticFile));
         });
 
-        should.equal(doc._group, 'all');
-        should.deepEqual(doc.src, ['style/common.css', 'style/index.css']);
+        expect(doc._group).to.be('all');
+        expect(doc.src).to.eql(['style/common.css', 'style/index.css']);
     });
 
     it('replaceSrc script', function(){
@@ -213,17 +225,17 @@ describe(__filename, function(){
             return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, P._debug.getRelative(headStaticFile));
         });
 
-        should.equal(doc._group, 'all');
-        should.deepEqual(doc.src, ['js/product.js', 'js/product_two.js']);
+        expect(doc._group).to.be('all');
+        expect(doc.src).to.eql(['js/product.js', 'js/product_two.js']);
 
         var script3 = '<script>alert("test");</script>';
         var script3Actual = replace.strWithArr(script3, patterns);
-        script3Actual.should.equal(script3);
+        expect(script3Actual).to.be(script3);
 
         var script5 = '<script src=""></script>';
         var script5Expected = '<script src=""></script>';
         var script5Actual = replace.strWithArr(script5, patterns);
-        script5Actual.should.equal(script5Expected);
+        expect(script5Actual).to.be(script5Expected);
     });
 
 });

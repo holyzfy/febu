@@ -1,9 +1,9 @@
 var fs = require('fs-extra');
 var path = require('path');
-var should = require('should');
 var async = require('async');
 var File = require('vinyl');
-var fs = require('fs-extra')
+var fs = require('fs-extra');
+var expect = require('expect.js');
 var util = require('../module/util.js');
 var common = require('../module/common.js');
 var Git = require('../module/git.js');
@@ -23,7 +23,7 @@ describe(__filename, function(){
 		fs.mkdirsSync(src);
 		fs.writeFileSync(path.join(src, 'note.txt'), 'hello');
 		util.isEmpty(src, function(ret){
-			ret.should.be.false;
+			expect(ret).not.to.be.ok();
 			fs.remove(src, done);
 		});
 	});
@@ -31,7 +31,7 @@ describe(__filename, function(){
 	it('isEmpty: 文件不存在', function(done) {
 		var fold = path.resolve(__dirname, '_not_exsited');
 		util.isEmpty(fold, function(ret){
-			ret.should.be.true;
+			expect(ret).to.be.ok();
 			done();
 		});
 	});
@@ -50,13 +50,13 @@ describe(__filename, function(){
 					if(err) {
 						return callback(err);
 					}
-					data.should.equal(commitExpected);
+					expect(data).to.be(commitExpected);
 					callback();
 				});
 			},
 			function(callback) {
 				util.formatCommit(project.repo, 'HEAD', function(err, commit) {
-					commit.should.have.length(7);
+					expect(commit).to.have.length(7);
 					callback(err);
 				});
 			}
@@ -69,7 +69,9 @@ describe(__filename, function(){
 		var base = 'd:/febu/data/src/github.com/test';
 
 		var ret = util.resolvePath(from, to, base);
-		should.equal(path.normalize(ret), path.normalize(to));
+		var ret2 = path.normalize(ret);
+		var to2 = path.normalize(to);
+		expect(ret2).to.be(to2);
 	});
 
 	it('getConfigPath', function(done) {
@@ -81,7 +83,7 @@ describe(__filename, function(){
 				if(err) {
 					return done(err);
 				}
-				should.equal(path, configPath);
+				expect(path).to.be(configPath);
 				done();
 			});
 		});
@@ -93,15 +95,15 @@ describe(__filename, function(){
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
 		};
 		var newContents = util.replaceConfigPaths(contents, newPaths);
-		newContents.should.startWith("require.config(");
-		newContents.indexOf('lib/jquery').should.below(0);
-		newContents.indexOf('//code.jquery.com/jquery-1.11.3.min').should.above(-1);
-		newContents.should.endWith(");");
+		expect(newContents.slice(0, "require.config(".length)).to.equal("require.config(");
+		expect(newContents.indexOf('lib/jquery')).to.be.below(0);
+		expect(newContents.indexOf('//code.jquery.com/jquery-1.11.3.min')).to.be.above(-1);
+		expect(newContents.slice(-2)).to.equal(");");
 	});
 	
 	it('hasAMD', function(done) {
 		util.hasAMD(project, function(err, exist){
-			exist.should.be.true;
+			expect(exist).to.be.ok();
 			done(err);
 		});
 	});
@@ -114,7 +116,7 @@ describe(__filename, function(){
 		var imagePath = '../../images/sub_xxx/btn.png';
 		var cssRet = util.relPath(css, imagePath);
 		var cssExpected = 'images/sub_xxx/btn.png';
-		cssRet.should.equal(cssExpected);
+		expect(cssRet).to.equal(cssExpected);
 
 		var html = new File({
 			base: '/febu/data_temp/test_project',
@@ -123,7 +125,7 @@ describe(__filename, function(){
 		var jsPath = 'js/config.js';
 		var htmlRet = util.relPath(html, jsPath);
 		var htmlExpected = 'js/config.js';
-		htmlRet.should.equal(htmlExpected);
+		expect(htmlRet).to.equal(htmlExpected);
 
 		var html2 = new File({
 			base: '/febu/data_temp/test_project',
@@ -132,12 +134,12 @@ describe(__filename, function(){
 		var jsPath2 = '../js/nav.js';
 		var htmlRet2 = util.relPath(html2, jsPath2);
 		var htmlExpected2 = 'www/js/nav.js';
-		htmlRet2.should.equal(htmlExpected2);
+		expect(htmlRet2).to.equal(htmlExpected2);
 	});
 
 	it('getIgnore', function() {
 		var testRet = util.getIgnore('./');
-		should.deepEqual(testRet, []);
+		expect(testRet).to.eql([]);
 
 		var data = {
 		    "ignore": [
@@ -159,7 +161,7 @@ describe(__filename, function(){
 		fs.writeJsonSync(configFile, data);
 		var ret = util.getIgnore('./');
 		fs.removeSync(configFile);
-		should.deepEqual(ret, expected);
+		expect(ret).to.eql(expected);
 	});
 
 });

@@ -1,7 +1,7 @@
 var path = require('path');
 var Git = require('../module/git.js');
 var fs = require('fs-extra')
-var should = require('should');
+var expect = require('expect.js');
 var async = require('async');
 
 describe(__filename, function(){
@@ -23,7 +23,7 @@ describe(__filename, function(){
 	});
 
 	it('repo url', function(){
-		repo.should.equal(git.url);
+		expect(repo).to.equal(git.url);
 	});
 
 	it('init', function(done) {
@@ -37,7 +37,7 @@ describe(__filename, function(){
 
 			var gitDir = path.join(p, '.git');
 			fs.exists(gitDir, function(ret) {
-				should.exist(ret);
+				expect(ret).to.be.ok();
 				done();
 			});
 		});
@@ -63,9 +63,8 @@ describe(__filename, function(){
 				datetime: 1400251035000,
 				message: '添加images'
 			};
-
-			should.not.exist(err);
-			should.deepEqual(ret, expected);
+			expect(err).to.be(null);
+			expect(ret).eql(expected);
 			done();
 		});
 	});
@@ -89,14 +88,14 @@ describe(__filename, function(){
 		    'list.html'
 		];
 		git.diff(from, to, function(err, data){
-			should.deepEqual(data, expected);
+			expect(data).to.eql(expected);
 			done();
 		});
 	});
 
 	it('getHeadCommit', function(done) {
 		git.getHeadCommit(function(err, data) {
-			should.exist(data);
+			expect(data).to.be.ok();
 			done();
 		});
 	});
