@@ -83,7 +83,7 @@ describe(__filename, function(){
 		db.resources.find(resource, function(err, ret) {
 			expect(err).to.be(null);
 			expect(ret).to.have.length(1);
-			expect(ret[0]).to.eql(resource);
+			expect(ret[0].dest).to.be(resource.dest);
 			done();
 		});
 	});
