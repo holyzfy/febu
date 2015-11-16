@@ -1,5 +1,5 @@
 var path = require('path');
-var fs= require('fs');
+var fs= require('fs-extra');
 var expect = require('expect.js');
 var fs = require('fs-extra');
 var Git = require('../module/git.js');
@@ -15,19 +15,21 @@ describe(__filename, function(){
 
 	it('getCwd', function(done){
 		var git = new Git(repo);
+		var local = common.getCwd(repo, 'src');
+		fs.removeSync(local);
 		git.clone(function(err) {
 			if(err) {
 				return done(err);
 			}
 
-			var local = common.getCwd(repo, 'src');
 			var gitDir = path.join(local, '.git');
 			fs.exists(gitDir, function(ret) {
 				expect(ret).to.be.ok();
-				fs.remove(local, done);
+				try {
+					fs.removeSync(local);
+				} catch(e) {}
+				done();
 			});
-			
 		});
-
 	});
 });
