@@ -15,7 +15,6 @@ var gulpif = require('gulp-if');
 var del = require('del');
 var plumber = require('gulp-plumber');
 var File = require('vinyl');
-var file = require('read-file');
 var exec = require('child_process').exec;
 var util = require('./util.js');
 var common = require('./common.js');
@@ -667,7 +666,7 @@ Production.prototype.styleInline = function(cssPath, compress) {
 
 	var content = '';
 	try {
-		content = file.readFileSync(fullPath, 'utf8');
+		content = fs.readFileSync(fullPath, 'utf8');
 	} catch(err) {
 		console.error('处理<link>样式表的_inline和_compress标记出错：', err.message);
 	}
@@ -702,7 +701,7 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 
 	var content = '';
 	try {
-		content = file.readFileSync(fullPath, 'utf8');
+		content = fs.readFileSync(fullPath, 'utf8');
 	} catch(err) {
 		console.error('处理脚本_inline和_compress标记出错：', err.message);
 	}

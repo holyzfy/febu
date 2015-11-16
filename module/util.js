@@ -6,7 +6,6 @@ var debug = require('debug')('febu:util.js');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var exec = require('child_process').exec;
-var file = require('read-file');
 var frep = require('frep');
 var File = require('vinyl');
 var config = require('config');
@@ -165,7 +164,7 @@ util.hasAMD = function(project, callback) {
 util.getConfigPath = function(project, callback) {
     var src = common.getCwd(project.repo, 'src');
     var buildPath = path.join(src, config.amd.tools, config.amd.config);
-    file.readFile(buildPath, function(err, data) {
+    fs.readFile(buildPath, 'utf8', function(err, data) {
         if(err) {
             return callback(err);
         }
