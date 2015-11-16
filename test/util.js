@@ -103,7 +103,7 @@ describe(__filename, function(){
 	
 	it('hasAMD', function(done) {
 		util.hasAMD(project, function(err, exist){
-			expect(exist).to.be.ok();
+			expect(exist).to.not.be.ok();
 			done(err);
 		});
 	});

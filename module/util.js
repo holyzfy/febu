@@ -147,15 +147,18 @@ util.getVmFileType = function() {
 // 项目里有requirejs的构建脚本吗
 util.hasAMD = function(project, callback) {
     var src = common.getCwd(project.repo, 'src');
-    var tools = path.join(src, config.amd.tools);
-    var files = [tools, path.join(tools, config.amd.config), path.join(tools, config.amd.optimizer)];
-    async.filter(files, fs.exists, function(result) {
-        if(result.length === 3) {
-            callback(null, true);
+    var configFile = path.join(src, config.project);
+    try {
+        var exist = fs.existsSync(configFile);
+        if(exist) {
+            var data = fs.readJsonSync(configFile);
+            callback(null, !!data.build);
         } else {
             callback(null, false);
         }
-    });
+    } catch(err) {
+        callback(err);
+    }
 };
 
 // 取得AMD项目里的config文件路径

@@ -252,7 +252,7 @@ Dev.prototype.js = function(files, callback) {
 			var next = arguments[arguments.length - 1];
 			var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
 			var buildPath = path.join(config.amd.tools, config.amd.config);
-			var command = ['node', optimizerPath, '-o', buildPath, 'optimize=none', 'optimizeCss=none'].join(' ');
+			var command = ['node', optimizerPath, '-o', buildPath, 'inlineText=true', 'optimize=none', 'optimizeCss=none'].join(' ');
 	        exec(command, {cwd: src}, next);
 	    };
 
