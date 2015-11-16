@@ -137,10 +137,12 @@ describe(__filename, function(){
 		expect(htmlRet2).to.equal(htmlExpected2);
 	});
 
-	it('getIgnore', function() {
+	it('getIgnore: empty', function() {
 		var testRet = util.getIgnore('./');
 		expect(testRet).to.eql([]);
+	});
 
+	it('getIgnore: has febu.json', function() {
 		var data = {
 		    "ignore": [
 		        "mock/",
