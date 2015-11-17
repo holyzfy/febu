@@ -44,69 +44,36 @@ util.isEmpty = function(searchPath, callback) {
     });
 };
 
-util.formatCommit = function(repo, commit, callback) {
-    if (commit && commit.toUpperCase() === 'HEAD') {
-        // 取得HEAD版本的版本号
-        var git = new Git(repo);
-        var args = ['--pretty=format:%h', '--no-patch', 'HEAD'];
-        git.exec('show', args, function(err, data) {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, data);
-        });
-    } else {
-        commit = commit.slice(0, 7);
-        callback(null, commit);
-    }
-};
-
 // 检出版本库相应的版本
 util.getProject = function(project, commit, callback) {
     var repo = project.repo;
     var git = new Git(repo);
     var tasks = [
         function(cb) {
-            var src = common.getCwd(repo, 'src');
-            util.isEmpty(src, function(empty) {
-                if (empty) {
-                    git.clone(cb);
-                } else {
-                    cb(null, '仓库已存在');
-                }
+            debug('clone');
+            git.clone(function() {
+                // ignore clone error when project is existed
+                cb();
             });
         },
-        function(data, cb){
+        function(cb){
             debug('git checkout master');
             git.checkout('master', cb);
         },
-        function(data, cb) {
+        function(cb) {
             debug('git pull');
             git.pull(cb);
         },
-        function(data, cb) {
-            util.formatCommit(repo, commit, cb);
-        },
-        function(commit, cb) {
+        function(cb) {
             debug('git checkout %s', commit);
-            git.checkout(commit, cb);
+            if('HEAD' === commit.toUpperCase()) {
+                cb();
+            } else {
+                git.checkout(commit, cb);
+            }
         }
     ];
-    async.waterfall(tasks, callback);
-};
-
-/**
- * 标记为已发布
- * @param  db 
- * @param  Object.<type, srcCommit, destCommit, project, db> data
- *                type  发布类型，有效值development, production
- *                src   源版本号
- *                dest  对应目标仓库的版本号
- *                repo
- * @param  callback
- */
-util.mark = function(db, data, callback) {
-    db.versions.save(data, callback);
+    async.series(tasks, callback);
 };
 
 util.resolvePath = function(from, to, base) {
@@ -143,24 +110,23 @@ util.getVmFileType = function() {
     return ret;
 }
 
-// 项目里有requirejs的构建脚本吗
-util.hasAMD = function(project, callback) {
+util.getAMDBuildPath = function(project) {
     var src = common.getCwd(project.repo, 'src');
     var configFile = path.join(src, config.project);
+    return path.resolve(configFile, fs.readJsonSync(configFile).build);
+};
+
+// 项目里有requirejs的构建脚本吗
+util.hasAMD = function (project) {
     try {
-        var exist = fs.existsSync(configFile);
-        if(exist) {
-            var data = fs.readJsonSync(configFile);
-            callback(null, !!data.build);
-        } else {
-            callback(null, false);
-        }
+        util.getAMDBuildPath(project);
+        return true;
     } catch(err) {
-        callback(err);
+        return false;
     }
 };
 
-// 取得AMD项目里的config文件路径
+// 取得AMD项目里的config.js路径
 util.getConfigPath = function(project, callback) {
     var src = common.getCwd(project.repo, 'src');
     var buildPath = path.join(src, config.amd.tools, config.amd.config);

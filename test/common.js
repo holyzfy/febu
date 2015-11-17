@@ -1,35 +1,18 @@
 var path = require('path');
-var fs= require('fs-extra');
 var expect = require('expect.js');
-var fs = require('fs-extra');
-var Git = require('../module/git.js');
 var common = require('../module/common.js');
 
 describe(__filename, function(){
-	var repo = 'https://github.com/holyzfy/trygit';
+	var repo = 'https://test.com/user/project';
 
 	it('getPathname', function(){
 		var pathname = common.getPathname(repo);
-		expect(pathname).to.be('holyzfy_trygit');
+		expect(pathname).to.be('user_project');
 	});
 
-	it('getCwd', function(done){
-		var git = new Git(repo);
+	it('getCwd', function(){
 		var local = common.getCwd(repo, 'src');
-		fs.removeSync(local);
-		git.clone(function(err) {
-			if(err) {
-				return done(err);
-			}
-
-			var gitDir = path.join(local, '.git');
-			fs.exists(gitDir, function(ret) {
-				expect(ret).to.be.ok();
-				try {
-					fs.removeSync(local);
-				} catch(e) {}
-				done();
-			});
-		});
+		var expected = path.join(__dirname, '../data/src/test.com/user_project');
+		expect(local).to.be(expected);
 	});
 });

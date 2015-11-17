@@ -1,11 +1,8 @@
 var fs = require('fs-extra');
 var path = require('path');
-var async = require('async');
 var File = require('vinyl');
-var fs = require('fs-extra');
 var expect = require('expect.js');
 var util = require('../module/util.js');
-var common = require('../module/common.js');
 var Git = require('../module/git.js');
 
 describe(__filename, function(){
@@ -14,8 +11,12 @@ describe(__filename, function(){
 	};
 	var git = new Git(project.repo);
 
-	before(function(done) {	
-		fs.remove(git.options.cwd, done);
+	before(function() {	
+		try {
+			fs.removeSync(git.options.cwd);
+		} catch(e) {
+			// ignore fs Error EBUSSY on Windows
+		}
 	});
 
 	it('isEmpty: 文件存在', function(done) {
@@ -36,33 +37,6 @@ describe(__filename, function(){
 		});
 	});
 
-	it('getProject', function(done) {
-		var commit = 'HEAD';
-		util.getProject(project, commit, done);
-	});
-
-	it('formatCommit', function(done) {
-		async.series([
-			function(callback){
-				var commit = '3bc6453272bdf9e0acfc8099a0f9cd3c07d3a8e4';
-				var commitExpected = '3bc6453';
-				util.formatCommit(project.repo, commit, function(err, data) {
-					if(err) {
-						return callback(err);
-					}
-					expect(data).to.be(commitExpected);
-					callback();
-				});
-			},
-			function(callback) {
-				util.formatCommit(project.repo, 'HEAD', function(err, commit) {
-					expect(commit).to.have.length(7);
-					callback(err);
-				});
-			}
-		], done);
-	});
-
 	it('resolvePath', function(){
 		var from = 'd:/febu/data/src/github.com/test/index.html';
 		var to = 'style/list.css';
@@ -74,22 +48,21 @@ describe(__filename, function(){
 		expect(ret2).to.be(to2);
 	});
 
-	it('getConfigPath', function(done) {
-		git.clone(function() {
-			var src = common.getCwd(project.repo, 'src');
-			var configPath = path.join(src, 'www/js/common.js');
-
-			util.getConfigPath(project, function(err, path) {
-				if(err) {
-					return done(err);
-				}
-				expect(path).to.be(configPath);
-				done();
-			});
-		});
+	it('getAMDBuildPath', function() {
+		var project = {
+			repo: 'https://test.com/user/project'
+		};
+		expect(util.getAMDBuildPath).withArgs(project).to.throwException();
 	});
 
-	it('replaceConfigPaths', function() {
+	it('hasAMD', function() {
+		var project = {
+			repo: 'https://test.com/user/project'
+		};
+		expect(util.hasAMD(project)).to.not.be.ok();
+	});
+
+	/*it('replaceConfigPaths', function() {
 		var contents = "  require({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
@@ -99,15 +72,8 @@ describe(__filename, function(){
 		expect(newContents.indexOf('lib/jquery')).to.be.below(0);
 		expect(newContents.indexOf('//code.jquery.com/jquery-1.11.3.min')).to.be.above(-1);
 		expect(newContents.slice(-2)).to.equal(");");
-	});
+	});*/
 	
-	it('hasAMD', function(done) {
-		util.hasAMD(project, function(err, exist){
-			expect(exist).to.not.be.ok();
-			done(err);
-		});
-	});
-
 	it('relPath', function() {
 		var css = new File({
 			base: '/febu/data_temp/test_project',

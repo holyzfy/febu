@@ -11,12 +11,7 @@ var util = proxyquire('../module/util.js', {
 });
 
 describe(__filename, function(){
-    it('hasAMD', function(done) {
-        var project = {};
-        util.hasAMD(project, function(err, exist){
-            expect(exist).to.be.ok();
-            done(err);
-        });
+    it('hasAMD', function() {
+        expect(util.hasAMD({})).to.be.ok();
     });
-
 });

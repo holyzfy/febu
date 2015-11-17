@@ -16,93 +16,9 @@ var Git = require('./git.js');
 var util = require('./util.js');
 var common = require('./common.js');
 
-// 项目里有requirejs的构建脚本吗
-var hasAMD;
-
 function Dev(project) {
 	this.project = project;
 }
-
-/**
- * 是否发布过此版本
- * @param  commit
- * @param  callback(err, Boolean)
- */
-Dev.prototype.exist = function(commit, callback) {
-	var dev = this;
-
-	var conditions = {
-		repo: dev.project.repo,
-		src: commit,
-		type: 'development'
-	};
-	dev.db.versions.find(conditions, function(err, ret) {
-		if(err) {
-			return callback(err);
-		}
-
-		var dest = ret ? ret.dest : null;
-		callback(null, !!ret, dest);
-	});
-};
-
-// 从测试环境的仓库里检出指定版本
-Dev.prototype.checkout = function(commit, callback) {
-	debug('checkout ', commit);
-	var dev = this;
-	var git = new Git(dev.project.repo, {
-		type: 'development'
-	});
-	git.checkout(commit, callback);
-};
-
-// 收集要处理的文件列表
-Dev.prototype.getSource = function(commit, callback) {
-	var dev = this;
-    var files = [];
-    var git = new Git(dev.project.repo);
-    var src = common.getCwd(dev.project.repo, 'src');
-
-    // 取得上次发布的src版本号
-    var getLatestVersion = function(cb) {
-    	dev.db.versions.find({
-    		repo: dev.project.repo,
-    		type: 'development'
-    	}, function(err, ret) {
-		 	if (err) {
-                return cb(err);
-            }
-    		
-    		var srcCommit = ret ? ret.src : null;
-    		debug('上次发布的版本号=%s', srcCommit);
-    		cb(null, srcCommit);
-    	});
-    };
-
-    getLatestVersion(function(err, srcCommit) {
-    	if (err) {
-            return callback(err);
-        }
-
-    	if(!srcCommit) {
-    		return callback(null, ['**/*']);
-    	}
-
-    	git.diff(srcCommit, commit, function(err, ret) {
-            if (err) {
-                return callback(err);
-            }
-
-            ret.forEach(function(item) {
-            	if(item && item.length > 0) {
-	                item = path.join(src, item);
-	                files.push(item);
-            	}
-            });
-            callback(null, files);
-        });
-    });
-};
 
 // 收集静态资源
 Dev.prototype.resource = function(files, callback) {
@@ -110,7 +26,7 @@ Dev.prototype.resource = function(files, callback) {
 	var dev = this;
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = hasAMD ? path.join(src, config.amd.www) : src;
+		src = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var destStatic = path.join(destRoot, 'static');
 		var ignoreList = util.getIgnore(src);
@@ -230,7 +146,7 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 Dev.prototype.js = function(files, callback) {
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
-	var base = hasAMD ? path.join(src, config.amd.www) : src;
+	var base = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
 	var destRoot = common.getCwd(dev.project.repo, 'development');
 	var destStatic = path.join(destRoot, 'static');
 	var ignoreList = util.getIgnore(base);
@@ -329,7 +245,7 @@ Dev.prototype.js = function(files, callback) {
 	var otherAction = function(done) {
 		done();
 	};
-	hasAMD ? amdAction(callback) : otherAction(callback);
+	util.hasAMD(dev.project) ? amdAction(callback) : otherAction(callback);
 };
 
 // 处理html文件
@@ -339,7 +255,7 @@ Dev.prototype.html = function(files, callback) {
 		
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = hasAMD ? path.join(src, config.amd.www) : src;
+		src = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
 		var ignoreList = util.getIgnore(src);
@@ -357,147 +273,28 @@ Dev.prototype.html = function(files, callback) {
 	gulp.start('html');
 }
 
-// 把发布好的文件提交到目标仓库
-Dev.prototype.commit = function(message, callback) {
-	debug('commit');
-	var dev = this;
-
-	var git = new Git(dev.project.repo, {
-		type: 'development'
-	});
-
-	var commit = function(cb) {
-		git.status(function(err, data) {
-			if(err) {
-				return cb(err);
-			}
-
-			if(!data) {
-				debug('本次无提交');
-				return cb();
-			}
-
-			git.addAll(function(err) {
-				if(err) {
-					return cb(data);
-				}
-				debug('本次提交：', data);
-				git.commit(message, cb);
-			});
-		});
-	};
-
-	var tasks = [
-		function(cb) {
-			// 首先确保已初始化仓库
-			git.init(function(){
-				cb();
-			});
-		},
-		function(cb) {
-			// 忽略空仓库时checkout的报错
-			git.checkout('master', function() {
-				cb();
-			});
-		},
-		commit
-	];
-
-	async.series(tasks, callback);
-};
-
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
-	dev.exist(commit, function(err, exist, destCommit) {
-		if(err) {
-			return callback(err);
-		}
-		if(exist) {
-			console.log('版本%s已发布过，直接签出%s', commit, destCommit);
-			return dev.checkout(destCommit, function(err) {
-				if(err) {
-					return callback(err);
-				}
 
-				var destRoot = common.getCwd(dev.project.repo, 'development');
-				var destStatic = path.join(destRoot, 'static');
-				var destVm = path.join(destRoot, 'vm');
+	var checkout = function(cb) {
+		debug('checkout:%s', commit);
+		util.getProject(dev.project, commit, cb);
+	};
 
-				console.log('输出静态资源：%s', destStatic);
-				console.log('输出模板：%s', destVm);
+	var compile = function(files) {
+		var files = ['**/*'];
+		var next = arguments[arguments.length - 1];
+		var tasks = [
+			dev.resource.bind(dev, files),
+			dev.js.bind(dev, files),
+			dev.html.bind(dev, files)
+		];
+		async.series(tasks, next);
+	};
 
-				callback();
-			});
-		} else {
-			debug('开始发布...');
-			// 签出源码 > 编译&输出 > 提交到版本库 > 标记为已发布
-			
-			var checkAMD = function() {
-				var next = arguments[arguments.length - 1];
-				util.hasAMD(dev.project, function(err, ret){
-					hasAMD = ret;
-					debug('hasAMD=%o', ret);
-					next(err, ret);
-				});
-			};
-
-			var checkout = function() {
-				debug('checkout:%s', commit);
-				var next = arguments[arguments.length - 1];
-				async.waterfall([
-					function(cb) {
-						util.getProject(dev.project, commit, function() {
-							cb();
-						});
-					},
-					dev.getSource.bind(dev, commit)
-				], next);
-			};
-
-			var compile = function(files) {
-				var next = arguments[arguments.length - 1];
-				var tasks = [
-					dev.resource.bind(dev, files),
-					dev.js.bind(dev, files),
-					dev.html.bind(dev, files)
-				];
-				async.series(tasks, next);
-			};
-
-			var save = function(){
-				debug('save');
-				var next = arguments[arguments.length - 1];
-				dev.commit(commit, next);
-			};
-
-			var getHeadCommit = function() {
-				debug('getHeadCommit');
-				var next = arguments[arguments.length - 1];
-				var git = new Git(dev.project.repo, {
-					type: 'development'
-				});
-				git.getHeadCommit(function(err, data) {
-					var args = {
-						type: 'development',
-						src: commit,
-						dest: data,
-						repo: dev.project.repo
-					}
-					next(null, args);
-				});
-			};
-
-			var mark = function(data) {
-				debug('mark', arguments);
-				var next = arguments[arguments.length - 1];
-				util.mark(dev.db, data, next);
-			};
-
-			var tasks = [checkAMD, checkout, compile, save, getHeadCommit, mark];
-			async.waterfall(tasks, function(err, data){
-				callback(err, data);
-			});
-		}
+	var tasks = [checkout, compile];
+	async.series(tasks, function(err, data){
+		callback(err, data);
 	});
 };
 
