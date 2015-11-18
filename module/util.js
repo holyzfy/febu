@@ -97,7 +97,7 @@ util.hasAMD = function (project) {
     }
 };
 
-var getAMDConfigPathByKey = function(project, key) {
+var getAMDConfigFieldPath = function(project, key) {
     var buildPath = util.getAMDBuildPath(project);
     var content = fs.readFileSync(buildPath, 'utf8');
     var data = eval("(" + content + ")");
@@ -105,11 +105,11 @@ var getAMDConfigPathByKey = function(project, key) {
 }
 
 util.getAMDConfigPath = function(project) {
-    return getAMDConfigPathByKey(project, 'mainConfigFile');
+    return getAMDConfigFieldPath(project, 'mainConfigFile');
 };
 
 util.getAMDOutputPath = function(project) {
-    return getAMDConfigPathByKey(project, 'dir');
+    return getAMDConfigFieldPath(project, 'dir');
 };
 
 // 替换AMD项目里的js文件路径
