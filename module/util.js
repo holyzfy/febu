@@ -14,36 +14,6 @@ var Git = require('./git.js');
 
 var util = {};
 
-/**
- * Check if a file or directory is empty
- * @see: https://github.com/codexar/npm-extfs
- *
- * @param {string} searchPath
- * @param {Function} cb
- */
-util.isEmpty = function(searchPath, callback) {
-    fs.stat(searchPath, function(err, stat) {
-        if (err) {
-            return callback(true);
-        }
-        if (stat.isDirectory()) {
-            fs.readdir(searchPath, function(err, items) {
-                if (err) {
-                    return callback(true);
-                }
-                callback(!items || !items.length);
-            });
-        } else {
-            fs.readFile(searchPath, function(err, data) {
-                if (err) {
-                    callback(true);
-                }
-                callback(!data || !data.length)
-            });
-        }
-    });
-};
-
 // 检出版本库相应的版本
 util.getProject = function(project, commit, callback) {
     var repo = project.repo;
@@ -126,22 +96,22 @@ util.hasAMD = function (project) {
     }
 };
 
-// 取得AMD项目里的config.js路径
-util.getConfigPath = function(project, callback) {
-    var src = common.getCwd(project.repo, 'src');
-    var buildPath = path.join(src, config.amd.tools, config.amd.config);
-    fs.readFile(buildPath, 'utf8', function(err, data) {
-        if(err) {
-            return callback(err);
-        }
-
-        var build = eval("(" + data + ")");
-        var configPath = path.join(src, config.amd.tools, build.mainConfigFile);
-        callback(null, configPath);
-    });
+var getAMDConfigPathByKey = function(project, key) {
+    var buildPath = util.getAMDBuildPath(project);
+    var content = fs.readFileSync(buildPath, 'utf8');
+    var data = eval("(" + content + ")");
+    return path.resolve(path.dirname(buildPath), data[key]);
 }
 
-// 处理AMD项目里的config文件
+util.getAMDConfigPath = function(project) {
+    return getAMDConfigPathByKey(project, 'mainConfigFile');
+};
+
+util.getAMDOutputPath = function(project) {
+    return getAMDConfigPathByKey(project, 'dir');
+};
+
+// 替换AMD项目里的js文件路径
 util.replaceConfigPaths = function(contents, newPaths) {
     var reg = /require(?:js)?(?:\.config)?\(([\s\S]*)\)/m;
     contents = contents.match(reg)[1];

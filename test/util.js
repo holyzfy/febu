@@ -2,6 +2,7 @@ var fs = require('fs-extra');
 var path = require('path');
 var File = require('vinyl');
 var expect = require('expect.js');
+var sinon = require('sinon');
 var util = require('../module/util.js');
 var Git = require('../module/git.js');
 
@@ -19,24 +20,6 @@ describe(__filename, function(){
 		}
 	});
 
-	it('isEmpty: 文件存在', function(done) {
-		var src = path.join(__dirname, '_a_test_path');
-		fs.mkdirsSync(src);
-		fs.writeFileSync(path.join(src, 'note.txt'), 'hello');
-		util.isEmpty(src, function(ret){
-			expect(ret).not.to.be.ok();
-			fs.remove(src, done);
-		});
-	});
-
-	it('isEmpty: 文件不存在', function(done) {
-		var fold = path.resolve(__dirname, '_not_exsited');
-		util.isEmpty(fold, function(ret){
-			expect(ret).to.be.ok();
-			done();
-		});
-	});
-
 	it('resolvePath', function(){
 		var from = 'd:/febu/data/src/github.com/test/index.html';
 		var to = 'style/list.css';
@@ -48,13 +31,6 @@ describe(__filename, function(){
 		expect(ret2).to.be(to2);
 	});
 
-	it('getAMDBuildPath', function() {
-		var project = {
-			repo: 'https://test.com/user/project'
-		};
-		expect(util.getAMDBuildPath).withArgs(project).to.throwException();
-	});
-
 	it('hasAMD', function() {
 		var project = {
 			repo: 'https://test.com/user/project'
@@ -62,7 +38,28 @@ describe(__filename, function(){
 		expect(util.hasAMD(project)).to.not.be.ok();
 	});
 
-	/*it('replaceConfigPaths', function() {
+	it('getAMDBuildPath', function() {
+		var project = {
+			repo: 'https://test.com/user/project'
+		};
+		expect(util.getAMDBuildPath).withArgs(project).to.throwException();
+	});
+
+	it('getAMDConfigPath', function() {
+        var buildPath = path.join(__dirname, './testcase/project1/build.js');
+        util.getAMDBuildPath = sinon.stub().returns(buildPath);
+        var project = {};
+        var actual = util.getAMDConfigPath(project);
+        expect(actual).to.be(path.join(__dirname, './testcase/project1/js/config.js'));
+    });
+
+    it('getAMDOutputPath', function() {
+        var project = {};
+        var actual = util.getAMDOutputPath(project);
+        expect(actual).to.be('/absoulte/path/to/output');
+    });
+
+	it('replaceConfigPaths', function() {
 		var contents = "  require({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
@@ -72,7 +69,7 @@ describe(__filename, function(){
 		expect(newContents.indexOf('lib/jquery')).to.be.below(0);
 		expect(newContents.indexOf('//code.jquery.com/jquery-1.11.3.min')).to.be.above(-1);
 		expect(newContents.slice(-2)).to.equal(");");
-	});*/
+	});
 	
 	it('relPath', function() {
 		var css = new File({
