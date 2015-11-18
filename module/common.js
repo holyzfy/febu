@@ -4,16 +4,10 @@ var path = require('path');
 var debug = require('debug')('febu:' + __filename);
 var common = {};
 
-/**
- * 取得仓库的路径名
- * @param  {[type]} repo [description]
- * @return {[type]}      [description]
- */
 common.getPathname = function(repo) {
     var urlMap = url.parse(repo);
     var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-    pathname = '.git' === pathname.slice(-4) ? pathname.slice(0, -4) : pathname;
-    return pathname;
+    return ('.git' === pathname.slice(-4)) ? pathname.slice(0, -4) : pathname;
 };
 
 /**
@@ -24,8 +18,7 @@ common.getPathname = function(repo) {
  */
 common.getCwd = function(repo, type) {
     var dataPath = path.resolve(__dirname, '..', config.dataPath);
-    var local = path.resolve(dataPath, type, url.parse(repo).hostname, common.getPathname(repo));
-    return local;
+    return path.resolve(dataPath, type, url.parse(repo).hostname, common.getPathname(repo));
 }
 
 module.exports = common;

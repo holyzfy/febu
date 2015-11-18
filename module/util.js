@@ -83,7 +83,8 @@ util.getVmFileType = function() {
 util.getAMDBuildPath = function(project) {
     var src = common.getCwd(project.repo, 'src');
     var configFile = path.join(src, config.project);
-    return path.resolve(configFile, fs.readJsonSync(configFile).build);
+    var buildPath = util.getProjectConfig(project, 'build');
+    return path.resolve(path.dirname(configFile), buildPath);
 };
 
 // 项目里有requirejs的构建脚本吗
@@ -269,6 +270,21 @@ util.getIgnore = function(src) {
         return '!' + item;
     });
 
+    return ret;
+};
+
+util.getProjectConfig = function(project, key) {
+    var src = common.getCwd(project.repo, 'src');
+    var configPath = path.join(src, config.project);
+    var ret = null;
+    try {
+        ret = fs.readJsonSync(configPath);
+        key.split('.').forEach(function(item) {
+            ret = ret[item];
+        });
+    } catch(err) {
+        ret = null;
+    }
     return ret;
 };
 

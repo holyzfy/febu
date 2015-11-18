@@ -71,7 +71,7 @@ Git.prototype.clone = function(callback) {
 	var dataPath = config.dataPath || 'data/';
 	var urlMap = url.parse(git.url);
 	var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
-	var local = path.resolve(dataPath, 'src', urlMap.hostname, pathname);
+	var local = common.getCwd(git.url, 'src');
     fs.mkdirs(local, function(err) {
         if(err) {
             return callback(err);

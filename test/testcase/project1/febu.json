@@ -2,5 +2,11 @@
     "build": "./build.js",
     "ignore": [
         "node_modules/"
-    ]
+    ],
+    "development": {
+        "publicPath": "//static.f2e.example.com/assets/myproject"
+    },
+    "production": {
+        "publicPath": ""
+    }
 }

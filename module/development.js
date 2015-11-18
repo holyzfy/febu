@@ -1,7 +1,7 @@
 var debug = require('debug')('febu:development.js');
 var path = require('path');
 var url = require('url');
-var fs = require('fs');
+var fs = require('fs-extra');
 var async = require('async');
 var gulp = require('gulp');
 var gulpFilter = require('gulp-filter');
@@ -26,7 +26,6 @@ Dev.prototype.resource = function(files, callback) {
 	var dev = this;
 	gulp.task('resource', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var destStatic = path.join(destRoot, 'static');
 		var ignoreList = util.getIgnore(src);
@@ -58,7 +57,8 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
-			var newHref = url.resolve(dev.project.development.web, subPath);
+			var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
+			var newHref = url.resolve(publicPath, subPath);
 			return 'href="' + newHref + '"';
 		}
 	};
@@ -71,6 +71,12 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 		match = match.replace(/\bhref=([^\s\\>]+)/i, replacement);
 	}
 	return match;
+};
+
+Dev.prototype.resolvePath = function(file, src) {
+	var dev = this;
+	var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
+	return url.resolve(publicPath, util.relPath(file, src));
 };
 
 Dev.prototype.replaceSrc = function(attrs, match, file) {
@@ -86,9 +92,7 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 		if(isDataURI || protocol) {
 			return match;
 		} else {
-			var subPath = util.relPath(file, sub);
-			var newSrc = url.resolve(dev.project.development.web, subPath);
-			return 'src="' + newSrc + '"';
+			return 'src="' + dev.resolvePath(file, sub) + '"';
 		}
 	};
 
@@ -111,9 +115,7 @@ Dev.prototype.replaceData = function(attrs, match, file) {
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
 		if(protocol === null) {
-			var subPath = util.relPath(file, sub);
-			var newSrc = url.resolve(dev.project.development.web, subPath);
-			return 'data="' + newSrc + '"';
+			return 'data="' + dev.resolvePath(file, sub) + '"';
 		} else {
 			return match;
 		}
@@ -137,22 +139,22 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	if(isDataURI || protocol) {
 		return match;
 	} else {
-		var subPath = util.relPath(file, sub);
-		var newSrc = url.resolve(dev.project.development.web, subPath);
-		return ':url(' + newSrc + ')';
+		return ':url(' + dev.resolvePath(file, sub) + ')';
 	}
 };
 
 Dev.prototype.js = function(files, callback) {
+	debug('js', arguments);
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
-	var base = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
+	var base = src;
 	var destRoot = common.getCwd(dev.project.repo, 'development');
 	var destStatic = path.join(destRoot, 'static');
 	var ignoreList = util.getIgnore(base);
 	var filterList = util.getStaticFileType().concat(ignoreList);
 
 	var amdAction = function(done) {
+		debug('amdAction', arguments);
 		// 本次发布有变更的js文件吗
 		var hasJsFiles = _.some(files, function(item) {
 			return (item === '**/*') || (item.slice(-3) === '.js');
@@ -164,21 +166,26 @@ Dev.prototype.js = function(files, callback) {
 
 		var newPaths = {};
 
-		var optimize = function() {
-			var next = arguments[arguments.length - 1];
-			var optimizerPath = path.join(config.amd.tools, config.amd.optimizer);
-			var buildPath = path.join(config.amd.tools, config.amd.config);
-			var command = ['node', optimizerPath, '-o', buildPath, 'inlineText=true', 'optimize=none', 'optimizeCss=none'].join(' ');
-	        exec(command, {cwd: src}, next);
+		var optimize = function(cb) {
+			debug('js:optimize', arguments);
+			var optimizerPath = path.join(__dirname, '../node_modules/requirejs/bin/r.js');
+			var command = ['node', optimizerPath, '-o', 
+							util.getAMDBuildPath(dev.project), 
+							'inlineText=true', 'optimize=none', 'optimizeCss=none'
+						].join(' ');
+	        exec(command, {cwd: src}, cb);
 	    };
 
 	    var copy = function() {
+	    	debug('js:copy');
 	    	var next = arguments[arguments.length - 1];
 
     		gulp.task('copy', function() {
-	    		var build = path.join(src, config.amd.build);
+	    		var output = util.getAMDOutputPath(dev.project);
+			    var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
+
 	    		return gulp.src('**/*.js', {
-		    			cwd: build
+		    			cwd: output
 		    		})
 	    			.pipe(plumber(function (err) {
 			            debug('出错 第%d行: %s', err.lineNumber, err.message);
@@ -192,8 +199,8 @@ Dev.prototype.js = function(files, callback) {
 				            return cb(null, file);		
 				        }
 
-						var filePath = path.relative(build, file.path);
-						var newFilePath = url.resolve(dev.project.development.web, filePath);
+						var filePath = path.relative(output, file.path);
+						var newFilePath = url.resolve(publicPath, filePath);
 						var key = file.basename.slice(0, -3); // 去掉扩展名
 			    		var dest = newFilePath.slice(0, -3);
 			    		newPaths[key] = dest;
@@ -206,16 +213,11 @@ Dev.prototype.js = function(files, callback) {
     		gulp.start('copy');
 	    };
 
-	    var getConfigPath = function() {
-	    	var next = arguments[arguments.length - 1];
-	    	util.getConfigPath(dev.project, next);
-	    }
-
-	    var updateConfig = function(configPath) {
-	    	debug('updateConfig');
+	    var updateConfig = function() {
+	    	debug('js:updateConfig');
 	    	var next = arguments[arguments.length - 1];
 
-	    	return gulp.src(configPath, {
+	    	return gulp.src(util.getAMDConfigPath(dev.project), {
 		    		base: base
 		    	})
 		    	.pipe(plumber(function (err) {
@@ -238,11 +240,11 @@ Dev.prototype.js = function(files, callback) {
 				.on('end', next);
 	    };
 
-		var tasks = [optimize, copy, getConfigPath, updateConfig];
-	    async.waterfall(tasks, done);
-	};
+	    async.series([optimize, copy, updateConfig], done);
+	};	
 
 	var otherAction = function(done) {
+		debug('otherAction');
 		done();
 	};
 	util.hasAMD(dev.project) ? amdAction(callback) : otherAction(callback);
@@ -252,10 +254,9 @@ Dev.prototype.js = function(files, callback) {
 Dev.prototype.html = function(files, callback) {
 	debug('html');
 	var dev = this;
-		
+	
 	gulp.task('html', function(){
 		var src = common.getCwd(dev.project.repo, 'src');
-		src = util.hasAMD(dev.project) ? path.join(src, config.amd.www) : src;
 		var destRoot = common.getCwd(dev.project.repo, 'development');
 		var dest = path.join(destRoot, 'vm');
 		var ignoreList = util.getIgnore(src);
@@ -276,26 +277,27 @@ Dev.prototype.html = function(files, callback) {
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
 
+	var clean = function(cb) {
+		var dist = common.getCwd(dev.project.repo, 'development');
+		fs.remove(dist, cb);
+	};
+
 	var checkout = function(cb) {
 		debug('checkout:%s', commit);
 		util.getProject(dev.project, commit, cb);
 	};
 
-	var compile = function(files) {
+	var compile = function(cb) {
 		var files = ['**/*'];
-		var next = arguments[arguments.length - 1];
 		var tasks = [
 			dev.resource.bind(dev, files),
 			dev.js.bind(dev, files),
 			dev.html.bind(dev, files)
 		];
-		async.series(tasks, next);
+		async.series(tasks, cb);
 	};
 
-	var tasks = [checkout, compile];
-	async.series(tasks, function(err, data){
-		callback(err, data);
-	});
+	async.series([clean, checkout, compile], callback);
 };
 
 module.exports = Dev;

@@ -4,21 +4,11 @@ var File = require('vinyl');
 var expect = require('expect.js');
 var sinon = require('sinon');
 var util = require('../module/util.js');
-var Git = require('../module/git.js');
 
 describe(__filename, function(){
 	var project = {
 		repo: 'https://github.com/requirejs/example-multipage'
 	};
-	var git = new Git(project.repo);
-
-	before(function() {	
-		try {
-			fs.removeSync(git.options.cwd);
-		} catch(e) {
-			// ignore fs Error EBUSSY on Windows
-		}
-	});
 
 	it('resolvePath', function(){
 		var from = 'd:/febu/data/src/github.com/test/index.html';
