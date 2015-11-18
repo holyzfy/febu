@@ -12,6 +12,7 @@ var common = {};
 common.getPathname = function(repo) {
     var urlMap = url.parse(repo);
     var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
+    pathname = '.git' === pathname.slice(-4) ? pathname.slice(0, -4) : pathname;
     return pathname;
 };
 
@@ -23,9 +24,7 @@ common.getPathname = function(repo) {
  */
 common.getCwd = function(repo, type) {
     var dataPath = path.resolve(__dirname, '..', config.dataPath);
-    var pathname = common.getPathname(repo);
-    var urlMap = url.parse(repo);
-    var local = path.resolve(dataPath, type, urlMap.hostname, pathname);
+    var local = path.resolve(dataPath, type, url.parse(repo).hostname, common.getPathname(repo));
     return local;
 }
 
