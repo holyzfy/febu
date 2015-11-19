@@ -1,103 +1,65 @@
 var path = require('path');
-var Git = require('../module/git.js');
 var fs = require('fs-extra');
 var expect = require('expect.js');
-var async = require('async');
+var sinon = require('sinon');
+var proxyquire = require('proxyquire');
+var Git = proxyquire('../module/git.js', {
+	shelljs: {
+		cd: sinon.spy(),
+		exec: sinon.stub()
+				.withArgs(sinon.match.string, sinon.match.fn)
+				.callsArg(1)
+				.returnsThis()
+	}
+});
 
 describe(__filename, function(){
-	var repo = 'https://github.com/holyzfy/trygit';
-	var git = new Git(repo);
-	var p = path.join(__dirname, '__test_init');
+	var repo = 'https://test.com/username/project';
+	var options = {
+		type: 'development',
+		cwd: __dirname
+	};
+	var git = new Git(repo, options);
 
-	before(function(done){
-		var tasks = [
-			fs.remove.bind(fs, git.options.cwd),
-			fs.remove.bind(fs, p),
-			fs.mkdirs.bind(fs, p)
-		];
-		async.series(tasks, done);
+	it('new Git', function(){
+		expect(git.url).to.be(repo);
+		expect(git.options).to.eql(options);
 	});
 
-	after(function(done) {
-		fs.remove(p, done);
+	it('new Git2', function(){
+		var git = new Git(repo);
+		expect(git.url).to.equal(repo);
+		var cwd = path.resolve(__dirname, '../data/src/test.com/username_project');
+		expect(git.options.cwd).to.be(cwd);
 	});
 
-	it('repo url', function(){
-		expect(repo).to.equal(git.url);
+	it('exec', function(done) {
+		git.exec('a command', done);
 	});
 
-	it('init', function(done) {
-		var git = new Git(repo, {
-			cwd: p
-		});
-		git.init(function(err){
-			if(err) {
-				return done(err);
-			}
-
-			var gitDir = path.join(p, '.git');
-			fs.exists(gitDir, function(ret) {
-				expect(ret).to.be.ok();
-				done();
-			});
-		});
+	it('exec2', function(done) {
+		git.exec('a command', {}, done);
 	});
+});
 
-	it('init 2', function(done) {
-		var git = new Git(repo, {
-			cwd: p
-		});
-		git.init(done);
-	});
+describe(__filename, function(){
+	var execBackup = Git.prototype.exec;
+	var git = new Git('https://test.com/username/project');
 
 	it('clone', function(done){
+		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		git.clone(done);
 	});
 
-	it('show', function(done){
-		var commit = '7b11df0';
-		git.show(commit, function(err, ret){
-			var expected = {
-				commit: commit,
-				author: 'zfq',
-				datetime: 1400251035000,
-				message: '添加images'
-			};
-			expect(err).to.be(null);
-			expect(ret).eql(expected);
-			done();
-		});
-	});
-
 	it('pull', function(done){
+		Git.prototype.exec = sinon.stub().callsArg(1).returnsThis();
 		git.pull(done);
 	});
 
 	it('checkout', function(done){
+		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		git.checkout('master', done);
 	});
 
-	it('diff', function(done){
-		var from = 'eae17bd';
-		var to = '0b6d734';
-		var expected = [
-		    'images/174338a0ay2nnznr3fv116.jpg',
-		    'images/logo_107.gif',
-		    'images/yoko_ogura.jpg',
-		    'index.html',
-		    'list.html'
-		];
-		git.diff(from, to, function(err, data){
-			expect(data).to.eql(expected);
-			done();
-		});
-	});
-
-	it('getHeadCommit', function(done) {
-		git.getHeadCommit(function(err, data) {
-			expect(data).to.be.ok();
-			done();
-		});
-	});
-
+	Git.prototype.exec = execBackup;
 });
