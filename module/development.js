@@ -57,7 +57,7 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
-			var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
+			var publicPath = util.getProjectPublicPath(dev.project, 'development');
 			var newHref = url.resolve(publicPath, subPath);
 			return 'href="' + newHref + '"';
 		}
@@ -75,7 +75,7 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 
 Dev.prototype.resolvePath = function(file, src) {
 	var dev = this;
-	var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
+	var publicPath = util.getProjectPublicPath(dev.project, 'development');
 	return url.resolve(publicPath, util.relPath(file, src));
 };
 
@@ -182,8 +182,7 @@ Dev.prototype.js = function(files, callback) {
 
     		gulp.task('copy', function() {
 	    		var output = util.getAMDOutputPath(dev.project);
-			    var publicPath = util.getProjectConfig(dev.project, 'development.publicPath');
-
+			    var publicPath = util.getProjectPublicPath(dev.project, 'development');
 	    		return gulp.src('**/*.js', {
 		    			cwd: output
 		    		})

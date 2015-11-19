@@ -1,5 +1,6 @@
 var path = require('path');
 var expect = require('expect.js');
+var sinon = require('sinon');
 var proxyquire = require('proxyquire');
 var util = proxyquire('../module/util.js', {
     './common.js': {
@@ -20,4 +21,19 @@ describe(__filename, function(){
         var ignore = util.getProjectConfig(project, 'ignore');
         expect(ignore).to.eql(['node_modules/']);
     });
+
+    it('getProjectPublicPath', function() {
+        var publicPath = 'http://static.example.com/project';
+        util.getProjectConfig = sinon.stub().returns(publicPath);
+        var ret = util.getProjectPublicPath({}, 'development');
+        expect(ret).to.be(publicPath + '/');
+    });
+
+    it('getProjectPublicPath2', function() {
+        var publicPath = 'http://static.example.com/project/';
+        util.getProjectConfig = sinon.stub().returns(publicPath);
+        var ret = util.getProjectPublicPath({}, 'development');
+        expect(ret).to.be(publicPath);
+    });
+
 });

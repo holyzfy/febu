@@ -288,4 +288,18 @@ util.getProjectConfig = function(project, key) {
     return ret;
 };
 
+/**
+ * @param {Object} project
+ * @param {String} type development或者production
+ */
+util.getProjectPublicPath = function(project, type) {
+    var publicPath = util.getProjectConfig(project, type + '.publicPath');
+
+    // publicPath should be end with /
+    if(publicPath.slice(-1) !== '/') {
+        publicPath += '/';
+    }
+    return publicPath;
+}
+
 module.exports = util;
