@@ -1,60 +1,16 @@
 var expect = require('expect.js');
 var replace = require('frep');
-var fs = require('fs');
 var path = require('path');
-var async = require('async');
 var File = require('vinyl');
-var mongoose = require('mongoose');
-var mockgoose = require('mockgoose');
-var proxyquire = require('proxyquire');
-var common = require('../module/common.js');
+var sinon = require('sinon');
 var Dev = require('../module/development.js');
-var Git = require('../module/git.js');
 var util = require('../module/util.js');
 
+util.getProjectPublicPath = sinon.stub().returns('//qa.developer.test.com/f2e/test_project/');
+
 describe(__filename, function(){
-	var project = {
-		repo: 'http://github.com/holyzfy/test_repo_url',
-		development: {
-			web: '//qa.developer.test.com/f2e/test_project/'
-		},
-		production: {
-			web: '//img1.cache.test.com/f2e/test_project/'
-		},
-		version: '3bc6453'
-	};
+	var dev = new Dev({});
 
-	var dev = new Dev(project);
-	var db;
-	
-	before(function(done){
-		mockgoose(mongoose);
-		db = proxyquire('../module/db.js', { 'mongoose': mongoose });
-		dev.db = db;
-		db.open(done);
-	});
-
-	it('getSource', function(done) {
-		var dev = new Dev({
-			repo: 'https://github.com/holyzfy/_a_test_project'
-		});
-		dev.db = db;
-
-		dev.getSource('HEAD', function(err, ret) {
-			console.log('getSource ret=', ret);
-			expect(ret).to.eql(['**/*']);
-			done();
-		});
-	});
-
-	it('exist', function(done) {
-		dev.exist('_a_commit_id', function(err, data) {
-			expect(data).not.to.be.ok();
-			done();
-		});
-	});
-
-	var urlRoot = '//qa.developer.test.com/f2e/test_project/';
 	var headStaticFile = new File({
 		path: '/test_project/inc/head_static.html'.replace(/\//g, path.sep)
 	});
