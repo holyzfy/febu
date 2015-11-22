@@ -5,11 +5,14 @@ var path = require('path');
 var File = require('vinyl');
 var sinon = require('sinon');
 var _ = require('underscore');
+var proxyquire = require('proxyquire');
 var common = require('../module/common.js');
-var P = require('../module/production.js');
 var util = require('../module/util.js');
-
-util.getProjectPublicPath = sinon.stub().returns('//img1.cache.test.com/f2e/test_project/');
+var P = proxyquire('../module/production.js', {
+    './util.js': {
+        getProjectPublicPath: sinon.stub().returns('//img1.cache.test.com/f2e/test_project/')
+    }
+});
 
 describe(__filename, function(){
     var p = new P({});

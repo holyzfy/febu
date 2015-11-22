@@ -3,10 +3,13 @@ var replace = require('frep');
 var path = require('path');
 var File = require('vinyl');
 var sinon = require('sinon');
-var Dev = require('../module/development.js');
+var proxyquire = require('proxyquire');
 var util = require('../module/util.js');
-
-util.getProjectPublicPath = sinon.stub().returns('//qa.developer.test.com/f2e/test_project/');
+var Dev = proxyquire('../module/development.js', {
+	'./util.js': {
+        getProjectPublicPath: sinon.stub().returns('//qa.developer.test.com/f2e/test_project/')
+    }
+});
 
 describe(__filename, function(){
 	var dev = new Dev({});

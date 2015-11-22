@@ -79,7 +79,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	try {
 		manifest = JSON.parse(file.contents.toString());
-		debug('updateManifestHelper manifest=%s', file.contents.toString());
+		// debug('updateManifestHelper manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err, file);
 	}
@@ -716,7 +716,7 @@ Production.prototype.compileVmFiles = function(callback) {
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
 		        	p._singleDone = true;
 					p.manifest = p.duplicate(p.manifest);
-		        	debug('完成收集manifest=\n', p.manifest);
+		        	// debug('完成收集manifest=\n', p.manifest);
 		        	cb();
 		        }))
 				.pipe(gulp.dest(destVm))

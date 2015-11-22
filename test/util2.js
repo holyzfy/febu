@@ -3,11 +3,11 @@ var expect = require('expect.js');
 var proxyquire = require('proxyquire');
 var sinon = require('sinon');
 var util = proxyquire('../module/util.js', {
-    common: (function() {
-        var common = require('../module/common.js');
-        common.getCwd = sinon.stub().returns(path.join(__dirname, 'testcase/project1'));
-        return common;
-    })()
+    './common.js': {
+        getCwd: function() {
+            return path.join(__dirname, '/testcase/project1');
+        }
+    }
 });
 
 describe(__filename, function(){
