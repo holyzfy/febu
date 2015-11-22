@@ -21,27 +21,21 @@ var common = require('./common.js');
 var Git = require('./git.js');
 var config = require('config');
 
-
 function Production(project) {
 	this.project = project;
 	this.publicPath = util.getProjectPublicPath(project, 'production');
+    this.manifest = [];
 }
 
 /**
  * 更新manifest属性
- * @param  {Object.<[repo], src, [dest], [rel]>} doc
+ * @param  {Object.<src, [dest], [rel]>} doc
  *                  src和rel的路径都是相对于项目根目录
  * @return {Production}
  */
 Production.prototype.updateManifest = function(doc) {
 	var p = this;
-
 	var findIt;
-	
-	_.extend(doc, {
-		repo: p.project.repo,
-		_status: 'dirty' // serializeManifest方法会用到
-	});
 
 	doc.src = [].concat(doc.src);
 
@@ -71,6 +65,7 @@ Production.prototype.updateManifest = function(doc) {
 
 Production.prototype.updateManifestHelper = function (file, enc, cb) {
 	var p = this;
+    var manifest;
 
 	file = new File(file);
 
@@ -82,11 +77,9 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 		return cb(null, file);
 	}
 
-	var manifest;
-
 	try {
 		manifest = JSON.parse(file.contents.toString());
-		// debug('updateManifestHelper manifest=%s', file.contents.toString());
+		debug('updateManifestHelper manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err, file);
 	}
@@ -274,7 +267,7 @@ Production.prototype.compileStaticFiles = function(callback) {
                 });
 
                 gulp.task('updateConfig', function() {
-                    return gulp.src(util.getAMDConfigPath(dev.project), {
+                    return gulp.src(util.getAMDConfigPath(p.project), {
                             base: src
                         })
                         .pipe(plumber(function (err) {
@@ -343,10 +336,7 @@ function replaceHelper(doc, file) {
 	doc.rel = doc.rel || [];
 	var relative = getRelative(file);
 	var relExisted = _.contains(doc.rel, relative);
-	if(!relExisted) {
-		doc.rel.push(relative);
-		doc._status = 'dirty';
-	}
+	!relExisted && doc.rel.push(relative);
 }
 
 function getRelative(file) {
@@ -694,13 +684,13 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 
 		replaceHelper(doc, file);
 		var newSrc = doc.dest;
-		// debug('replaceUrl: %s => %s', sub, newSrc);
+		debug('replaceUrl: %s => %s', sub, newSrc);
 		return ':url(' + newSrc + ')';
 	}
 };
 
 // 处理模板文件
-Production.prototype.compileVmFiles = function(files, callback) {
+Production.prototype.compileVmFiles = function(callback) {
 	debug('处理模板文件');
 	var p = this;
 	
@@ -823,7 +813,7 @@ Production.prototype.duplicate = function(manifest) {
 
 	manifest.forEach(function(item) {
 		var findIt = _.find(list, function(one) {
-			return _.isEqual(item.src, one.src) && _.isEqual(item.repo, one.repo);
+			return _.isEqual(item.src, one.src);
 		});
 
 		if(findIt) {

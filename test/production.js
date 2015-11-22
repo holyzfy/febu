@@ -1,49 +1,18 @@
 var expect = require('expect.js');
-var expect = require('expect.js');
 var replace = require('frep');
 var fs = require('fs');
 var path = require('path');
-var mongoose = require('mongoose');
-var mockgoose = require('mockgoose');
-var proxyquire = require('proxyquire');
 var File = require('vinyl');
+var sinon = require('sinon');
 var _ = require('underscore');
 var common = require('../module/common.js');
 var P = require('../module/production.js');
-var Git = require('../module/git.js');
 var util = require('../module/util.js');
 
+util.getProjectPublicPath = sinon.stub().returns('//img1.cache.test.com/f2e/test_project/');
+
 describe(__filename, function(){
-    var project = {
-        repo: 'http://github.com/holyzfy/test_repo_url',
-        development: {
-            web: '//qa.developer.test.com/f2e/test_project/'
-        },
-        production: {
-            web: '//img1.cache.test.com/f2e/test_project/'
-        }
-    };
-    
-    var p = new P(project);
-
-    mockgoose(mongoose);
-    var db = proxyquire('../module/db.js', { 'mongoose': mongoose });
-    p.db = db;
-
-    before(function(done){
-        db.open(done);
-    });
-
-    /*after(function(done) {
-        db.close(done);
-    });*/
-
-    it('exist', function(done) {
-        p.exist('_a_commit_id', function(err, data) {
-            expect(data).not.to.be.ok();
-            done();
-        });
-    });
+    var p = new P({});
 
     it('getBasename', function() {
         var href1 = '//img1.febucache.com/f2e/style/all.1234.group.css';
@@ -59,26 +28,6 @@ describe(__filename, function(){
         expect(basename3).to.be('logo.123');
     });
 
-    it('initManifest', function(done) {
-        var resource = {
-            repo: p.project.repo,
-            src: ['images/p_btn.png'],
-            dest: '//img1.cahce.febucdn.com/xxx/p_btn.a1b2c3d4e5.png',
-            rel: ['style/p_common.css', 'detail.shtml']
-        };
-
-        db.resources.save(resource, function(err, newRes) {
-            p.initManifest(function(err, docs) {
-                var ret = docs.filter(function(item) {
-                    return item.dest == resource.dest;
-                });
-                expect(ret.length).to.above(0);
-                expect(p.manifest.length).to.above(0);
-                db.resources.remove(resource, done);
-            });
-        });
-    });
-
     it('updateManifest', function() {
         var resource = {
             src: 'images/p_logo.png',
@@ -89,10 +38,8 @@ describe(__filename, function(){
 
         var manifest1 = p.manifest.filter(function(item) {
             var hasSrc = item.src.length === 1 && item.src[0] === 'images/p_logo.png';
-            var hasRepo = item.repo === p.project.repo;
             var hasDest = item.dest === resource.dest;
-            var isDirty = item._status === 'dirty';
-            return hasSrc || hasRepo || hasDest || isDirty;
+            return hasSrc && hasDest;
         });
 
         expect(manifest1.length).to.above(0);
@@ -130,29 +77,6 @@ describe(__filename, function(){
         p.updateManifest(script3);
     });
 
-    it('serializeManifest', function(done) {
-        var resource = {
-            src: ['images/p_book.png'],
-            dest: '//img1.cahce.febucdn.com/xxx/p_book.c8s5a7h1k3.png',
-            rel: ['book.shtml']
-        };
-        
-        p.updateManifest(resource);
-
-        p.serializeManifest(function(err){
-            var conditions = {
-                src: {
-                    '$in': ['images/p_book.png', 'images/p_logo.png']
-                }
-            };
-            p.db.resources.find(conditions, function(err, docs) {
-                expect(docs).to.have.length(2);
-                expect(docs[0]).not.to.have.property('_status');
-                db.resources.remove(docs, done);
-            });
-        });
-    });
-
     it('updateManifestHelper', function() {
         var manifest = {
             'images/logo.png': 'images/logo-4x6r2q7t9j.png',
@@ -164,24 +88,17 @@ describe(__filename, function(){
         };
         var expected = [
             {
-                repo: p.project.repo,
                 src: ['images/logo.png'],
-                dest: '//img1.cache.test.com/f2e/test_project/images/logo-4x6r2q7t9j.png',
-                _status: 'dirty'
-
+                dest: '//img1.cache.test.com/f2e/test_project/images/logo-4x6r2q7t9j.png'
             },
             {
-                repo: p.project.repo,
                 src: ['style/common.css'],
-                dest: '//img1.cache.test.com/f2e/test_project/style/common-3j7x0f1d2n.css',
-                _status: 'dirty'
+                dest: '//img1.cache.test.com/f2e/test_project/style/common-3j7x0f1d2n.css'
             }
         ];
 
-        p.initManifest(function(err, docs) {
-            var ret = p.updateManifestHelper(file, 'utf-8');
-            expect(ret).to.eql(expected);
-        });
+        var ret = p.updateManifestHelper(file, 'utf-8');
+        expect(ret).to.eql(expected);
     });
 
     it('getGroup', function() {
