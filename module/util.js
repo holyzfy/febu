@@ -4,7 +4,6 @@ var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:util.js');
 var gulp = require('gulp');
-var gutil = require('gulp-util');
 var exec = require('child_process').exec;
 var frep = require('frep');
 var File = require('vinyl');

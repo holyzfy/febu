@@ -5,7 +5,6 @@ var fs = require('fs-extra');
 var async = require('async');
 var gulp = require('gulp');
 var gulpFilter = require('gulp-filter');
-var dir = require('node-dir');
 var through2 = require('through2');
 var _ = require('underscore');
 var plumber = require('gulp-plumber');
