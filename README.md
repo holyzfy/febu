@@ -1,14 +1,14 @@
 # febu
 
-[前端部署系统](https://github.com/holyzfy/febu/wiki)
+前端部署系统
 
 [![Build Status](https://travis-ci.org/holyzfy/febu.svg?branch=master)](https://travis-ci.org/holyzfy/febu)
+[![Dependency Status](https://david-dm.org/holyzfy/febu.svg)](https://david-dm.org/holyzfy/febu)
 
 ## 安装
 
 0. 命令行窗口需要能执行`git`命令
-0. 安装MongoDB，并[初始化一个项目](https://github.com/holyzfy/febu/wiki/init_project)
-0. 编辑`config/default.js`并另存为`config/local.js`
+0. 编辑`config/default.js`并另存为`config/local.js` （可选步骤）
 0. 安装依赖
 	* `npm install -g gulp`
 	* `npm install`
@@ -19,7 +19,7 @@
 
 ### 参数
 * **repo** 仓库地址
-* **commit** 版本号，默认是HEAD，版本号长度>=7
+* **commit** 版本号，默认是HEAD
 
 ### 发布到测试环境
 
@@ -32,6 +32,49 @@
 ### 发布到生产环境
 
 	gulp production --repo repo [--commit commitid]
+
+## 约定规则
+
+**inc**：inc目录存放模板碎片，模板碎片里的静态资源路径是相对于仓库根目录
+
+**生产环境**：模板文件里script，link标签可以使用以下属性
+
+| 属性 | 描述 |
+| :------- | :-------- |
+| _group | 合并多个标签的外部资源 |
+| _inline | 把静态资源的内容直接输出到页面 |
+| _compress | 与_inline配合使用，输出压缩后的内容 |
+
+符合AMD规范的项目，js文件可以放到不同的目录里，但不能重名
+
+### _group示例
+
+对于同一个页面，_group值一样的link标签合并到一起，_group值一样的script标签合并到一起
+
+原始代码
+```html
+<link rel="stylesheet" href="style/common.css" _group="all">
+<link rel="stylesheet" href="style/index.css" _group="all">
+```
+
+处理后
+```html
+<link rel="stylesheet" href="//img1.febucdn.com/my_project/style/all.f9e3196e67.css">
+```
+
+### _inline和_compress示例
+
+原始代码
+```html
+<script src="js/config.js" _inline _compress></script>
+```
+
+处理后
+```html
+<script>
+require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["highcharts"],url:{exports:"url"},"jquery.pagination":["jquery"],"jquery.event.drag":["jquery"],"jquery.validate":["jquery"],"jquery.validate_common":["jquery.validate"]},paths:{arttemplate:"//img1.febucdn.com/f2e/my_project/js/arttemplate-404a5647dd",common:"//img1.febucdn.com/f2e/my_project/js/common-77fc0b9010",detail:"//img1.febucdn.com/f2e/my_project/js/detail-35cbe12497"}});
+</script>
+```
 
 ## 测试
 
