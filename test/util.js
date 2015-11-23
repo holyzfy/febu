@@ -98,19 +98,21 @@ describe(__filename, function(){
 	it('getIgnore: has febu.json', function() {
 		var data = {
 		    "ignore": [
-		        "mock/",
+		        "mock",
 		        "selenium/",
-		        "templates/**/*",
-		        "test/",
-		        "licence"
+		        "templates",
+		        "test.js"
 		    ]
 		};
 		var expected = [
 	        "!mock/**/*",
+	        "!mock",
 	        "!selenium/**/*",
+	        "!selenium",
 	        "!templates/**/*",
-	        "!test/**/*",
-	        '!licence'
+	        "!templates",
+	        "!test.js/**/*",
+	        "!test.js"
 	    ];
 		var configFile = 'febu.json';
 		fs.writeJsonSync(configFile, data);

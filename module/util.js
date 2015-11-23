@@ -251,22 +251,23 @@ util.relPath = function(fromFile, filepath) {
  * @param src 项目根目录
  */
 util.getIgnore = function(src) {
-    var ret = [];
+    var ignoreList = [];
     var configFile = path.join(src, config.project);
     try {
         var exist = fs.existsSync(configFile);
         if(exist) {
             var data = fs.readJsonSync(configFile);
-            ret = data.ignore || [];
+            ignoreList = data.ignore || [];
         }
     } catch(err) {
         console.error('配置文件%s格式错误%s：', configFile, err.message);
     }
 
-    ret = ret.map(function(item) {
-        // 如果是目录，结尾需要增加**/*
-        item = (item.slice(-1) === '/') ? (item + '**/*') : item;
-        return '!' + item;
+    var ret = [];
+    ignoreList.forEach(function(item) {
+        item = '/' === item.slice(-1) ? item.slice(0, -1): item;
+        ret.push('!' + item + '/**/*');
+        ret.push('!' + item);
     });
 
     return ret;
