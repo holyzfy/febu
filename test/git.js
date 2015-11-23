@@ -10,6 +10,9 @@ var Git = proxyquire('../module/git.js', {
 				.withArgs(sinon.match.string, sinon.match.fn)
 				.callsArg(1)
 				.returnsThis()
+	},
+	'fs-extra': {
+		mkdirs: sinon.stub().callsArg(1)
 	}
 });
 
