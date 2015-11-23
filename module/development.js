@@ -11,6 +11,7 @@ var plumber = require('gulp-plumber');
 var exec = require('child_process').exec;
 var File = require('vinyl');
 var config = require('config');
+var colors = require('colors');
 var Git = require('./git.js');
 var util = require('./util.js');
 var common = require('./common.js');
@@ -29,7 +30,7 @@ Dev.prototype.resource = function(files, callback) {
 		var destStatic = path.join(destRoot, 'static');
 		var ignoreList = util.getIgnore(src);
 		var filterList = util.getStaticFileType().concat(ignoreList);
-		console.log('输出静态资源：%s', destStatic);
+		console.log(colors.green('输出静态资源：' + destStatic));
 		gulp.src(files, {
 			base: src
 		})
@@ -259,7 +260,7 @@ Dev.prototype.html = function(files, callback) {
 		var dest = path.join(destRoot, 'vm');
 		var ignoreList = util.getIgnore(src);
 		var filterList = util.getVmFileType().concat(ignoreList);
-		console.log('输出模板：%s', dest);
+		console.log(colors.green('输出html：' + dest));
 		gulp.src(files, {
 			base: src
 		})

@@ -16,10 +16,11 @@ var del = require('del');
 var plumber = require('gulp-plumber');
 var File = require('vinyl');
 var exec = require('child_process').exec;
+var config = require('config');
+var colors = require('colors');
 var util = require('./util.js');
 var common = require('./common.js');
 var Git = require('./git.js');
-var config = require('config');
 
 function Production(project) {
 	this.project = project;
@@ -326,9 +327,8 @@ Production.prototype.compileStaticFiles = function(callback) {
     };
 
     async.series([img, css, js], function(err, results) {
-        console.log('输出静态资源：%s', destStatic);
-        // 把files参数传递下去，方便async.waterfall的下个阶段使用
-        callback(err, files);
+        console.log(colors.green('输出静态资源：' + destStatic));
+        callback(err);
     });
 };
 
@@ -803,7 +803,7 @@ Production.prototype.compileVmFiles = function(callback) {
 	};
 
 	async.series([single, groupFile, groupAndInline], function(err) {
-		console.log('输出模板：%s', destVm);
+		console.log(colors.green('输出模板：' + destVm));
 		callback(err);
 	});
 };
