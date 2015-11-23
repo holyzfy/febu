@@ -685,7 +685,7 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 		replaceHelper(doc, file);
 		var newSrc = doc.dest;
 		debug('replaceUrl: %s => %s', sub, newSrc);
-		return ':url(' + newSrc + ')';
+		return match.replace(sub, newSrc);
 	}
 };
 

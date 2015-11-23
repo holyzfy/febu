@@ -139,7 +139,7 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	if(isDataURI || protocol) {
 		return match;
 	} else {
-		return ':url(' + dev.resolvePath(file, sub) + ')';
+		return match.replace(sub, dev.resolvePath(file, sub));
 	}
 };
 

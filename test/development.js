@@ -142,4 +142,38 @@ describe(__filename, function(){
 		expect(objectActual).to.be(objectExpected);
 	});
 
+	it('replaceUrl:background-image', function() {
+		var style = '<style>.nav {background-image: url("images/nav.png");}</style>';
+		var expected = '<style>.nav {background-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(expected);
+	});
+
+	it('replaceUrl:background', function() {
+		var style = '<style>.nav {background: url("images/nav.png");}</style>';
+		var expected = '<style>.nav {background: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(expected);
+	});
+
+	it('replaceUrl:border-image', function() {
+		var style = '<style>.nav {border-image: url("images/nav.png");}</style>';
+		var expected = '<style>.nav {border-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(expected);
+	});
+
+	it('replaceUrl:border', function() {
+		var style = '<style>.nav {border: url("images/nav.png");}</style>';
+		var expected = '<style>.nav {border: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(expected);
+	});
+
+	it('replaceUrl:sript', function() {
+		var script = '<script>var thisUrl = url("?companyId");</script>';
+		var actual = replace.strWithArr(script, patterns);
+		expect(actual).to.be(script);
+	});
+
 });

@@ -134,12 +134,12 @@ describe(__filename, function(){
     it('replaceSrc script', function(){
         var script2 = '<script SRC="js/product.js" _group="all"></script>';
         var script2Expected = '<script src="//img1.cache.test.com/f2e/test_project/js/all-77fc0b9010.js"></script>';
-        var script2Actual = replace.strWithArr(script2, patterns);
+        replace.strWithArr(script2, patterns);
 
         var script2b = '<script SRC="js/product_two.js" _group="all"></script>';
-        var script2bActual = replace.strWithArr(script2b, patterns);
-
-        // console.log('p.manifest=', p.manifest);
+        replace.strWithArr(script2b, patterns);
+        
+        console.log('p.manifest=', p.manifest);     
 
         var doc = _.find(p.manifest, function(item) {
             return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, P._debug.getRelative(headStaticFile));
@@ -158,4 +158,37 @@ describe(__filename, function(){
         expect(script5Actual).to.be(script5Expected);
     });
 
+    it('replaceUrl:background-image', function() {
+        var style = '<style>.nav {background-image: url("images/p_logo.png");}</style>';
+        var expected = '<style>.nav {background-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
+
+    it('replaceUrl:background', function() {
+        var style = '<style>.nav {background: url("images/p_logo.png");}</style>';
+        var expected = '<style>.nav {background: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
+
+    it('replaceUrl:border-image', function() {
+        var style = '<style>.nav {border-image: url("images/p_logo.png");}</style>';
+        var expected = '<style>.nav {border-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
+
+    it('replaceUrl:border', function() {
+        var style = '<style>.nav {border: url("images/p_logo.png");}</style>';
+        var expected = '<style>.nav {border: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
+
+    it('replaceUrl:sript', function() {
+        var script = '<script>var thisUrl = url("?companyId");</script>';
+        var actual = replace.strWithArr(script, patterns);
+        expect(actual).to.be(script);
+    });
 });
