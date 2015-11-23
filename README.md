@@ -17,8 +17,10 @@
 - [约定规则](#%E7%BA%A6%E5%AE%9A%E8%A7%84%E5%88%99)
   - [inc](#inc)
   - [js](#js)
-  - [_group示例](#_group%E7%A4%BA%E4%BE%8B)
-  - [_inline和_compress示例](#_inline%E5%92%8C_compress%E7%A4%BA%E4%BE%8B)
+  - [html](#html)
+    - [_group示例](#_group%E7%A4%BA%E4%BE%8B)
+    - [_inline和_compress示例](#_inline%E5%92%8C_compress%E7%A4%BA%E4%BE%8B)
+  - [febu.json](#febujson)
 - [测试](#%E6%B5%8B%E8%AF%95)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -55,13 +57,16 @@
 
 ### inc
 
-inc目录存放模板碎片，模板碎片里的静态资源路径是相对于仓库根目录
+inc目录存放html碎片，html碎片里的静态资源路径是相对于仓库根目录
 
 ### js
 
 符合AMD规范的项目，js文件可以放到不同的目录里，但不能重名，示例：https://github.com/holyzfy/amd_demo
 
-模板文件里script，link标签可以使用以下属性（生产环境下有效）
+
+### html
+
+html文件里script，link标签可以使用以下属性（生产环境下有效）
 
 | 属性 | 描述 |
 | :------- | :-------- |
@@ -69,7 +74,7 @@ inc目录存放模板碎片，模板碎片里的静态资源路径是相对于�
 | _inline | 把静态资源的内容直接输出到页面 |
 | _compress | 与_inline配合使用，输出压缩后的内容 |
 
-### _group示例
+#### _group示例
 
 对于同一个页面，_group值一样的link标签合并到一起，_group值一样的script标签合并到一起
 
@@ -86,7 +91,7 @@ inc目录存放模板碎片，模板碎片里的静态资源路径是相对于�
 <link rel="stylesheet" href="//img1.febucdn.com/my_project/style/all.f9e3196e67.css">
 ```
 
-### _inline和_compress示例
+#### _inline和_compress示例
 
 原始代码
 
@@ -100,6 +105,28 @@ inc目录存放模板碎片，模板碎片里的静态资源路径是相对于�
 <script>
 require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["highcharts"],url:{exports:"url"},"jquery.pagination":["jquery"],"jquery.event.drag":["jquery"],"jquery.validate":["jquery"],"jquery.validate_common":["jquery.validate"]},paths:{arttemplate:"//img1.febucdn.com/f2e/my_project/js/arttemplate-404a5647dd",common:"//img1.febucdn.com/f2e/my_project/js/common-77fc0b9010",detail:"//img1.febucdn.com/f2e/my_project/js/detail-35cbe12497"}});
 </script>
+```
+
+### febu.json
+
+项目根目录下创建febu.json，来指定部署的配置项，示例：
+
+```javascript
+{
+    "build": "./build.js", // requirejs的构建脚本
+    "ignore": [             // 忽略的文件或目录
+        "node_modules",
+        "build",
+        "build.js",
+        "test"
+    ],
+    "development": {      // 发布到测试环境时静态资源前缀
+        "publicPath": "//static.f2e.example.com/project"
+    },
+    "production": {     // 发布到生产环境时静态资源前缀
+        "publicPath": "//examplecdn.com/project"
+    }
+}
 ```
 
 ## 测试
