@@ -139,7 +139,7 @@ describe(__filename, function(){
         var script2b = '<script SRC="js/product_two.js" _group="all"></script>';
         replace.strWithArr(script2b, patterns);
         
-        console.log('p.manifest=', p.manifest);     
+        // console.log('p.manifest=', p.manifest);     
 
         var doc = _.find(p.manifest, function(item) {
             return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, P._debug.getRelative(headStaticFile));
