@@ -1,6 +1,6 @@
 # febu
 
-前端部署系统
+前端构建工具
 
 [![Build Status](https://travis-ci.org/holyzfy/febu.svg?branch=master)](https://travis-ci.org/holyzfy/febu)
 [![Dependency Status](https://david-dm.org/holyzfy/febu.svg)](https://david-dm.org/holyzfy/febu)
