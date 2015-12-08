@@ -223,6 +223,11 @@ Production.prototype.compileStaticFiles = function(callback) {
 
             var optimize = function(cb) {
                 var optimizerPath = path.join(__dirname, '../node_modules/requirejs/bin/r.js');
+                try {
+                    fs.accessSync(optimizerPath);
+                } catch(err) {
+                    optimizerPath = path.join(__dirname, '../../node_modules/requirejs/bin/r.js');
+                }
 				var command = ['node', optimizerPath, '-o', 
 								util.getAMDBuildPath(p.project), 
 								'inlineText=true', 'optimize=uglify', 'optimizeCss=none'

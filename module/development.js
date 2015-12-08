@@ -169,7 +169,12 @@ Dev.prototype.js = function(files, callback) {
 		var optimize = function(cb) {
 			debug('js:optimize', arguments);
 			var optimizerPath = path.join(__dirname, '../node_modules/requirejs/bin/r.js');
-			var command = ['node', optimizerPath, '-o', 
+			try {
+				fs.accessSync(optimizerPath);
+			} catch(err) {
+				optimizerPath = path.join(__dirname, '../../node_modules/requirejs/bin/r.js');
+			}
+			var command = ['node', optimizerPath, '-o',
 							util.getAMDBuildPath(dev.project), 
 							'inlineText=true', 'optimize=none', 'optimizeCss=none'
 						].join(' ');
