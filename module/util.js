@@ -55,7 +55,7 @@ util.getStaticFileType = function() {
     var list =  [
         'css',
         'js',
-        'jpg', 'jpeg', 'png', 'gif',
+        'jpg', 'jpeg', 'png', 'gif', 'webp',
         'mp3', 'aac', 'mpeg', 'flv', 'f4v', 'swf', 'ogg', 'mp4', 'm4v', 'webm', 'wav', 'ogv', 'mov', 'm3u8',
         'ttf', 'otf', 'eot', 'woff', 'woff2', 'svg',
         'vml', 'htc'
@@ -128,7 +128,7 @@ util.regex = {
     link: /<link\b[^<]*>/mgi,
     media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
     object: /<object\b[^<]*>/mgi,
-    url: /(?:background|border)(?:\-image)?.+url\('?"?([^"'\)]+)'?"?\)/mgi // 样式表里url(xxx)
+    url: /\burl\('?"?([^"'\)\.]+\.(?:png|jpe?g|gif|webp|svg|eot|woff|ttf))[^"'\)\.]*'?"?\)/mgi // 样式表里url(xxx)
 };
 
 /**
@@ -293,7 +293,7 @@ util.getProjectConfig = function(project, key) {
  * @param {String} type development或者production
  */
 util.getProjectPublicPath = function(project, type) {
-    var publicPath = util.getProjectConfig(project, type + '.publicPath');
+    var publicPath = util.getProjectConfig(project, type + '.publicPath') || '';
 
     // publicPath should be end with /
     if(publicPath.slice(-1) !== '/') {
