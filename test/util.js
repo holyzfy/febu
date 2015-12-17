@@ -36,17 +36,23 @@ describe(__filename, function(){
 	});
 
 	it('getAMDConfigPath', function() {
+		var _getAMDBuildPath = util.getAMDBuildPath;
         var buildPath = path.join(__dirname, './testcase/project1/build.js');
         util.getAMDBuildPath = sinon.stub().returns(buildPath);
         var project = {};
         var actual = util.getAMDConfigPath(project);
+        util.getAMDBuildPath = _getAMDBuildPath;
         expect(actual).to.be(path.join(__dirname, './testcase/project1/js/config.js'));
     });
 
     it('getAMDOutputPath', function() {
+    	var _getAMDBuildPath = util.getAMDBuildPath;
+        var buildPath = path.join(__dirname, './testcase/project1/build.js');
+        util.getAMDBuildPath = sinon.stub().returns(buildPath);
         var project = {};
         var actual = util.getAMDOutputPath(project);
-        expect(actual).to.be('/absoulte/path/to/output');
+        util.getAMDBuildPath = _getAMDBuildPath;
+        expect(actual).to.be(path.resolve('/absoulte/path/to/output'));
     });
 
 	it('replaceConfigPaths', function() {
