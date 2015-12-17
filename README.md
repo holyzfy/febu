@@ -61,8 +61,7 @@ inc目录存放html碎片，html碎片里的静态资源路径是相对于仓库
 
 ### js
 
-符合AMD规范的项目，js文件可以放到不同的目录里，但不能重名，示例：https://github.com/holyzfy/amd_demo
-
+使用AMD规范的项目，约定模块名就是文件名，也就说js文件可以放到不同的目录里，但不能重名，示例：https://github.com/holyzfy/amd_demo
 
 ### html
 
@@ -131,6 +130,5 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 
 ## 测试
 
-0. 增加环境变量 `DEBUG=febu*`
 0. 安装依赖 `npm install -g mocha`
 0. 运行 `npm test`
