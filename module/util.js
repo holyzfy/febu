@@ -128,7 +128,7 @@ util.regex = {
     link: /<link\b[^<]*>/mgi,
     media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
     object: /<object\b[^<]*>/mgi,
-    url: /\burl\('?"?([^"'\)\.]+\.(?:png|jpe?g|gif|webp|svg|eot|woff|ttf))[^"'\)\.]*'?"?\)/mgi // 样式表里url(xxx)
+    url: /\burl\('?"?([^"'\)]+\.(?:png|jpe?g|gif|webp|svg|eot|woff|ttf))[^"'\)\.]*'?"?\)/mgi // 样式表里url(xxx)
 };
 
 /**
