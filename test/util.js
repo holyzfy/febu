@@ -55,16 +55,29 @@ describe(__filename, function(){
         expect(actual).to.be(path.resolve('/absoulte/path/to/output'));
     });
 
-	it('replaceConfigPaths', function() {
-		var contents = "  require({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
+    it('replaceConfigPaths.reg', function() {
+    	var contents = 'var require = {baseUrl: "js"}';
+    });
+
+	it('replaceConfigPaths: require.config(...)', function() {
+		var contents = "  require.config({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
 		};
 		var newContents = util.replaceConfigPaths(contents, newPaths);
-		expect(newContents.slice(0, "require.config(".length)).to.equal("require.config(");
-		expect(newContents.indexOf('lib/jquery')).to.be.below(0);
-		expect(newContents.indexOf('//code.jquery.com/jquery-1.11.3.min')).to.be.above(-1);
-		expect(newContents.slice(-2)).to.equal(");");
+		expect(newContents).to.contain("require.config(");
+		expect(newContents).to.not.contain('lib/jquery');
+		expect(newContents).to.contain('//code.jquery.com/jquery-1.11.3.min');
+	});
+
+	it('replaceConfigPaths: var require = ...', function() {
+		var contents = "var require = {waitSeconds: 0, paths: {'jquery': 'lib/jquery'}}";
+		var newPaths = {
+			jquery: '//code.jquery.com/jquery-1.11.3.min'
+		};
+		var newContents = util.replaceConfigPaths(contents, newPaths);
+		expect(newContents).to.not.contain('lib/jquery');
+		expect(newContents).to.contain('//code.jquery.com/jquery-1.11.3.min');
 	});
 	
 	it('relPath', function() {
@@ -126,5 +139,4 @@ describe(__filename, function(){
 		fs.removeSync(configFile);
 		expect(ret).to.eql(expected);
 	});
-
 });

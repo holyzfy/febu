@@ -114,12 +114,24 @@ util.getAMDOutputPath = function(project) {
 // 替换AMD项目里的js文件路径
 util.replaceConfigPaths = function(contents, newPaths) {
     var reg = /require(?:js)?(?:\.config)?\(([\s\S]*)\)/m;
-    contents = contents.match(reg)[1];
-    var cfg = eval("(" + contents + ")");
+    var reg2 = /\brequire\s*=\s*({[\s\S]*})/m;
+    var pattern = contents.match(reg) ? reg : reg2;
+
+    try {
+        var configText = contents.match(pattern)[1];
+    } catch(error) {
+        return contents;
+    }
+
+    var cfg = eval("(" + configText + ")");
     delete cfg.paths;
     delete cfg.baseUrl;
-    cfg.paths = newPaths;
-    var newContents = 'require.config(' + JSON.stringify(cfg, null, 4) + ');';
+    if(newPaths) {
+        cfg.paths = newPaths;
+    }
+    newContents = contents.replace(pattern, function(match, sub) {
+        return match.replace(sub, JSON.stringify(cfg, null, 4));
+    });
     return newContents;
 };
 
