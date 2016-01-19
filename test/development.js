@@ -61,6 +61,10 @@ describe(__filename, function(){
 		var link9Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css">';
 		var link9Actual = replace.strWithArr(link9, patterns);
 		expect(link9Actual).to.equal(link9Expected);
+
+		var link10 = '<link rel="stylesheet" _group="all" href="/css/common.css">';
+		var link10Actual = replace.strWithArr(link10, patterns);
+		expect(link10Actual).to.equal(link10);
 	});
 	
 	it('replaceSrc script', function(){
@@ -87,6 +91,14 @@ describe(__filename, function(){
 		var script5Expected = '<script src=""></script>';
 		var script5Actual = replace.strWithArr(script5, patterns);
 		expect(script5Actual).to.be(script5Expected);
+
+		var script6 = '<script src="/path/to/test.js"></script>';
+		var script6Actual = replace.strWithArr(script6, patterns);
+		expect(script6Actual).to.be(script6);
+
+		var script7 = '<script src="$path/to/test.js"></script>';
+		var script7Actual = replace.strWithArr(script7, patterns);
+		expect(script7Actual).to.be(script7);
 	});
 
 	it('replaceSrc media', function(){
@@ -113,6 +125,14 @@ describe(__filename, function(){
 		var img5Expected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg"/>';
 		var img5Actual = replace.strWithArr(img5, patterns);
 		expect(img5Actual).to.be(img5Expected);
+
+		var img6 = '<img src="/images/logo.jpg"/>';
+		var img6Actual = replace.strWithArr(img6, patterns);
+		expect(img6Actual).to.be(img6);
+
+		var img7 = '<img src="$images/logo.jpg"/>';
+		var img7Actual = replace.strWithArr(img7, patterns);
+		expect(img7Actual).to.be(img7);
 
 		var audio = '<audio src="song.ogg" controls="controls"> Your browser does not support the audio tag. </audio>';
 		var audioExpected = '<audio src="//qa.developer.test.com/f2e/test_project/song.ogg" controls="controls"> Your browser does not support the audio tag. </audio>';
@@ -147,6 +167,18 @@ describe(__filename, function(){
 		var expected = '<style>.nav {background-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(expected);
+	});
+
+	it('replaceUrl:background-image (absolute path)', function() {
+		var style = '<style>.nav {background-image: url("/images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(style);
+	});
+
+	it('replaceUrl:background-image (vm variable path)', function() {
+		var style = '<style>.nav {background-image: url("$images/nav.png");}</style>';
+		var actual = replace.strWithArr(style, patterns);
+		expect(actual).to.be(style);
 	});
 
 	it('replaceUrl:background', function() {

@@ -131,6 +131,12 @@ describe(__filename, function(){
         expect(doc.src).to.eql(['style/common.css', 'style/index.css']);
     });
 
+    it('replaceHref: absolute path', function() {
+        var link = '<link rel="stylesheet" _group="all" href="/css/common.css">';
+        var linkActual = replace.strWithArr(link, patterns);
+        expect(linkActual).to.equal(link);
+    });
+
     it('replaceSrc script', function(){
         var script2 = '<script SRC="js/product.js" _group="all"></script>';
         var script2Expected = '<script src="//img1.cache.test.com/f2e/test_project/js/all-77fc0b9010.js"></script>';
@@ -139,8 +145,6 @@ describe(__filename, function(){
         var script2b = '<script SRC="js/product_two.js" _group="all"></script>';
         replace.strWithArr(script2b, patterns);
         
-        // console.log('p.manifest=', p.manifest);     
-
         var doc = _.find(p.manifest, function(item) {
             return (item._group === 'all') && (item._type == 'js') && _.contains(item.rel, P._debug.getRelative(headStaticFile));
         });

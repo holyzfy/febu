@@ -53,7 +53,9 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
-		if(protocol) {
+		var isAbsolutePath = sub[0] === '/';
+		var isVmVar = sub[0] === '$';
+		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
@@ -89,7 +91,9 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 		sub = sub.trim();
 		var isDataURI = sub.slice(0, 5) === 'data:';
 		var protocol = url.parse(sub).protocol;
-		if(isDataURI || protocol) {
+		var isAbsolutePath = sub[0] === '/';
+		var isVmVar = sub[0] === '$';
+		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
 			return 'src="' + dev.resolvePath(file, sub) + '"';
@@ -136,7 +140,9 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	sub = sub.trim();
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
-	if(isDataURI || protocol) {
+	var isAbsolutePath = sub[0] === '/';
+	var isVmVar = sub[0] === '$';
+	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
 	} else {
 		return match.replace(sub, dev.resolvePath(file, sub));

@@ -363,7 +363,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return match;
 	}
 
-	var hrefValue = (href.match(/^href='?"?([^'"]+)'?"?$/i) || '')[1];
+	var hrefValue = (href.match(/^href='?"?(?![\/\$])([^'"]+)'?"?$/i) || '')[1];
 	if(!hrefValue) {
 		return match;
 	}
@@ -539,7 +539,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		return match;
 	}
 
-	var srcValue = (src.match(/^src='?"?([^'"]+)'?"?$/i) || '')[1];
+	var srcValue = (src.match(/^src='?"?(?![\/\$])([^'"]+)'?"?$/i) || '')[1];
 	if(!srcValue) {
 		return match;
 	}
@@ -643,8 +643,10 @@ Production.prototype.replaceData = function(attrs, match, file) {
 	})[0];
 
 	var replacement = function(match, sub) {
-		var protocol = url.parse(sub).protocol;
-		if(protocol) {
+        var protocol = url.parse(sub).protocol;
+        var isAbsolutePath = sub[0] === '/';
+        var isVmVar = sub[0] === '$';
+		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
@@ -676,7 +678,9 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 	sub = sub.trim();
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
-	if(isDataURI || protocol) {
+    var isAbsolutePath = sub[0] === '/';
+    var isVmVar = sub[0] === '$';
+	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
 	} else {
 		var subPath = util.relPath(file, sub);
