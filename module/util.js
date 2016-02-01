@@ -305,7 +305,7 @@ util.getProjectConfig = function(project, key) {
  * @param {String} type development或者production
  */
 util.getProjectPublicPath = function(project, type) {
-    var publicPath = util.getProjectConfig(project, type + '.publicPath') || '';
+    var publicPath = project.publicPath || util.getProjectConfig(project, type + '.publicPath') || '';
 
     // publicPath should be end with /
     if(publicPath.slice(-1) !== '/') {

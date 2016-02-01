@@ -37,7 +37,8 @@ gulp.task('before', function(callback){
 	build = common.getCwd(repo, 'build');
 
 	project = {
-		repo: repo
+		repo: repo,
+		publicPath: argv.publicPath
 	};
 
 	var git = new Git(repo);

@@ -38,8 +38,9 @@
 仅支持发布git项目的master分支
 
 ### 参数
-* **repo** 仓库地址
-* **commit** 版本号，默认是HEAD
+- **repo** 仓库地址
+- **commit** 版本号，默认是HEAD
+- **publicPath** 静态资源前缀，默认从项目的`febu.json`里取
 
 ### 发布到测试环境
 
