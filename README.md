@@ -44,7 +44,7 @@
 
 ### 发布到测试环境
 
-	gulp development --repo repo [--commit commitid]
+	gulp development --repo repo [--commit commitid] [--publicPath publicPath]
 
 例如发布项目[trygit](https://github.com/holyzfy/trygit)的 master 分支的最新代码
 
@@ -52,7 +52,7 @@
 
 ### 发布到生产环境
 
-	gulp production --repo repo [--commit commitid]
+	gulp production --repo repo [--commit commitid] [--publicPath publicPath]
 
 ## 约定规则
 
