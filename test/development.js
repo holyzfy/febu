@@ -14,6 +14,32 @@ var Dev = proxyquire('../module/development.js', {
 describe(__filename, function(){
 	var dev = new Dev({});
 
+	it('resolvePath', function() {
+		var index = new File({
+		    base: '/myproject',
+		    path: '/myproject/index.html'
+		});
+
+		var indexRet = dev.resolvePath(index, 'style/common.css');
+		expect(indexRet).to.be('//qa.developer.test.com/f2e/test_project/style/common.css');
+
+		var one = new File({
+		    base: '/myproject',
+		    path: '/myproject/module/one.html'
+		});
+
+		var oneRet = dev.resolvePath(one, '../style/common.css');
+		expect(indexRet).to.be('//qa.developer.test.com/f2e/test_project/style/common.css');
+
+		var two = new File({
+		    base: '/myproject',
+		    path: '/myproject/inc/two.html'
+		});
+
+		var twoRet = dev.resolvePath(two, 'style/common.css');
+		expect(twoRet).to.be('//qa.developer.test.com/f2e/test_project/style/common.css');
+	});
+
 	var headStaticFile = new File({
 		path: '/test_project/inc/head_static.html'.replace(/\//g, path.sep)
 	});

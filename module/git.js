@@ -2,6 +2,7 @@ var debug = require('debug')('febu:git.js');
 var fs = require('fs-extra');
 var shell = require('shelljs');
 var config = require('config');
+var colors = require('colors');
 var common = require('./common.js');
 
 /**
@@ -34,8 +35,9 @@ Git.prototype.exec = function(command, args, callback) {
     shell.cd(git.options.cwd);
     
     var _command = [git.binary, command].concat(args).join(' ');
-    shell.exec(_command, function(code, output) {
+    shell.exec(_command, {silent: true}, function(code, output) {
         var err = code === 0 ? null : output;
+        console.log(colors.grey(output));
         callback(err, output);
     });
 

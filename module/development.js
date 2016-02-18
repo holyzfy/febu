@@ -12,6 +12,7 @@ var exec = require('child_process').exec;
 var File = require('vinyl');
 var config = require('config');
 var colors = require('colors');
+var nodeUtil = require('util');
 var Git = require('./git.js');
 var util = require('./util.js');
 var common = require('./common.js');
@@ -54,7 +55,7 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
 		var isAbsolutePath = sub[0] === '/';
-		var isVmVar = sub[0] === '$';
+		var isVmVar = /[$<{]/.test(sub[0]);
 		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
@@ -77,8 +78,24 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 
 Dev.prototype.resolvePath = function(file, src) {
 	var dev = this;
+
+	var filePath = file.path.replace(new RegExp('\\' + path.sep, 'g'), '/');
+    var inc = '/inc/';
+    var hasInc = filePath.lastIndexOf(inc) > 0;
+
+	// 约定：inc目录的静态资源路径相对于根目录
+	var relativeDir = hasInc ? '' : file.relative.slice(0, 0 - file.basename.length);
+
+	src = path.join(relativeDir, src);
+	try {
+		fs.accessSync(src);
+	} catch(err) {
+		var message = nodeUtil.format('File not found: %s (see: %s)', src, file.relative);
+		console.warn(colors.yellow(message));
+	}
+
 	var publicPath = util.getProjectPublicPath(dev.project, 'development');
-	return url.resolve(publicPath, util.relPath(file, src));
+	return url.resolve(publicPath, src);
 };
 
 Dev.prototype.replaceSrc = function(attrs, match, file) {
@@ -92,7 +109,7 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 		var isDataURI = sub.slice(0, 5) === 'data:';
 		var protocol = url.parse(sub).protocol;
 		var isAbsolutePath = sub[0] === '/';
-		var isVmVar = sub[0] === '$';
+		var isVmVar = /[$<{]/.test(sub[0]);
 		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
@@ -141,7 +158,7 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
 	var isAbsolutePath = sub[0] === '/';
-	var isVmVar = sub[0] === '$';
+	var isVmVar = /[$<{]/.test(sub[0]);
 	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
 	} else {

@@ -7,8 +7,9 @@ var Git = proxyquire('../module/git.js', {
 	shelljs: {
 		cd: sinon.spy(),
 		exec: sinon.stub()
-				.withArgs(sinon.match.string, sinon.match.fn)
+				.withArgs(sinon.match.string, sinon.match.any, sinon.match.fn)
 				.callsArg(1)
+				.callsArg(2)
 				.returnsThis()
 	},
 	'fs-extra': {
