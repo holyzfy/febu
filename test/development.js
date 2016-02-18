@@ -8,6 +8,9 @@ var util = require('../module/util.js');
 var Dev = proxyquire('../module/development.js', {
 	'./util.js': {
         getProjectPublicPath: sinon.stub().returns('//qa.developer.test.com/f2e/test_project/')
+    },
+    'fs-extra': {
+    	accessSync: sinon.spy()
     }
 });
 

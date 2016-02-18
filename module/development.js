@@ -80,22 +80,23 @@ Dev.prototype.resolvePath = function(file, src) {
 	var dev = this;
 
 	var filePath = file.path.replace(new RegExp('\\' + path.sep, 'g'), '/');
-    var inc = '/inc/';
-    var hasInc = filePath.lastIndexOf(inc) > 0;
+	var inc = '/inc/';
+	var hasInc = filePath.lastIndexOf(inc) > 0;
 
 	// 约定：inc目录的静态资源路径相对于根目录
 	var relativeDir = hasInc ? '' : file.relative.slice(0, 0 - file.basename.length);
 
-	src = path.join(relativeDir, src);
+	var publicPath = util.getProjectPublicPath(dev.project, 'development');
+	var newSrc = path.join(relativeDir, src);
 	try {
-		fs.accessSync(src);
+		fs.accessSync(newSrc);
 	} catch(err) {
 		var message = nodeUtil.format('File not found: %s (see: %s)', src, file.relative);
 		console.warn(colors.yellow(message));
+		publicPath = '';
 	}
 
-	var publicPath = util.getProjectPublicPath(dev.project, 'development');
-	return url.resolve(publicPath, src);
+	return url.resolve(publicPath, newSrc);
 };
 
 Dev.prototype.replaceSrc = function(attrs, match, file) {
