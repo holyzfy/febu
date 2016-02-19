@@ -88,6 +88,7 @@ Dev.prototype.resolvePath = function(file, src) {
 
 	var publicPath = util.getProjectPublicPath(dev.project, 'development');
 	var newSrc = path.join(relativeDir, src);
+	newSrc = url.parse(newSrc).pathname || src; // 去掉查询参数和hash部分
 	try {
 		fs.accessSync(newSrc);
 	} catch(err) {

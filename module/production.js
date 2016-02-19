@@ -363,10 +363,11 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return match;
 	}
 
-	var hrefValue = (href.match(/^href='?"?(?![\/\$])([^'"]+)'?"?$/i) || '')[1];
-	if(!hrefValue) {
-		return match;
-	}
+    var hrefValue = (href.match(/^href='?"?(?![/$<{])([^'"]+)'?"?$/i) || '')[1];
+    if(!hrefValue) {
+        return match;
+    }
+    hrefValue = url.parse(hrefValue).pathname;
 
 	var inline = attrs.filter(function(item) {
 		return /^_inline=?$/i.test(item);
@@ -433,6 +434,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
+            subPath = url.parse(subPath).pathname;
 			var doc = _.find(p.manifest, function(item) {
 				return item.src[0] == subPath;
 			});
@@ -539,10 +541,11 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		return match;
 	}
 
-	var srcValue = (src.match(/^src='?"?(?![\/\$])([^'"]+)'?"?$/i) || '')[1];
-	if(!srcValue) {
-		return match;
-	}
+    var srcValue = (src.match(/^src='?"?(?![/$<{])([^'"]+)'?"?$/i) || '')[1];
+    if(!srcValue) {
+        return match;
+    }
+    srcValue = url.parse(srcValue).pathname;
 
 	var inline = attrs.filter(function(item) {
 		return /^_inline=?$/i.test(item);
@@ -611,6 +614,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
+            subPath = url.parse(subPath).pathname;
 			var doc = _.find(p.manifest, function(item) {
 				return item.src[0] == subPath;
 			});
@@ -645,11 +649,12 @@ Production.prototype.replaceData = function(attrs, match, file) {
 	var replacement = function(match, sub) {
         var protocol = url.parse(sub).protocol;
         var isAbsolutePath = sub[0] === '/';
-        var isVmVar = sub[0] === '$';
+        var isVmVar = /[$<{]/.test(sub[0]);;
 		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
 		} else {
 			var subPath = util.relPath(file, sub);
+            subPath = url.parse(subPath).pathname;
 			var doc = _.find(p.manifest, function(item) {
 				return item.src[0] == subPath;
 			});
@@ -679,10 +684,11 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
     var isAbsolutePath = sub[0] === '/';
-    var isVmVar = sub[0] === '$';
+    var isVmVar = /[$<{]/.test(sub[0]);;
 	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
 	} else {
+        sub = url.parse(sub.trim()).pathname;
 		var subPath = util.relPath(file, sub);
 		var doc = _.find(p.manifest, function(item) {
 			return item.src[0] == subPath;

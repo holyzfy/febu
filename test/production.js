@@ -117,7 +117,7 @@ describe(__filename, function(){
     var patterns = util.getReplacements(p, 'production', headStaticFile);
     
     it('replaceHref', function() {
-        var link = '<link rel="stylesheet" href="style/common.css" _group="all" />';
+        var link = '<link rel="stylesheet" href="style/common.css?v=1.0.1" _group="all" />';
         var linkActual = replace.strWithArr(link, patterns);
 
         var link2 = '<link rel="stylesheet" href="style/index.css" _group="all" />';
@@ -138,11 +138,10 @@ describe(__filename, function(){
     });
 
     it('replaceSrc script', function(){
-        var script2 = '<script SRC="js/product.js" _group="all"></script>';
-        var script2Expected = '<script src="//img1.cache.test.com/f2e/test_project/js/all-77fc0b9010.js"></script>';
+        var script2 = '<script SRC="js/product.js?v=123" _group="all"></script>';
         replace.strWithArr(script2, patterns);
 
-        var script2b = '<script SRC="js/product_two.js" _group="all"></script>';
+        var script2b = '<script SRC="js/product_two.js?v=11#testhash" _group="all"></script>';
         replace.strWithArr(script2b, patterns);
         
         var doc = _.find(p.manifest, function(item) {
@@ -163,8 +162,8 @@ describe(__filename, function(){
     });
 
     it('replaceUrl:background-image', function() {
-        var style = '<style>.nav {background-image: url("images/p_logo.png");}</style>';
-        var expected = '<style>.nav {background-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+        var style = '<style>.nav {background-image: url("images/p_logo.png?ver=123");}</style>';
+        var expected = '<style>.nav {background-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png?ver=123");}</style>';
         var actual = replace.strWithArr(style, patterns);
         expect(actual).to.be(expected);
     });

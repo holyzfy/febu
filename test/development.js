@@ -26,6 +26,9 @@ describe(__filename, function(){
 		var indexRet = dev.resolvePath(index, 'style/common.css');
 		expect(indexRet).to.be('//qa.developer.test.com/f2e/test_project/style/common.css');
 
+		var indexRet2 = dev.resolvePath(index, 'style/common.css?v=1.0.1');
+		expect(indexRet2).to.be('//qa.developer.test.com/f2e/test_project/style/common.css');
+
 		var one = new File({
 		    base: '/myproject',
 		    path: '/myproject/module/one.html'
