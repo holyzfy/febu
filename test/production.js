@@ -31,6 +31,46 @@ describe(__filename, function(){
         expect(basename3).to.be('logo.123');
     });
 
+    it('updateManifest:_group', function() {
+        var p = new P({});
+        p.manifest = [
+            {
+                "src": [
+                    "js/m_index.js"
+                ],
+                "dest": "http://examplecdn.com/project/js/m_index-6c4007b7d1.js"
+            },
+            {
+                "src": [
+                    "js/m_index_b.js"
+                ],
+                "dest": "http://examplecdn.com/project/js/m_index_b-60e22eea67.js"
+            },
+            {
+                "src": [
+                    "js/m_index.js",
+                    "js/m_index_b.js"
+                ],
+                "_group": "index",
+                "_type": "js",
+                "rel": [
+                    "index.shtml"
+                ]
+            }
+        ];
+
+        var doc = {
+            "src": [
+                "js/m_index.js",
+                "js/m_index_b.js"
+            ],
+            "dest": "http://examplecdn.com/project/js/index-e1a65110fb.js"
+        };
+
+        p.updateManifest(doc);
+        expect(p.manifest[2].dest).to.be('http://examplecdn.com/project/js/index-e1a65110fb.js');
+    });
+
     it('updateManifest', function() {
         var resource = {
             src: 'images/p_logo.png',

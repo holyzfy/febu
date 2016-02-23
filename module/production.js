@@ -711,6 +711,7 @@ Production.prototype.compileVmFiles = function(callback) {
 	
 	var files = ['**/*'];
 	var src = common.getCwd(p.project.repo, 'src');
+    var build = common.getCwd(p.project.repo, 'build');
 	var destRoot = common.getCwd(p.project.repo, 'production');
 	var destStatic = path.join(destRoot, 'static');
 	var destVm = path.join(destRoot, 'vm');
@@ -746,15 +747,17 @@ Production.prototype.compileVmFiles = function(callback) {
 		var doGroup = function(item, cb) {
 			gulp.task('group', function() {
 				var groupPath;
+                var pathRoot = src;
 				if(item._type === 'css') {
 					groupPath = path.join('style', item._group + '.css');
+                    pathRoot = build;
 				} else if(item._type === 'js') {
 					groupPath = path.join('js', item._group + '.js');
 				}
 
 				return gulp.src(item.src, {
-						base: src,
-						cwd: src
+						base: pathRoot,
+						cwd: pathRoot
 					})
 					.pipe(plumber(function (err) {
 			            debug('task group出错: %s', err.message);
