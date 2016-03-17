@@ -20,7 +20,6 @@ var config = require('config');
 var colors = require('colors');
 var util = require('./util.js');
 var common = require('./common.js');
-var Git = require('./git.js');
 
 function Production(project) {
 	this.project = project;
@@ -46,7 +45,7 @@ Production.prototype.updateManifest = function(doc) {
 		});
 	} else {
 		findIt = _.find(p.manifest, function(item) {
-			return _.isEqual(item.src, doc.src)
+			return _.isEqual(item.src, doc.src);
 		});
 	}
 	
@@ -80,7 +79,6 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	try {
 		manifest = JSON.parse(file.contents.toString());
-		// debug('updateManifestHelper manifest=%s', file.contents.toString());
 	} catch(err) {
 		return cb(err, file);
 	}
@@ -379,9 +377,9 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 				return /^_compress=?$/i.test(item);
 			})[0];
 			return p.styleInline(hrefValue, compress);
-		} else {
-			return match;
 		}
+
+		return match;
 	}
 
 	var group = attrs.filter(function(item) {
@@ -401,51 +399,49 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 			replaceHelper(doc, file);
 			p.updateManifest(doc);
 			return match;
-		} else {
-			// 替换_group
-			var relative = getRelative(file);
-			var findIt = _.find(p.manifest, function(item) {
-				var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
-				var groupName = match[1];
-				return (groupName === groupValue) && _.contains(item.rel, relative);
-			});
+		}
+		
+        // 替换_group
+		var relative = getRelative(file);
+		var findIt = _.find(p.manifest, function(item) {
+			var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
+			var groupName = match[1];
+			return (groupName === groupValue) && _.contains(item.rel, relative);
+		});
 
-			if(!findIt) {
-				return match;
-			}
-			
-			findIt._groupDone = findIt._groupDone || {};
-
-			if(findIt._groupDone[relative]) { // 已替换过
-				return '';
-			} else {
-				findIt._groupDone[relative] = true; // 标记为已替换
-				var link = '<link rel="stylesheet" href="' + findIt.dest + '" />';
-				return link;
-			}
-
+		if(!findIt) {
 			return match;
 		}
+		
+		findIt._groupDone = findIt._groupDone || {};
+
+		if(findIt._groupDone[relative]) { // 已替换过
+			return '';
+		}
+
+		findIt._groupDone[relative] = true; // 标记为已替换
+		var link = '<link rel="stylesheet" href="' + findIt.dest + '" />';
+		return link;
 	}
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
 		if(protocol) {
 			return match;
-		} else {
-			var subPath = util.relPath(file, sub);
-            subPath = url.parse(subPath).pathname;
-			var doc = _.find(p.manifest, function(item) {
-				return item.src[0] == subPath;
-			});
-			if(!doc) {
-				return match;
-			}
-			
-			replaceHelper(doc, file);
-			var newHref = doc.dest;
-			return 'href="' + newHref + '"';
 		}
+
+		var subPath = util.relPath(file, sub);
+        subPath = url.parse(subPath).pathname;
+		var doc = _.find(p.manifest, function(item) {
+			return item.src[0] == subPath;
+		});
+		if(!doc) {
+			return match;
+		}
+		
+		replaceHelper(doc, file);
+		var newHref = doc.dest;
+		return 'href="' + newHref + '"';
 	};
 
 	if(/^href="/i.test(href)) {
@@ -559,9 +555,9 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 				return /^_compress=?$/i.test(item);
 			})[0];
 			return p.scriptInline(srcValue, compress);
-		} else {
-			return match;
 		}
+
+		return match;
 	}
 
 	var group = attrs.filter(function(item) {
@@ -581,52 +577,50 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			replaceHelper(doc, file);
 			p.updateManifest(doc);
 			return match;
-		} else {
-			// 替换_group
-			var relative = getRelative(file);
-			var findIt = _.find(p.manifest, function(item) {
-				var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
-				var groupName = match[1];
-				return (groupName === groupValue) && _.contains(item.rel, relative);
-			});
+		}
 
-			if(!findIt) {
-				return match;
-			}
-			
-			findIt._groupDone = findIt._groupDone || {};
+		// 替换_group
+		var relative = getRelative(file);
+		var findIt = _.find(p.manifest, function(item) {
+			var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
+			var groupName = match[1];
+			return (groupName === groupValue) && _.contains(item.rel, relative);
+		});
 
-			if(findIt._groupDone[relative]) { // 已替换过
-				return '';
-			} else {
-				findIt._groupDone[relative] = true; // 标记为已替换
-				var script = '<script src="' + findIt.dest + '"></script>';
-				return script;
-			}
-
+		if(!findIt) {
 			return match;
 		}
+		
+		findIt._groupDone = findIt._groupDone || {};
+
+		if(findIt._groupDone[relative]) { // 已替换过
+			return '';
+		}
+
+		findIt._groupDone[relative] = true; // 标记为已替换
+		var script = '<script src="' + findIt.dest + '"></script>';
+		return script;
 	}
 
 	var replacement = function(match, sub) {
 		var protocol = url.parse(sub).protocol;
 		if(protocol) {
 			return match;
-		} else {
-			var subPath = util.relPath(file, sub);
-            subPath = url.parse(subPath).pathname;
-			var doc = _.find(p.manifest, function(item) {
-				return item.src[0] == subPath;
-			});
-			if(!doc) {
-				return match;
-			}
-
-			replaceHelper(doc, file);
-
-			var newSrc = doc.dest;
-			return 'src="' + newSrc + '"';
 		}
+
+		var subPath = util.relPath(file, sub);
+        subPath = url.parse(subPath).pathname;
+		var doc = _.find(p.manifest, function(item) {
+			return item.src[0] == subPath;
+		});
+		if(!doc) {
+			return match;
+		}
+
+		replaceHelper(doc, file);
+
+		var newSrc = doc.dest;
+		return 'src="' + newSrc + '"';
 	};
 
 	if(/^src="/i.test(src)) {
@@ -649,23 +643,23 @@ Production.prototype.replaceData = function(attrs, match, file) {
 	var replacement = function(match, sub) {
         var protocol = url.parse(sub).protocol;
         var isAbsolutePath = sub[0] === '/';
-        var isVmVar = /[$<{]/.test(sub[0]);;
+        var isVmVar = /[$<{]/.test(sub[0]);
 		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
-		} else {
-			var subPath = util.relPath(file, sub);
-            subPath = url.parse(subPath).pathname;
-			var doc = _.find(p.manifest, function(item) {
-				return item.src[0] == subPath;
-			});
-			if(!doc) {
-				return match;
-			}
-
-			replaceHelper(doc, file);
-			var newData = doc.dest;
-			return 'data="' + newData + '"';
 		}
+
+		var subPath = util.relPath(file, sub);
+        subPath = url.parse(subPath).pathname;
+		var doc = _.find(p.manifest, function(item) {
+			return item.src[0] == subPath;
+		});
+		if(!doc) {
+			return match;
+		}
+
+		replaceHelper(doc, file);
+		var newData = doc.dest;
+		return 'data="' + newData + '"';
 	};
 
 	if(/^data="/i.test(data)) {
@@ -684,24 +678,25 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
     var isAbsolutePath = sub[0] === '/';
-    var isVmVar = /[$<{]/.test(sub[0]);;
+    var isVmVar = /[$<{]/.test(sub[0]);
 	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
-	} else {
-        sub = url.parse(sub.trim()).pathname;
-		var subPath = util.relPath(file, sub);
-		var doc = _.find(p.manifest, function(item) {
-			return item.src[0] == subPath;
-		});
-		if(!doc) {
-			return match;
-		}
-
-		replaceHelper(doc, file);
-		var newSrc = doc.dest;
-		// debug('replaceUrl: %s => %s', sub, newSrc);
-		return match.replace(sub, newSrc);
 	}
+
+    sub = url.parse(sub.trim()).pathname;
+	var subPath = util.relPath(file, sub);
+	var doc = _.find(p.manifest, function(item) {
+		return item.src[0] == subPath;
+	});
+	if(!doc) {
+		return match;
+	}
+
+	replaceHelper(doc, file);
+	var newSrc = doc.dest;
+	
+    // debug('replaceUrl: %s => %s', sub, newSrc);
+	return match.replace(sub, newSrc);
 };
 
 // 处理模板文件
@@ -732,7 +727,8 @@ Production.prototype.compileVmFiles = function(callback) {
 		        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
 		        	p._singleDone = true;
 					p.manifest = p.duplicate(p.manifest);
-		        	// debug('完成收集manifest=\n', p.manifest);
+		        	
+                    // debug('完成收集manifest=\n', p.manifest);
 		        	cb();
 		        }))
 				.pipe(gulp.dest(destVm))
@@ -767,7 +763,7 @@ Production.prototype.compileVmFiles = function(callback) {
 					.pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
 					.pipe(rev())
 					.pipe(through2.obj(function(_file, enc, _cb) {
-						file = new File(_file);
+						var file = new File(_file);
 
 						if(file.isNull()) {		
 					        return _cb(null, file);		

@@ -1,7 +1,6 @@
 var debug = require('debug')('febu:git.js');
 var fs = require('fs-extra');
 var shell = require('shelljs');
-var config = require('config');
 var colors = require('colors');
 var common = require('./common.js');
 
@@ -13,7 +12,7 @@ var common = require('./common.js');
 function Git(url, options) {
     this.binary = 'git';
 	this.url = url;
-    options = options || {}
+    options = options || {};
 	this.options = options || {};
     this.options.type = options.type || 'src';
     this.options.cwd = options.cwd || common.getCwd(url, this.options.type);
@@ -59,7 +58,7 @@ Git.prototype.clone = function(callback) {
         git.exec('clone', [git.url, local], callback);
     });
 	return git;
-}
+};
 
 /**
  * 从远程仓库拉取当前分支

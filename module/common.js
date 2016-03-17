@@ -19,6 +19,6 @@ common.getPathname = function(repo) {
 common.getCwd = function(repo, type) {
     var dataPath = path.resolve(__dirname, '..', config.dataPath);
     return path.resolve(dataPath, type, url.parse(repo).hostname, common.getPathname(repo));
-}
+};
 
 module.exports = common;

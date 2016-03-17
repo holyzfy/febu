@@ -1,0 +1,28 @@
+{
+    "env": {
+        "node": true
+    },
+    "rules": {
+        "semi": "error",
+        "no-dupe-keys": "error",
+        "curly": ["error", "multi-line"],
+        "no-extra-semi": "error",
+        "no-inner-declarations": "error",
+        "no-unreachable": "error",
+        "valid-typeof": "error",
+        "array-callback-return": "error",
+        "no-else-return": "warn",
+        "no-extend-native": "error",
+        "no-implicit-globals": "error",
+        "no-loop-func": "warn",
+        "no-return-assign": "warn",
+        "no-unmodified-loop-condition": "warn",
+        "no-unused-expressions": ["warn", { "allowShortCircuit": true, "allowTernary": true }],
+        "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+        "camelcase": ["error", {"properties": "never"}],
+        "lines-around-comment": ["warn", { "beforeLineComment": true, "beforeBlockComment": true, "allowBlockStart": true }],
+        "max-params": ["warn", { "maximum": 4}],
+        "new-cap": ["warn", { "newIsCap": true, "capIsNew": false }],
+        "no-multiple-empty-lines": ["error", {"max": 1}]
+    }
+}

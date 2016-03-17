@@ -77,7 +77,7 @@ util.getVmFileType = function() {
         return '**/*.' + item;
     });
     return ret;
-}
+};
 
 util.getAMDBuildPath = function(project) {
     var src = common.getCwd(project.repo, 'src');
@@ -101,7 +101,7 @@ var getAMDConfigFieldPath = function(project, key) {
     var content = fs.readFileSync(buildPath, 'utf8');
     var data = eval("(" + content + ")");
     return path.resolve(path.dirname(buildPath), data[key]);
-}
+};
 
 util.getAMDConfigPath = function(project) {
     return getAMDConfigFieldPath(project, 'mainConfigFile');
@@ -129,7 +129,7 @@ util.replaceConfigPaths = function(contents, newPaths) {
     if(newPaths) {
         cfg.paths = newPaths;
     }
-    newContents = contents.replace(pattern, function(match, sub) {
+    var newContents = contents.replace(pattern, function(match, sub) {
         return match.replace(sub, JSON.stringify(cfg, null, 4));
     });
     return newContents;
@@ -151,6 +151,7 @@ util.regex = {
 util.getReplacements = function(obj, env, file) {
     var patterns = [
         {
+
             // css
             pattern: util.regex.link,
             replacement: function(match) {
@@ -161,7 +162,7 @@ util.getReplacements = function(obj, env, file) {
                 var attrs = (match.match(/<link\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 
                 var css = attrs.some(function(item) {
-                    return item === 'rel="stylesheet"' || item === "rel='stylesheet'"
+                    return item === 'rel="stylesheet"' || item === "rel='stylesheet'";
                 });
                 if(!css) {
                     return match;
@@ -171,6 +172,7 @@ util.getReplacements = function(obj, env, file) {
             }
         },
         {
+
             // js
             pattern: util.regex.script,
             replacement: function(match) {
@@ -182,6 +184,7 @@ util.getReplacements = function(obj, env, file) {
             }
         },
         {
+
             // media
             pattern: util.regex.media,
             replacement: function(match) {
@@ -193,6 +196,7 @@ util.getReplacements = function(obj, env, file) {
             }
         },
         {
+
             // object
             pattern: util.regex.object,
             replacement: function(match) {
@@ -204,6 +208,7 @@ util.getReplacements = function(obj, env, file) {
             }
         },
         {
+
             // url
             pattern: util.regex.url,
             replacement: function(match, first) {
@@ -312,6 +317,6 @@ util.getProjectPublicPath = function(project, type) {
         publicPath += '/';
     }
     return publicPath;
-}
+};
 
 module.exports = util;

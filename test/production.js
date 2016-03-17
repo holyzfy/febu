@@ -124,7 +124,7 @@ describe(__filename, function(){
         var manifest = {
             'images/logo.png': 'images/logo-4x6r2q7t9j.png',
             'style/common.css': 'style/common-3j7x0f1d2n.css'
-        }
+        };
         var file = {
             path: 'rev-manifest.json',
             contents: new Buffer(JSON.stringify(manifest))

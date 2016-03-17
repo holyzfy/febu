@@ -13,7 +13,6 @@ var File = require('vinyl');
 var config = require('config');
 var colors = require('colors');
 var nodeUtil = require('util');
-var Git = require('./git.js');
 var util = require('./util.js');
 var common = require('./common.js');
 
@@ -58,12 +57,12 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 		var isVmVar = /[$<{]/.test(sub[0]);
 		if(protocol || isAbsolutePath || isVmVar) {
 			return match;
-		} else {
-			var subPath = util.relPath(file, sub);
-			var publicPath = util.getProjectPublicPath(dev.project, 'development');
-			var newHref = url.resolve(publicPath, subPath);
-			return 'href="' + newHref + '"';
 		}
+
+		var subPath = util.relPath(file, sub);
+		var publicPath = util.getProjectPublicPath(dev.project, 'development');
+		var newHref = url.resolve(publicPath, subPath);
+		return 'href="' + newHref + '"';
 	};
 
 	if(/^href="/i.test(href)) {
@@ -114,9 +113,9 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 		var isVmVar = /[$<{]/.test(sub[0]);
 		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 			return match;
-		} else {
-			return 'src="' + dev.resolvePath(file, sub) + '"';
 		}
+
+		return 'src="' + dev.resolvePath(file, sub) + '"';
 	};
 
 	if(/^src="/i.test(src)) {
@@ -139,9 +138,9 @@ Dev.prototype.replaceData = function(attrs, match, file) {
 		var protocol = url.parse(sub).protocol;
 		if(protocol === null) {
 			return 'data="' + dev.resolvePath(file, sub) + '"';
-		} else {
-			return match;
 		}
+
+		return match;
 	};
 
 	if(/^data="/i.test(src)) {
@@ -163,9 +162,9 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 	var isVmVar = /[$<{]/.test(sub[0]);
 	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
 		return match;
-	} else {
-		return match.replace(sub, dev.resolvePath(file, sub));
 	}
+
+	return match.replace(sub, dev.resolvePath(file, sub));
 };
 
 Dev.prototype.js = function(files, callback) {
@@ -180,6 +179,7 @@ Dev.prototype.js = function(files, callback) {
 
 	var amdAction = function(done) {
 		debug('amdAction', arguments);
+		
 		// 本次发布有变更的js文件吗
 		var hasJsFiles = _.some(files, function(item) {
 			return (item === '**/*') || (item.slice(-3) === '.js');
@@ -301,7 +301,7 @@ Dev.prototype.html = function(files, callback) {
 		.on('error', callback);
 	});
 	gulp.start('html');
-}
+};
 
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
