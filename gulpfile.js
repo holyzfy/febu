@@ -38,6 +38,7 @@ gulp.task('before', function(callback){
 
 	project = {
 		repo: repo,
+		branch: argv.branch || 'master',
 		publicPath: argv.publicPath
 	};
 
@@ -50,7 +51,11 @@ gulp.task('before', function(callback){
 		});
 	};
 
-	var tasks = [clone, git.checkout.bind(git, 'master'), git.pull.bind(git)];
+	var tasks = [
+		clone,
+		git.fetch.bind(git, ['origin', project.branch + ':' + project.branch]),
+		git.checkout.bind(git, project.branch)
+	];
 	async.series(tasks, function(err) {
 		clearTimeout(timer);
 		callback(err);

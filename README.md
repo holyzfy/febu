@@ -35,24 +35,25 @@
 
 ## 发布
 
-仅支持发布git项目的master分支
+仅支持发布git项目
 
 ### 参数
-- **repo** 仓库地址
-- **commit** 版本号，默认是HEAD
+- **repo** git仓库地址
+- **branch** 分支，默认是`master`
+- **commit** 版本号，默认是`HEAD`
 - **publicPath** 静态资源前缀，默认从项目的`febu.json`里取
 
 ### 发布到测试环境
 
-	gulp development --repo repo [--commit commitid] [--publicPath publicPath]
+	gulp development --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath]
 
-例如发布项目[trygit](https://github.com/holyzfy/trygit)的 master 分支的最新代码
+例如发布项目[amd_demo](https://github.com/holyzfy/amd_demo)的`master`分支的最新代码
 
 	gulp development --repo https://github.com/holyzfy/trygit
 
 ### 发布到生产环境
 
-	gulp production --repo repo [--commit commitid] [--publicPath publicPath]
+	gulp production --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath]
 
 ## 约定规则
 

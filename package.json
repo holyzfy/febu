@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.6.6",
+  "version": "0.7.0",
   "description": "前端部署系统",
   "repository": {
     "type": "git",
@@ -20,14 +20,14 @@
     "test": "mocha test"
   },
   "dependencies": {
-    "async": "^1.5.2",
+    "async": "^2.0.0-rc.2",
     "colors": "^1.1.2",
     "config": "^1.19.0",
     "debug": "^2.2.0",
     "del": "^2.2.0",
     "expect.js": "^0.3.1",
     "frep": "^0.2.3",
-    "fs-extra": "^0.26.5",
+    "fs-extra": "^0.26.7",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
     "gulp-filter": "^4.0.0",
@@ -37,12 +37,12 @@
     "gulp-rev": "^7.0.0",
     "gulp-uglify": "^1.5.3",
     "proxyquire": "^1.7.4",
-    "requirejs": "^2.1.22",
+    "requirejs": "^2.2.0",
     "shelljs": "^0.6.0",
     "sinon": "^1.17.3",
     "through2": "^2.0.1",
     "underscore": "^1.8.3",
     "vinyl": "^1.1.1",
-    "yargs": "^4.2.0"
+    "yargs": "^4.3.2"
   }
 }

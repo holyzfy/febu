@@ -34,6 +34,7 @@ Git.prototype.exec = function(command, args, callback) {
     shell.cd(git.options.cwd);
     
     var _command = [git.binary, command].concat(args).join(' ');
+    debug('git command=', _command);
     shell.exec(_command, {silent: true}, function(code, output) {
         var err = code === 0 ? null : output;
         console.log(colors.grey(output));
@@ -62,11 +63,13 @@ Git.prototype.clone = function(callback) {
 
 /**
  * 从远程仓库拉取当前分支
+ * @param {Array}   args
  * @param callback(err)
  */
-Git.prototype.pull = function(callback){
+Git.prototype.fetch = function(args, callback){
 	var git = this;
-    git.exec('pull', callback);
+    callback = arguments[arguments.length - 1];
+    git.exec('fetch', args, callback);
 	return git;
 };
 

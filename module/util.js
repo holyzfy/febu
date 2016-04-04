@@ -25,13 +25,11 @@ util.getProject = function(project, commit, callback) {
                 cb();
             });
         },
-        function(cb){
-            debug('git checkout master');
-            git.checkout('master', cb);
-        },
         function(cb) {
-            debug('git pull');
-            git.pull(cb);
+            var args = ['origin', project.branch + ':' + project.branch];
+            debug('git fetch %s', args.join(' '));
+            git.fetch(args, cb);
+
         },
         function(cb) {
             debug('git checkout %s', commit);

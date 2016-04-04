@@ -7,7 +7,7 @@ var util = proxyquire('../module/util.js', {
     './git.js': function() {
         this.clone = sinon.stub().callsArg(0);
         this.checkout = sinon.stub().callsArg(1);
-        this.pull = sinon.stub().callsArg(0);
+        this.fetch = sinon.stub().callsArg(1);
     }
 });
 

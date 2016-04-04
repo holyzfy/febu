@@ -42,7 +42,7 @@ describe(__filename, function(){
 	});
 
 	it('exec2', function(done) {
-		git.exec('a command', {}, done);
+		git.exec('a command', [], done);
 	});
 });
 
@@ -55,9 +55,15 @@ describe(__filename, function(){
 		git.clone(done);
 	});
 
-	it('pull', function(done){
+	it('fetch', function(done){
 		Git.prototype.exec = sinon.stub().callsArg(1).returnsThis();
-		git.pull(done);
+		git.fetch(done);
+	});
+
+	it('fetch with args', function(done){
+		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
+		var args = ['origin', 'rbranch:lbranch'];
+		git.fetch(args, done);
 	});
 
 	it('checkout', function(done){
