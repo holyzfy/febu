@@ -234,4 +234,30 @@ describe(__filename, function(){
         var actual = replace.strWithArr(script, patterns);
         expect(actual).to.be(script);
     });
+
+    it('replaceUrl:font', function() {
+        var eot = {
+            src: 'font/fontawesome-webfont.eot',
+            dest: '//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-a247f4358b.eot',
+            rel: ['style/test.css']
+        };
+        p.updateManifest(eot);
+
+        var woff = {
+            src: 'font/fontawesome-webfont.woff',
+            dest: '//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-f84ffa8dd9.woff',
+            rel: ['style/test.css']
+        };
+        p.updateManifest(woff);
+
+        var cssFile = new File({
+            base: '/test_project',
+            path: '/test_project/style/test.css'
+        });
+        var patterns = util.getReplacements(p, 'production', cssFile);
+        var style = '@font-face {src: url("../font/fontawesome-webfont.eot?#iefix&v=4.6.2") format("embedded-opentype"), url("../font/fontawesome-webfont.woff?v=4.6.2") format("woff")}';
+        var expected = '@font-face {src: url("//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-a247f4358b.eot?#iefix&v=4.6.2") format("embedded-opentype"), url("//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-f84ffa8dd9.woff?v=4.6.2") format("woff")}';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
 });
