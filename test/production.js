@@ -222,6 +222,26 @@ describe(__filename, function(){
         expect(actual).to.be(expected);
     });
 
+    it('replaceUrl:border-image', function() {
+        var resource = {
+            src: 'images/banner.jpg',
+            dest: '//img1.cahce.febucdn.com/xxx/banner.613971c09b.jpg',
+            rel: ['style/test.css']
+        };
+        p.updateManifest(resource);
+
+        var cssFile = new File({
+            base: '/test_project',
+            path: '/test_project/style/test.css'
+        });
+        var patterns = util.getReplacements(p, 'production', cssFile);
+
+        var style = '.nav {border-image: url(../images/banner.jpg);}';
+        var expected = '.nav {border-image: url(//img1.cahce.febucdn.com/xxx/banner.613971c09b.jpg);}';
+        var actual = replace.strWithArr(style, patterns);
+        expect(actual).to.be(expected);
+    });
+
     it('replaceUrl:border', function() {
         var style = '<style>.nav {border: url("images/p_logo.png");}</style>';
         var expected = '<style>.nav {border: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
