@@ -261,11 +261,13 @@ Production.prototype.compileStaticFiles = function(callback) {
                     return isJsFile;
                 });
                 var newPaths = {};
+                var configPathDir = path.dirname(util.getAMDConfigPath(p.project));
                 _.each(jsMap, function(item) {
                     var file = new File({
-                        path: item.src[0]
+                        path: path.join(src, item.src[0])
                     });
-                    var key = file.basename.slice(0, -3); // 去掉扩展名
+                    var relativePath = path.relative(configPathDir, file.path);
+                    var key = relativePath.slice(-3) === '.js' ? relativePath.slice(0, -3) : relativePath;
                     var dest = item.dest.slice(0, -3);
                     newPaths[key] = dest;
                 });
@@ -769,7 +771,6 @@ Production.prototype.compileVmFiles = function(callback) {
 					        return _cb(null, file);		
 					    }
 
-					    var filePath;
 					    if(item._type === 'css') {
 					    	file.extname = '.group.css';
 					    } else if(item._type === 'js') {

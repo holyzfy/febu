@@ -212,6 +212,8 @@ Dev.prototype.js = function(files, callback) {
 
     		gulp.task('copy', function() {
 	    		var output = util.getAMDOutputPath(dev.project);
+	    		var configPathRelative = path.relative(src, util.getAMDConfigPath(dev.project));
+	    		var configDir = path.dirname(path.join(output, configPathRelative));
 			    var publicPath = util.getProjectPublicPath(dev.project, 'development');
 	    		return gulp.src('**/*.js', {
 		    			cwd: output
@@ -228,9 +230,9 @@ Dev.prototype.js = function(files, callback) {
 				            return cb(null, file);		
 				        }
 
-						var filePath = path.relative(output, file.path);
+						var filePath = path.relative(configDir, file.path);
 						var newFilePath = url.resolve(publicPath, filePath);
-						var key = file.basename.slice(0, -3); // 去掉扩展名
+						var key = filePath.slice(-3) === '.js' ? filePath.slice(0, -3) : filePath;
 			    		var dest = newFilePath.slice(0, -3);
 			    		newPaths[key] = dest;
 						cb(null, file);

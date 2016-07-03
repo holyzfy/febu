@@ -16,7 +16,6 @@
   - [发布到生产环境](#%E5%8F%91%E5%B8%83%E5%88%B0%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83)
 - [约定规则](#%E7%BA%A6%E5%AE%9A%E8%A7%84%E5%88%99)
   - [inc](#inc)
-  - [js](#js)
   - [html](#html)
     - [_group示例](#_group%E7%A4%BA%E4%BE%8B)
     - [_inline和_compress示例](#_inline%E5%92%8C_compress%E7%A4%BA%E4%BE%8B)
@@ -60,10 +59,6 @@
 ### inc
 
 inc目录存放html碎片，html碎片里的静态资源路径是相对于仓库根目录
-
-### js
-
-使用AMD规范的项目，约定模块名就是文件名，也就说js文件可以放到不同的目录里，但不能重名，示例：https://github.com/holyzfy/amd_demo
 
 ### html
 
@@ -110,7 +105,7 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 
 ### febu.json
 
-项目根目录下创建febu.json，来指定部署的配置项，示例：
+项目根目录下创建febu.json，来指定部署的配置项（所有配置项都是选填），示例：
 
 ```javascript
 {

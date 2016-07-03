@@ -109,6 +109,13 @@ util.getAMDOutputPath = function(project) {
     return getAMDConfigFieldPath(project, 'dir');
 };
 
+util.fixAMDPathKey = function(paths) {
+    for (var key in paths) {
+        paths[key] = paths[paths[key]] || paths[key];
+    }
+    return paths;
+}
+
 // 替换AMD项目里的js文件路径
 util.replaceConfigPaths = function(contents, newPaths) {
     var reg = /require(?:js)?(?:\.config)?\(([\s\S]*)\)/m;
@@ -122,11 +129,9 @@ util.replaceConfigPaths = function(contents, newPaths) {
     }
 
     var cfg = eval("(" + configText + ")");
-    delete cfg.paths;
     delete cfg.baseUrl;
-    if(newPaths) {
-        cfg.paths = newPaths;
-    }
+    Object.assign(cfg.paths, newPaths);
+    cfg.paths = util.fixAMDPathKey(cfg.paths);
     var newContents = contents.replace(pattern, function(match, sub) {
         return match.replace(sub, JSON.stringify(cfg, null, 4));
     });

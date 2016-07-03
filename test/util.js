@@ -55,12 +55,18 @@ describe(__filename, function(){
         expect(actual).to.be(path.resolve('/absoulte/path/to/output'));
     });
 
-    it('replaceConfigPaths.reg', function() {
-    	var contents = 'var require = {baseUrl: "js"}';
+    it('fixAMDPathKey', function() {
+    	var jqueryDest = 'http://static.f2e.example.com/assets/test_project/lib/jquery';
+    	var paths = {
+    		jquery: 'lib/jquery',
+    		'lib/jquery': jqueryDest
+    	};
+    	var newPaths = util.fixAMDPathKey(paths);
+    	expect(newPaths.jquery).to.be(jqueryDest);
     });
 
 	it('replaceConfigPaths: require.config(...)', function() {
-		var contents = "  require.config({baseUrl: 'js', paths: {'jquery': 'lib/jquery'}, shim: {'highcharts': ['jquery'] } }); ";
+		var contents = "  require.config({baseUrl: 'js', paths: {'jquery': 'lib/jquery', 'bower': '../bower_components'}, shim: {'highcharts': ['jquery'] } }); ";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
 		};
@@ -68,6 +74,7 @@ describe(__filename, function(){
 		expect(newContents).to.contain("require.config(");
 		expect(newContents).to.not.contain('lib/jquery');
 		expect(newContents).to.contain('//code.jquery.com/jquery-1.11.3.min');
+		expect(newContents).to.contain('bower');
 	});
 
 	it('replaceConfigPaths: var require = ...', function() {
