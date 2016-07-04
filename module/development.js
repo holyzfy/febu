@@ -216,6 +216,7 @@ Dev.prototype.js = function(files, callback) {
 	    		var configDir = path.dirname(path.join(output, configPathRelative));
 			    var publicPath = util.getProjectPublicPath(dev.project, 'development');
 	    		return gulp.src('**/*.js', {
+	    				base: output,
 		    			cwd: output
 		    		})
 	    			.pipe(plumber(function (err) {
@@ -231,7 +232,7 @@ Dev.prototype.js = function(files, callback) {
 				        }
 
 						var filePath = path.relative(configDir, file.path);
-						var newFilePath = url.resolve(publicPath, filePath);
+						var newFilePath = url.resolve(publicPath, file.relative);
 						var key = filePath.slice(-3) === '.js' ? filePath.slice(0, -3) : filePath;
 			    		var dest = newFilePath.slice(0, -3);
 			    		newPaths[key] = dest;
