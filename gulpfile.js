@@ -53,8 +53,9 @@ gulp.task('before', function(callback){
 
 	var tasks = [
 		clone,
-		git.fetch.bind(git, ['origin', project.branch + ':' + project.branch]),
-		git.checkout.bind(git, project.branch)
+		git.fetch.bind(git, ['origin', project.branch]),
+		git.checkout.bind(git, project.branch),
+		git.exec.bind(git, 'merge', 'origin/' + project.branch)
 	];
 	async.series(tasks, function(err) {
 		clearTimeout(timer);
