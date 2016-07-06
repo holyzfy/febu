@@ -194,6 +194,21 @@ describe(__filename, function(){
 		expect(objectActual).to.be(objectExpected);
 	});
 
+	it('replaceSrcset', function() {
+		var img = `
+			<img srcset="path/to/large.jpg 1024w,
+			             path/to/medium.jpg 640w,
+			             http://xxx.com/path/to/small.jpg 320w"
+			    src="">`;
+		var expected = `
+			<img srcset="//qa.developer.test.com/f2e/test_project/path/to/large.jpg 1024w,
+			             //qa.developer.test.com/f2e/test_project/path/to/medium.jpg 640w,
+			             http://xxx.com/path/to/small.jpg 320w"
+			    src="">`;
+		var actual = replace.strWithArr(img, patterns);
+		expect(actual).to.be(expected);
+	});
+
 	it('replaceUrl:background-image', function() {
 		var style = '<style>.nav {background-image: url("images/nav.png");}</style>';
 		var expected = '<style>.nav {background-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';

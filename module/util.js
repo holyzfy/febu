@@ -143,6 +143,7 @@ util.regex = {
     link: /<link\b[^<]*>/mgi,
     media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
     object: /<object\b[^<]*>/mgi,
+    srcset: /\bsrcset='?"?([^'"]*)'?"?\b/mi,
     url: /[:,]?\burl\('?"?([^"'()]+\.\w+)\??[^"'()]*'?"?\)/mgi // 样式表里url(xxx)
 };
 
@@ -208,6 +209,18 @@ util.getReplacements = function(obj, env, file) {
                 }
                 var attrs = (match.match(/<object\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceData(attrs, match, file);
+            }
+        },
+        {
+            pattern: util.regex.srcset,
+            replacement: function(match, first) {
+                if(!obj.replaceSrcset) {
+                    return match;
+                }
+                var srcList = first.split(/\s*,\s*/).map(function(item) {
+                    return item.split(/\s+/)[0];
+                });
+                return obj.replaceSrcset(match, srcList, file);
             }
         },
         {

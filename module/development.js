@@ -153,6 +153,22 @@ Dev.prototype.replaceData = function(attrs, match, file) {
 	return match;
 };
 
+Dev.prototype.replaceSrcset = function(match, srcList, file) {
+	var dev = this;
+
+	srcList.forEach(function(src) {
+		var isDataURI = src.slice(0, 5) === 'data:';
+		var protocol = url.parse(src).protocol;
+		var isAbsolutePath = src[0] === '/';
+		var isVmVar = /[$<{]/.test(src[0]);
+		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+			return;
+		}
+		match = match.replace(src, dev.resolvePath(file, src));		
+	});
+	return match;
+};
+
 Dev.prototype.replaceUrl = function(match, sub, file) {
 	var dev = this;
 	sub = sub.trim();

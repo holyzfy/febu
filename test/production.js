@@ -201,6 +201,40 @@ describe(__filename, function(){
         expect(script5Actual).to.be(script5Expected);
     });
 
+    it('replaceSrcset', function() {
+        p.updateManifest({
+            src: 'path/to/large.jpg',
+            dest: '//img1.cahce.febucdn.com/xxx/images/large-293kf8u.jpg',
+            rel: ['test.html']
+        });
+
+        p.updateManifest({
+            src: 'path/to/medium.jpg',
+            dest: '//img1.cahce.febucdn.com/xxx/images/medium-v7z61m0.jpg',
+            rel: ['test.html']
+        });
+
+        var testHtml = new File({
+            base: '/test_project',
+            path: '/test_project/test.html'
+        });
+
+        var patterns = util.getReplacements(p, 'production', testHtml);
+
+        var img = `
+            <img srcset="path/to/large.jpg 1024w,
+                         path/to/medium.jpg 640w,
+                         http://xxx.com/path/to/small.jpg 320w"
+                src="">`;
+        var expected = `
+            <img srcset="//img1.cahce.febucdn.com/xxx/images/large-293kf8u.jpg 1024w,
+                         //img1.cahce.febucdn.com/xxx/images/medium-v7z61m0.jpg 640w,
+                         http://xxx.com/path/to/small.jpg 320w"
+                src="">`;
+        var actual = replace.strWithArr(img, patterns);
+        expect(actual).to.be(expected);
+    });
+
     it('replaceUrl:background-image', function() {
         var style = '<style>.nav {background-image: url("images/p_logo.png?ver=123");}</style>';
         var expected = '<style>.nav {background-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png?ver=123");}</style>';

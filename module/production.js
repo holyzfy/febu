@@ -674,6 +674,32 @@ Production.prototype.replaceData = function(attrs, match, file) {
 	return match;
 };
 
+Production.prototype.replaceSrcset = function(match, srcList, file) {
+    var p = this;
+
+    srcList.forEach(function(src) {
+        var isDataURI = src.slice(0, 5) === 'data:';
+        var protocol = url.parse(src).protocol;
+        var isAbsolutePath = src[0] === '/';
+        var isVmVar = /[$<{]/.test(src[0]);
+        if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+            return;
+        }
+
+        var srcPath = util.relPath(file, src);
+        var doc = _.find(p.manifest, function(item) {
+            return item.src[0] == srcPath;
+        });
+        if(!doc) {
+            return match;
+        }
+
+        replaceHelper(doc, file);
+        match = match.replace(src, doc.dest);     
+    });
+    return match;
+};
+
 Production.prototype.replaceUrl = function(match, sub, file) {
 	var p = this;
 	sub = sub.trim();
