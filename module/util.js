@@ -223,10 +223,7 @@ util.getReplacements = function(obj, env, file) {
         }
     ];
 
-    // 禁止外部函数修改patterns
-    var ret = [].concat(patterns);
-
-    return ret;
+    return patterns;
 };
 
 util.replacePath = function (obj, env) {
