@@ -11,38 +11,23 @@ var util = require('./module/util.js');
 var Development = require('./module/development.js');
 var Production = require('./module/production.js');
 
-var repo;
-var commit = argv.commit || 'HEAD';  // 检出相应版本
-var release;
-var src;
-var build;
-var source = [];
-var project;
-var timer;
-
-var handleError = function(err) {
-	if(handleError.busy) {
-		return;
-	}
-	handleError.busy = true;
-	console.error('发布失败: %s', err.message || err);
-};
+function getProject() {
+	return {
+		repo: argv.repo,
+		branch: argv.branch || 'master',
+		publicPath: argv.publicPath
+	};
+}
 
 gulp.task('before', function(callback){
 	if(!argv.repo) {
 		return callback('请输入仓库地址，参数--repo');
 	}
-	repo = argv.repo;
-	src = common.getCwd(repo, 'src');
-	build = common.getCwd(repo, 'build');
 
-	project = {
-		repo: repo,
-		branch: argv.branch || 'master',
-		publicPath: argv.publicPath
-	};
-
-	var git = new Git(repo);
+	var timer;
+	var src = common.getCwd(argv.repo, 'src');
+	var project = getProject();
+	var git = new Git(argv.repo);
 
 	var clone = function(cb) {
 		git.clone(function() {
@@ -65,25 +50,22 @@ gulp.task('before', function(callback){
 	timer = setTimeout(function() {
 		callback('发布超时，请稍后重试');
 	}, 240000);
-})
-.on('task_err', handleError);
-
-gulp.task('clean', ['before'], function(){
-	del([build], {force: true});
 });
 
-// 发布到测试环境
-gulp.task('development', ['before'], function(callback){
-	console.log('发布到测试环境 commit=%s', commit);
-	var dev = new Development(project);
-	dev.run(commit, callback);
-})
-.on('task_err', handleError);
+gulp.task('clean', function(done){
+	del([common.getCwd(argv.repo, 'build')], {
+		force: true
+	}).then(function() {
+		done();
+	});
+});
 
-// 发布到生产环境
-gulp.task('production', ['before'], function(callback){
-	console.log('发布到生产环境 commit=%s', commit);
-	var p = new Production(project);
-	p.run(commit, callback);
-})
-.on('task_err', handleError);
+gulp.task('development', gulp.series('before', 'clean', function main(callback){
+	var dev = new Development(getProject());
+	dev.run(argv.commit || 'HEAD', callback);
+}));
+
+gulp.task('production', gulp.series('before', 'clean', function main(callback){
+	var p = new Production(getProject());
+	p.run(argv.commit || 'HEAD', callback);
+}));

@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "前端部署系统",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "expect.js": "^0.3.1",
     "frep": "^0.2.3",
     "fs-extra": "^0.30.0",
-    "gulp": "^3.9.1",
+    "gulp": "github:gulpjs/gulp#4.0",
     "gulp-concat": "^2.6.0",
     "gulp-filter": "^4.0.0",
     "gulp-if": "^2.0.1",
