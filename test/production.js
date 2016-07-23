@@ -15,7 +15,9 @@ var P = proxyquire('../module/production.js', {
 });
 
 describe(__filename, function(){
-    var p = new P({});
+    var p = new P({
+        repo: 'https://github.com/xxx/one_project'
+    });
 
     it('getBasename', function() {
         var href1 = '//img1.febucache.com/f2e/style/all.1234.group.css';
@@ -32,7 +34,9 @@ describe(__filename, function(){
     });
 
     it('updateManifest:_group', function() {
-        var p = new P({});
+        var p = new P({
+            repo: 'https://github.com/xxx/one_project'
+        });
         p.manifest = [
             {
                 "src": [
