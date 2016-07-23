@@ -315,11 +315,6 @@ Dev.prototype.html = function(files, callback) {
 Dev.prototype.run = function(commit, callback) {
 	var dev = this;
 
-	// function clean(cb) {
-	// 	var dist = common.getCwd(dev.project.repo, 'development');
-	// 	fs.remove(dist, cb);
-	// }
-
 	function clean(done) {
 		var dist = common.getCwd(dev.project.repo, 'development');
         del(dist, {
@@ -342,7 +337,7 @@ Dev.prototype.run = function(commit, callback) {
 			dev.html.bind(dev, files)
 		];
 		async.series(tasks, done);
-	};
+	}
 
 	async.series([clean, checkout, compile], callback);
 };

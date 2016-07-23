@@ -114,7 +114,7 @@ util.fixAMDPathKey = function(paths) {
         paths[key] = paths[paths[key]] || paths[key];
     }
     return paths;
-}
+};
 
 // 替换AMD项目里的js文件路径
 util.replaceConfigPaths = function(contents, newPaths) {
