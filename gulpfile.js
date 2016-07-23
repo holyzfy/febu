@@ -1,15 +1,11 @@
 var gulp = require('gulp');
-var debug = require('debug')('febu:gulpfile.js');
-var minifyCss = require('gulp-minify-css');
 var argv = require('yargs').argv;
-var del = require('del');
 var async = require('async');
-var path = require('path');
 var common = require('./module/common.js');
 var Git = require('./module/git.js');
-var util = require('./module/util.js');
 var Development = require('./module/development.js');
 var Production = require('./module/production.js');
+var util = require('./module/util.js');
 
 function getProject() {
 	return {
@@ -19,9 +15,9 @@ function getProject() {
 	};
 }
 
-gulp.task('before', function(callback){
+gulp.task('before', done => {
 	if(!argv.repo) {
-		return callback('请输入仓库地址，参数--repo');
+		return done('请输入仓库地址，参数--repo');
 	}
 
 	var timer;
@@ -29,12 +25,11 @@ gulp.task('before', function(callback){
 	var project = getProject();
 	var git = new Git(argv.repo);
 
-	var clone = function(cb) {
-		git.clone(function() {
-			// ignore error when destination path already exists and is not an empty directory
+	function clone(cb) {
+		git.clone(function ignoreError() {
 			cb();
 		});
-	};
+	}
 
 	var tasks = [
 		clone,
@@ -42,30 +37,26 @@ gulp.task('before', function(callback){
 		git.checkout.bind(git, project.branch),
 		git.exec.bind(git, 'merge', 'origin/' + project.branch)
 	];
-	async.series(tasks, function(err) {
+	async.series(tasks, err => {
 		clearTimeout(timer);
-		callback(err);
+		done(err);
 	});
 
-	timer = setTimeout(function() {
-		callback('发布超时，请稍后重试');
+	timer = setTimeout(() => {
+		done('发布超时，请稍后重试');
 	}, 240000);
 });
 
-gulp.task('clean', function(done){
-	del([common.getCwd(argv.repo, 'build')], {
-		force: true
-	}).then(function() {
-		done();
-	});
+gulp.task('clean', done => {
+	util.clean(common.getCwd(argv.repo, 'build'))(done);
 });
 
-gulp.task('development', gulp.series('before', 'clean', function main(callback){
+gulp.task('development', gulp.series('before', 'clean', function main(done) {
 	var dev = new Development(getProject());
-	dev.run(argv.commit || 'HEAD', callback);
+	dev.run(argv.commit || 'HEAD', done);
 }));
 
-gulp.task('production', gulp.series('before', 'clean', function main(callback){
+gulp.task('production', gulp.series('before', 'clean', function main(done) {
 	var p = new Production(getProject());
-	p.run(argv.commit || 'HEAD', callback);
+	p.run(argv.commit || 'HEAD', done);
 }));

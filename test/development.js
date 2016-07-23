@@ -14,10 +14,12 @@ var Dev = proxyquire('../module/development.js', {
     }
 });
 
-describe(__filename, function(){
-	var dev = new Dev({});
+describe(__filename, () => {
+	var dev = new Dev({
+		repo: 'https://github.com/xxx/one_project'
+	});
 
-	it('resolvePath', function() {
+	it('resolvePath', () => {
 		var index = new File({
 		    base: '/myproject',
 		    path: '/myproject/index.html'
@@ -51,7 +53,7 @@ describe(__filename, function(){
 	});
 	var patterns = util.getReplacements(dev, 'development', headStaticFile);
 	
-	it('replaceHref', function(){
+	it('replaceHref', () => {
 		var link = '<link rel="stylesheet" href="css/common.css" _group="all">';
 		var linkExpected = '<link rel="stylesheet" href="//qa.developer.test.com/f2e/test_project/css/common.css" _group="all">';
 		var linkActual = replace.strWithArr(link, patterns);
@@ -99,7 +101,7 @@ describe(__filename, function(){
 		expect(link10Actual).to.equal(link10);
 	});
 	
-	it('replaceSrc script', function(){
+	it('replaceSrc script', () => {
 		var script = '<script src="js/arttemplate.js"></script>';
 		var scriptExpected = '<script src="//qa.developer.test.com/f2e/test_project/js/arttemplate.js"></script>';
 		var scriptActual = replace.strWithArr(script, patterns);
@@ -133,7 +135,7 @@ describe(__filename, function(){
 		expect(script7Actual).to.be(script7);
 	});
 
-	it('replaceSrc media', function(){
+	it('replaceSrc media', () => {
 		var img = '<img src="images/logo.jpg" alt="">';
 		var imgExpected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg" alt="">';
 		var imgActual = replace.strWithArr(img, patterns);
@@ -187,14 +189,14 @@ describe(__filename, function(){
 		expect(flashActual).to.be(flashExpected);
 	});
 	
-	it('replaceData object', function(){
+	it('replaceData object', () => {
 		var object = '<object data="bookmark.swf"></object>';
 		var objectExpected = '<object data="//qa.developer.test.com/f2e/test_project/bookmark.swf"></object>';
 		var objectActual = replace.strWithArr(object, patterns);
 		expect(objectActual).to.be(objectExpected);
 	});
 
-	it('replaceSrcset', function() {
+	it('replaceSrcset', () => {
 		var img = `
 			<img srcset="path/to/large.jpg 1024w,
 			             path/to/medium.jpg 640w,
@@ -209,47 +211,47 @@ describe(__filename, function(){
 		expect(actual).to.be(expected);
 	});
 
-	it('replaceUrl:background-image', function() {
+	it('replaceUrl:background-image', () => {
 		var style = '<style>.nav {background-image: url("images/nav.png");}</style>';
 		var expected = '<style>.nav {background-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(expected);
 	});
 
-	it('replaceUrl:background-image (absolute path)', function() {
+	it('replaceUrl:background-image (absolute path)', () => {
 		var style = '<style>.nav {background-image: url("/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(style);
 	});
 
-	it('replaceUrl:background-image (vm variable path)', function() {
+	it('replaceUrl:background-image (vm variable path)', () => {
 		var style = '<style>.nav {background-image: url("$images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(style);
 	});
 
-	it('replaceUrl:background', function() {
+	it('replaceUrl:background', () => {
 		var style = '<style>.nav {background: url("images/nav.png");}</style>';
 		var expected = '<style>.nav {background: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(expected);
 	});
 
-	it('replaceUrl:border-image', function() {
+	it('replaceUrl:border-image', () => {
 		var style = '<style>.nav {border-image: url("images/nav.png");}</style>';
 		var expected = '<style>.nav {border-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(expected);
 	});
 
-	it('replaceUrl:border', function() {
+	it('replaceUrl:border', () => {
 		var style = '<style>.nav {border: url("images/nav.png");}</style>';
 		var expected = '<style>.nav {border: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
 		var actual = replace.strWithArr(style, patterns);
 		expect(actual).to.be(expected);
 	});
 
-	it('replaceUrl:sript', function() {
+	it('replaceUrl:sript', () => {
 		var script = '<script>var thisUrl = url("?companyId");</script>';
 		var actual = replace.strWithArr(script, patterns);
 		expect(actual).to.be(script);

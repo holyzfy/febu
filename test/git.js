@@ -17,7 +17,7 @@ var Git = proxyquire('../module/git.js', {
 	}
 });
 
-describe(__filename, function(){
+describe(__filename, () => {
 	var repo = 'https://test.com/username/project';
 	var options = {
 		type: 'development',
@@ -25,48 +25,48 @@ describe(__filename, function(){
 	};
 	var git = new Git(repo, options);
 
-	it('new Git', function(){
+	it('new Git', () => {
 		expect(git.url).to.be(repo);
 		expect(git.options).to.eql(options);
 	});
 
-	it('new Git2', function(){
+	it('new Git2', () => {
 		var git = new Git(repo);
 		expect(git.url).to.equal(repo);
 		var cwd = path.resolve(__dirname, '../data/src/test.com/username_project');
 		expect(git.options.cwd).to.be(cwd);
 	});
 
-	it('exec', function(done) {
+	it('exec', done => {
 		git.exec('a command', done);
 	});
 
-	it('exec2', function(done) {
+	it('exec2', done => {
 		git.exec('a command', [], done);
 	});
 });
 
-describe(__filename, function(){
+describe(__filename, () => {
 	var execBackup = Git.prototype.exec;
 	var git = new Git('https://test.com/username/project');
 
-	it('clone', function(done){
+	it('clone', done => {
 		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		git.clone(done);
 	});
 
-	it('fetch', function(done){
+	it('fetch', done => {
 		Git.prototype.exec = sinon.stub().callsArg(1).returnsThis();
 		git.fetch(done);
 	});
 
-	it('fetch with args', function(done){
+	it('fetch with args', done => {
 		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		var args = ['origin', 'rbranch:lbranch'];
 		git.fetch(args, done);
 	});
 
-	it('checkout', function(done){
+	it('checkout', done => {
 		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		git.checkout('master', done);
 	});

@@ -25,23 +25,20 @@ function Git(url, options) {
  * @param  {Function} callback(err, data)
  */
 Git.prototype.exec = function(command, args, callback) {
-    var git = this;
     callback = arguments[arguments.length - 1];
     if (arguments.length < 3) {
         args = [];
     }
 
-    shell.cd(git.options.cwd);
+    shell.cd(this.options.cwd);
     
-    var _command = [git.binary, command].concat(args).join(' ');
+    var _command = [this.binary, command].concat(args).join(' ');
     debug('git command=', _command);
-    shell.exec(_command, {silent: true}, function(code, output) {
+    shell.exec(_command, {silent: true}, (code, output) => {
         var err = code === 0 ? null : output;
         console.log(colors.grey(output));
         callback(err, output);
     });
-
-    return git;
 };
 
 /**
@@ -50,15 +47,13 @@ Git.prototype.exec = function(command, args, callback) {
  * @param callback(err)
  */
 Git.prototype.clone = function(callback) {
-	var git = this;
-	var local = common.getCwd(git.url, 'src');
-    fs.mkdirs(local, function(err) {
+	var local = common.getCwd(this.url, 'src');
+    fs.mkdirs(local, err => {
         if(err) {
             return callback(err);
         }
-        git.exec('clone', [git.url, local], callback);
+        this.exec('clone', [this.url, local], callback);
     });
-	return git;
 };
 
 /**
@@ -67,10 +62,7 @@ Git.prototype.clone = function(callback) {
  * @param callback(err)
  */
 Git.prototype.fetch = function(args, callback){
-	var git = this;
-    callback = arguments[arguments.length - 1];
-    git.exec('fetch', args, callback);
-	return git;
+    this.exec('fetch', args, callback);
 };
 
 /**
@@ -79,9 +71,7 @@ Git.prototype.fetch = function(args, callback){
  * @param callback(err)
  */
 Git.prototype.checkout = function(commit, callback){
-	var git = this;
-    git.exec('checkout', [commit], callback);
-	return git;
+    this.exec('checkout', [commit], callback);
 };
 
 module.exports = Git;

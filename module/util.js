@@ -8,30 +8,29 @@ var exec = require('child_process').exec;
 var frep = require('frep');
 var File = require('vinyl');
 var config = require('config');
+var del = require('del');
 var common = require('./common.js');
 var Git = require('./git.js');
 
 var util = {};
 
 // 检出版本库相应的版本
-util.getProject = function(project, commit, callback) {
+util.getProject = (project, commit, callback) => {
     var repo = project.repo;
     var git = new Git(repo);
     var tasks = [
-        function(cb) {
+        cb => {
             debug('clone');
-            git.clone(function() {
-                // ignore clone error when project is existed
+            git.clone(function ignoreError() {
                 cb();
             });
         },
-        function(cb) {
+        cb => {
             var args = ['origin', project.branch + ':' + project.branch];
             debug('git fetch %s', args.join(' '));
             git.fetch(args, cb);
-
         },
-        function(cb) {
+        cb => {
             debug('git checkout %s', commit);
             if('HEAD' === commit.toUpperCase()) {
                 cb();
@@ -43,14 +42,13 @@ util.getProject = function(project, commit, callback) {
     async.series(tasks, callback);
 };
 
-util.resolvePath = function(from, to, base) {
-    var dir = path.dirname(from);
-    var thisPath = path.resolve(dir, to);
+util.resolvePath = (from, to, base) => {
+    var thisPath = path.resolve(path.dirname(from), to);
     return path.relative(base, thisPath);
 };
 
-util.getStaticFileType = function() {
-    var list =  [
+util.getStaticFileType = () => {
+    var list = [
         'css',
         'js',
         'jpg', 'jpeg', 'png', 'gif', 'webp',
@@ -58,26 +56,20 @@ util.getStaticFileType = function() {
         'ttf', 'otf', 'eot', 'woff', 'woff2', 'svg',
         'vml', 'htc'
     ];
-    var ret = list.map(function(item) {
-        return '**/*.' + item;
-    });
-    return ret;
+    return list.map(item => '**/*.' + item);
 };
 
-util.getVmFileType = function() {
+util.getVmFileType = () => {
     var list = [
         'shtml', 'html', 'html',
         'jsp', 'vm', 'ftl',
         'php', 'tpl',
         'asp', 'aspx', 'cshtml', 'vbhtml'
     ];
-    var ret = list.map(function(item) {
-        return '**/*.' + item;
-    });
-    return ret;
+    return list.map(item => '**/*.' + item);
 };
 
-util.getAMDBuildPath = function(project) {
+util.getAMDBuildPath = project => {
     var src = common.getCwd(project.repo, 'src');
     var configFile = path.join(src, config.project);
     var buildPath = util.getProjectConfig(project, 'build');
@@ -85,7 +77,7 @@ util.getAMDBuildPath = function(project) {
 };
 
 // 项目里有requirejs的构建脚本吗
-util.hasAMD = function (project) {
+util.hasAMD = project => {
     try {
         util.getAMDBuildPath(project);
         return true;
@@ -94,22 +86,22 @@ util.hasAMD = function (project) {
     }
 };
 
-var getAMDConfigFieldPath = function(project, key) {
+var getAMDConfigFieldPath = (project, key) => {
     var buildPath = util.getAMDBuildPath(project);
     var content = fs.readFileSync(buildPath, 'utf8');
     var data = eval("(" + content + ")");
     return path.resolve(path.dirname(buildPath), data[key]);
 };
 
-util.getAMDConfigPath = function(project) {
+util.getAMDConfigPath = project => {
     return getAMDConfigFieldPath(project, 'mainConfigFile');
 };
 
-util.getAMDOutputPath = function(project) {
+util.getAMDOutputPath = project => {
     return getAMDConfigFieldPath(project, 'dir');
 };
 
-util.fixAMDPathKey = function(paths) {
+util.fixAMDPathKey = paths => {
     for (var key in paths) {
         paths[key] = paths[paths[key]] || paths[key];
     }
@@ -117,7 +109,7 @@ util.fixAMDPathKey = function(paths) {
 };
 
 // 替换AMD项目里的js文件路径
-util.replaceConfigPaths = function(contents, newPaths) {
+util.replaceConfigPaths = (contents, newPaths) => {
     var reg = /require(?:js)?(?:\.config)?\(([\s\S]*)\)/m;
     var reg2 = /\brequire\s*=\s*({[\s\S]*})/m;
     var pattern = contents.match(reg) ? reg : reg2;
@@ -132,7 +124,7 @@ util.replaceConfigPaths = function(contents, newPaths) {
     delete cfg.baseUrl;
     Object.assign(cfg.paths, newPaths);
     cfg.paths = util.fixAMDPathKey(cfg.paths);
-    var newContents = contents.replace(pattern, function(match, sub) {
+    var newContents = contents.replace(pattern, (match, sub) => {
         return match.replace(sub, JSON.stringify(cfg, null, 4));
     });
     return newContents;
@@ -152,22 +144,20 @@ util.regex = {
  * @param  env  development或者production
  * @param  {File} file @see: https://github.com/wearefractal/vinyl
  */
-util.getReplacements = function(obj, env, file) {
+util.getReplacements = (obj, env, file) => {
     var patterns = [
         {
 
             // css
             pattern: util.regex.link,
-            replacement: function(match) {
+            replacement: match => {
                 if(!obj.replaceHref) {
                     return match;
                 }
 
                 var attrs = (match.match(/<link\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
                 
-                var css = attrs.some(function(item) {
-                    return item === 'rel="stylesheet"' || item === "rel='stylesheet'";
-                });
+                var css = attrs.some(item => (item === 'rel="stylesheet"' || item === "rel='stylesheet'"));
                 if(!css) {
                     return match;
                 }
@@ -179,7 +169,7 @@ util.getReplacements = function(obj, env, file) {
 
             // js
             pattern: util.regex.script,
-            replacement: function(match) {
+            replacement: match => {
                 if(!obj.replaceSrc) {
                     return match;
                 }
@@ -191,7 +181,7 @@ util.getReplacements = function(obj, env, file) {
 
             // media
             pattern: util.regex.media,
-            replacement: function(match) {
+            replacement: match => {
                 if(!obj.replaceSrc) {
                     return match;
                 }
@@ -203,7 +193,7 @@ util.getReplacements = function(obj, env, file) {
 
             // object
             pattern: util.regex.object,
-            replacement: function(match) {
+            replacement: match => {
                 if(!obj.replaceData) {
                     return match;
                 }
@@ -213,13 +203,11 @@ util.getReplacements = function(obj, env, file) {
         },
         {
             pattern: util.regex.srcset,
-            replacement: function(match, first) {
+            replacement: (match, first) => {
                 if(!obj.replaceSrcset) {
                     return match;
                 }
-                var srcList = first.split(/\s*,\s*/).map(function(item) {
-                    return item.split(/\s+/)[0];
-                });
+                var srcList = first.split(/\s*,\s*/).map(item => item.split(/\s+/)[0]);
                 return obj.replaceSrcset(match, srcList, file);
             }
         },
@@ -227,7 +215,7 @@ util.getReplacements = function(obj, env, file) {
 
             // url
             pattern: util.regex.url,
-            replacement: function(match, first) {
+            replacement: (match, first) => {
                 if(!obj.replaceUrl) {
                     return match;
                 }
@@ -239,8 +227,8 @@ util.getReplacements = function(obj, env, file) {
     return patterns;
 };
 
-util.replacePath = function (obj, env) {
-    var fn = function(file, enc, cb) {
+util.replacePath = (obj, env) => {
+    return (file, enc, cb) => {
         file = new File(file);
         if(file.isNull()) {     
             return cb(null, file);      
@@ -250,15 +238,13 @@ util.replacePath = function (obj, env) {
         file.contents = new Buffer(frep.strWithArr(file.contents.toString(), replacements));
         cb(null, file);
     };
-
-    return fn;
 };
 
 /**
  * 求filepath的相对路径（相对于fromFile.base）
  * 约定：不处理inc目录
  */
-util.relPath = function(fromFile, filepath) {
+util.relPath = (fromFile, filepath) => {
     var fromFilePath = fromFile.path.replace(new RegExp('\\' + path.sep, 'g'), '/');
     var inc = '/inc/';
     var hasInc = fromFilePath.lastIndexOf(inc) > 0;
@@ -280,7 +266,7 @@ util.relPath = function(fromFile, filepath) {
  * 取得忽略列表：读取febu.json的ignore字段
  * @param src 项目根目录
  */
-util.getIgnore = function(src) {
+util.getIgnore = src => {
     var ignoreList = [];
     var configFile = path.join(src, config.project);
     try {
@@ -294,7 +280,7 @@ util.getIgnore = function(src) {
     }
 
     var ret = [];
-    ignoreList.forEach(function(item) {
+    ignoreList.forEach(item => {
         item = '/' === item.slice(-1) ? item.slice(0, -1): item;
         ret.push('!' + item + '/**/*');
         ret.push('!' + item);
@@ -303,15 +289,13 @@ util.getIgnore = function(src) {
     return ret;
 };
 
-util.getProjectConfig = function(project, key) {
+util.getProjectConfig = (project, key) => {
     var src = common.getCwd(project.repo, 'src');
     var configPath = path.join(src, config.project);
     var ret = null;
     try {
         ret = fs.readJsonSync(configPath);
-        key.split('.').forEach(function(item) {
-            ret = ret[item];
-        });
+        key.split('.').forEach(item => (ret = ret[item]));
     } catch(err) {
         ret = null;
     }
@@ -322,7 +306,7 @@ util.getProjectConfig = function(project, key) {
  * @param {Object} project
  * @param {String} type development或者production
  */
-util.getProjectPublicPath = function(project, type) {
+util.getProjectPublicPath = (project, type) => {
     var publicPath = project.publicPath || util.getProjectConfig(project, type + '.publicPath') || '';
 
     // publicPath should be end with /
@@ -330,6 +314,12 @@ util.getProjectPublicPath = function(project, type) {
         publicPath += '/';
     }
     return publicPath;
+};
+
+util.clean = (dir, done) => {
+    return done => {
+        del(dir, { force: true }).then(() => done());   
+    };
 };
 
 module.exports = util;

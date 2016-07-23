@@ -5,14 +5,13 @@ var debug = require('debug')('febu:production.js');
 var gulpFilter = require('gulp-filter');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
-var minifyCss = require('gulp-minify-css');
+var minifyCss = require('gulp-clean-css');
 var rev = require('gulp-rev');
 var _ = require('underscore');
 var url = require('url');
 var through2 = require('through2');
 var gulp = require('gulp');
 var gulpif = require('gulp-if');
-var del = require('del');
 var plumber = require('gulp-plumber');
 var File = require('vinyl');
 var exec = require('child_process').exec;
@@ -23,9 +22,15 @@ var util = require('./util.js');
 var common = require('./common.js');
 
 function Production(project) {
-	this.project = project;
-	this.publicPath = util.getProjectPublicPath(project, 'production');
+    this.project = project;
+    this.publicPath = util.getProjectPublicPath(project, 'production');
     this.manifest = [];
+    this.src = common.getCwd(project.repo, 'src');
+    this.destRoot = common.getCwd(project.repo, 'production');
+    this.destStatic = path.join(this.destRoot, 'static');
+    this.build = common.getCwd(project.repo, 'build');
+    this.ignoreList = util.getIgnore(this.src);
+    this.filterList = util.getStaticFileType().concat(this.ignoreList);
 }
 
 /**
@@ -41,13 +46,11 @@ Production.prototype.updateManifest = function(doc) {
 	doc.src = [].concat(doc.src);
 
 	if(doc._group) {
-		findIt = _.find(p.manifest, function(item) {
+		findIt = _.find(p.manifest, item => {
 			return (item._group === doc._group) && (item._type === doc._type) && _.isEqual(item.rel, doc.rel);
 		});
 	} else {
-		findIt = _.find(p.manifest, function(item) {
-			return _.isEqual(item.src, doc.src);
-		});
+		findIt = _.find(p.manifest, item => _.isEqual(item.src, doc.src));
 	}
 	
 	if(findIt) {
@@ -85,7 +88,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 	}
 
 	var docs = []; // 方便做单元测试
-	_.mapObject(manifest, function(value, key) {
+	_.mapObject(manifest, (value, key) => {
 		var dest = url.resolve(p.publicPath, value);
 		var doc = {
 			src: key,
@@ -103,234 +106,197 @@ Production.prototype.getBasename = function(filepath) {
 	return ret.base.slice(0, ret.base.length - ret.ext.length);
 };
 
-// 处理静态资源
 Production.prototype.compileStaticFiles = function(callback) {
-    debug('处理静态资源');
-
-    var p = this;
-    var files = ['**/*'];
-    var src = common.getCwd(p.project.repo, 'src');
-    var destRoot = common.getCwd(p.project.repo, 'production');
-    var destStatic = path.join(destRoot, 'static');
-    var build = common.getCwd(p.project.repo, 'build');
-    var ignoreList = util.getIgnore(src);
-    var filterList = util.getStaticFileType().concat(ignoreList);
-
-    /**
-     * 1. 除js, css的静态资源rev后输出到dest目录
-     * 2. 更新manifest
-     */
-    function img(done) {
-        debug('img');
-
-        var imgFilterList = _.filter(filterList, function(item) {
-            return (item !== '**/*.css') && (item !== '**/*.js');
-        });
-
-        gulp.src(files, {
-            base: src
-        })
-        .pipe(plumber(function (err) {
-            debug('task img出错: %s', err.message);
-            this.emit('end', err);
-        }))
-        .pipe(gulpFilter(imgFilterList))
-        .pipe(rev())
-        .pipe(gulp.dest(destStatic))
-        .pipe(rev.manifest())
-        .pipe(through2.obj(p.updateManifestHelper.bind(p), function(_cb) {
-            _cb();
-            done();
-        }));
-    }
-
-    function clean(done) {
-        del(build, {
-            force: true
-        }).then(function() {
-            done();
-        });
-    }
-
-    /**
-     * 1. 替换静态资源内链（图片，字体...）-> build目录
-     * 2. build目录 -> min + rev -> dest目录
-     * 3. 更新manifest
-     */
-    function css(cb) {
-        debug('css');
-
-        var filterList = ['**/*.css'].concat(ignoreList);
-
-        function output2build(done) {
-            gulp.src(files, {
-                base: src
-            })
-            .on('end', done)
-            .pipe(plumber(function (err) {
-                debug('task build出错: %s', err.message);
-                this.emit('end', err);
-            }))
-            .pipe(gulpFilter(filterList))
-            .pipe(through2.obj(util.replacePath(p, 'production'))) // 替换静态资源链接
-            .pipe(gulp.dest(build));
-        }
-
-        function style(done) {
-            gulp.src('**/*.css', {
-                base: build,
-                cwd: build
-            })
-            .pipe(plumber(function (err) {
-                debug('task css出错: %s', err.message);
-                this.emit('end', err);
-            }))
-            .pipe(gulpFilter(filterList))
-            .pipe(minifyCss())
-            .pipe(rev())
-            .pipe(gulp.dest(destStatic))
-            .pipe(rev.manifest())
-            .pipe(through2.obj(p.updateManifestHelper.bind(p), function(_cb) {
-                _cb();
-                done();
-            }));
-        }
-
-        async.series([clean, output2build, style], cb);
-    }
-
-    /**
-     * AMD
-     * 1. build目录：optimize=uglify, optimizeCss=none
-     * 2.1 build目录(所有.js) -> rev -> dest目录
-     * 2.2 更新manifest
-     * 3.1 config.js替换paths值 -> build目录 -> min + rev -> dest目录
-     * 3.2 更新manifest
-     *
-     * 非AMD
-     * 1. files -> rev -> dest目录
-     * 2. 更新manifest
-     */
-    function js(cb) {
-        debug('js');
-
-        function amdAction(done) {
-            var hasJsFiles = files.some(function(item) {
-                return (item === '**/*') || (item.slice(-3) === '.js');
-            });
-            if(!hasJsFiles) {
-                debug('本次无变更的js');
-                return done();
-            }
-
-            function optimize(_done) {
-                var optimizerPath = path.join(__dirname, '../node_modules/requirejs/bin/r.js');
-                try {
-                    fs.accessSync(optimizerPath);
-                } catch(err) {
-                    optimizerPath = path.join(__dirname, '../../requirejs/bin/r.js');
-                }
-				var command = ['node', optimizerPath, '-o', 
-        				util.getAMDBuildPath(p.project), 
-        				'inlineText=true', 'optimize=uglify', 'optimizeCss=none'
-        			].join(' ');
-		        shell.exec(command, { cwd: src }, _done);
-            }
-
-            function copy(_done) {
-                gulp.src('**/*.js', {
-                    cwd: path.join(src, config.amd.build)
-                })
-                .pipe(plumber(function (err) {
-                    debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
-                    this.emit('end', err);
-                }))
-                .pipe(gulpFilter(filterList))
-                .pipe(rev())
-                .pipe(gulp.dest(destStatic))
-                .pipe(rev.manifest())
-                .pipe(through2.obj(p.updateManifestHelper.bind(p), function(_cb) {
-                    _cb();
-                    _done();
-                }));
-            }
-
-            function updateConfig(_done) {
-                var jsMap = _.filter(p.manifest, function(item) {
-                    var isJsFile = item.src[0].slice(-3) === '.js';
-                    return isJsFile;
-                });
-                var newPaths = {};
-                var configPathDir = path.dirname(util.getAMDConfigPath(p.project));
-                _.each(jsMap, function(item) {
-                    var file = new File({
-                        path: path.join(src, item.src[0])
-                    });
-                    var relativePath = path.relative(configPathDir, file.path);
-                    var key = relativePath.slice(-3) === '.js' ? relativePath.slice(0, -3) : relativePath;
-                    var dest = item.dest.slice(0, -3);
-                    newPaths[key] = dest;
-                });
-
-                gulp.src(util.getAMDConfigPath(p.project), {
-                    base: src
-                })
-                .pipe(plumber(function (err) {
-                    debug('task updateConfig出错 第%d行: %s', err.lineNumber, err.message);
-                    this.emit('end', err);
-                }))
-                .pipe(through2.obj(function (file, enc, cb) {
-                    file = new File(file);
-
-                    if(file.isNull()) {     
-                        return cb(null, file);      
-                    }
-                    
-                    var contents = file.contents.toString();
-                    var result = util.replaceConfigPaths(contents, newPaths);
-                    file.contents = new Buffer(result);
-                    cb(null, file);
-                }))
-                .pipe(uglify())
-                .pipe(rev())
-                .pipe(gulp.dest(destStatic))
-                .pipe(rev.manifest())
-                .pipe(through2.obj(p.updateManifestHelper.bind(p), function(_cb) {
-                    _cb();
-                    _done();
-                }));
-            }
-
-            var tasks = [optimize, copy, updateConfig];
-            async.series(tasks, done);
-        }
-
-        function otherAction(done) {
-            gulp.src(files, {
-                base: src
-            })
-            .pipe(plumber(function (err) {
-                debug('task js出错 第%d行: %s', err.lineNumber, err.message);
-                this.emit('end', err);
-            }))
-            .pipe(gulpFilter(['**/*.js'].concat(ignoreList)))
-            .pipe(uglify())
-            .pipe(rev())
-            .pipe(gulp.dest(destStatic))
-            .pipe(rev.manifest())
-            .pipe(through2.obj(p.updateManifestHelper.bind(p), function(_cb) {
-                _cb();
-                done();
-            }));
-        }
-
-        util.hasAMD(p.project) ? amdAction(cb) : otherAction(cb);
-    }
-
-    async.series([img, css, js], function(err, results) {
-        console.log(colors.green('输出静态资源：' + destStatic));
+    var tasks = [
+        this.img.bind(this),
+        this.css.bind(this),
+        util.hasAMD(this.project) ? this.amd.bind(this) : this.js.bind(this)
+    ];
+    async.series(tasks, err => {
+        console.log(colors.green('输出静态资源：' + this.destStatic));
         callback(err);
     });
+};
+
+/**
+ * 1. 除js, css的静态资源rev后输出到dest目录
+ * 2. 更新manifest
+ */
+Production.prototype.img = function (done) {
+    debug('img');
+    var imgFilterList = _.filter(this.filterList, item => (item !== '**/*.css') && (item !== '**/*.js'));
+
+    gulp.src(['**/*'], {
+        base: this.src
+    })
+    .pipe(plumber(err => {
+        debug('task img出错: %s', err.message);
+        this.emit('end', err);
+    }))
+    .pipe(gulpFilter(imgFilterList))
+    .pipe(rev())
+    .pipe(gulp.dest(this.destStatic))
+    .pipe(rev.manifest())
+    .pipe(through2.obj(this.updateManifestHelper.bind(this), cb => {
+        cb();
+        done();
+    }));
+};
+
+/**
+ * 1. 替换静态资源内链（图片，字体...）-> build目录
+ * 2. build目录 -> min + rev -> dest目录
+ * 3. 更新manifest
+ */
+Production.prototype.css = function (callback) {
+    debug('css');
+    var cssFilterList = ['**/*.css'].concat(this.ignoreList);
+
+    var output2build = done => {
+        gulp.src(['**/*'], {
+            base: this.src
+        })
+        .on('end', done)
+        .pipe(plumber(err => {
+            debug('task build出错: %s', err.message);
+            this.emit('end', err);
+        }))
+        .pipe(gulpFilter(cssFilterList))
+        .pipe(through2.obj(util.replacePath(this, 'production'))) // 替换静态资源链接
+        .pipe(gulp.dest(this.build));
+    };
+
+    var style = done => {
+        gulp.src('**/*.css', {
+            base: this.build,
+            cwd: this.build
+        })
+        .pipe(plumber(err => {
+            debug('task css出错: %s', err.message);
+            this.emit('end', err);
+        }))
+        .pipe(gulpFilter(cssFilterList))
+        .pipe(minifyCss())
+        .pipe(rev())
+        .pipe(gulp.dest(this.destStatic))
+        .pipe(rev.manifest())
+        .pipe(through2.obj(this.updateManifestHelper.bind(this), cb => {
+            cb();
+            done();
+        }));
+    };
+
+    async.series([util.clean(this.build), output2build, style], callback);
+};
+
+// 使用AMD规范的项目
+Production.prototype.amd = function (done) {
+    var tasks = [
+        amd.optimize.bind(this),
+        amd.copy.bind(this),
+        amd.updateConfig.bind(this)
+    ];
+    async.series(tasks, done);
+};
+
+var amd = {};
+
+amd.optimize = function (done) {
+    var optimizerPath = path.join(__dirname, '../node_modules/requirejs/bin/r.js');
+    try {
+        fs.accessSync(optimizerPath);
+    } catch(err) {
+        optimizerPath = path.join(__dirname, '../../requirejs/bin/r.js');
+    }
+    var command = ['node', optimizerPath, '-o', 
+            util.getAMDBuildPath(this.project), 
+            'inlineText=true', 'optimize=uglify', 'optimizeCss=none'
+        ].join(' ');
+    shell.exec(command, { cwd: this.src }, done);
+};
+
+amd.copy = function (done) {
+    gulp.src('**/*.js', {
+        cwd: path.join(this.src, config.amd.build)
+    })
+    .pipe(plumber(function (err) {
+        debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
+        this.emit('end', err);
+    }))
+    .pipe(gulpFilter(this.filterList))
+    .pipe(rev())
+    .pipe(gulp.dest(this.destStatic))
+    .pipe(rev.manifest())
+    .pipe(through2.obj(this.updateManifestHelper.bind(this), cb => {
+        cb();
+        done();
+    }));
+};
+
+amd.updateConfig = function (done) {
+    var jsMap = _.filter(this.manifest, item => {
+        var isJsFile = item.src[0].slice(-3) === '.js';
+        return isJsFile;
+    });
+    var newPaths = {};
+    var configPathDir = path.dirname(util.getAMDConfigPath(this.project));
+    _.each(jsMap, item => {
+        var file = new File({
+            path: path.join(this.src, item.src[0])
+        });
+        var relativePath = path.relative(configPathDir, file.path);
+        var key = relativePath.endsWith('.js') ? relativePath.slice(0, -3) : relativePath;
+        var dest = item.dest.slice(0, -3);
+        newPaths[key] = dest;
+    });
+
+    gulp.src(util.getAMDConfigPath(this.project), {
+        base: this.src
+    })
+    .pipe(plumber(function (err) {
+        debug('task updateConfig出错 第%d行: %s', err.lineNumber, err.message);
+        this.emit('end', err);
+    }))
+    .pipe(through2.obj((file, enc, cb) => {
+        file = new File(file);
+
+        if(file.isNull()) {     
+            return cb(null, file);      
+        }
+        
+        var contents = file.contents.toString();
+        var result = util.replaceConfigPaths(contents, newPaths);
+        file.contents = new Buffer(result);
+        cb(null, file);
+    }))
+    .pipe(uglify())
+    .pipe(rev())
+    .pipe(gulp.dest(this.destStatic))
+    .pipe(rev.manifest())
+    .pipe(through2.obj(this.updateManifestHelper.bind(this), cb => {
+        cb();
+        done();
+    }));
+};
+
+// 未使用AMD规范的项目
+Production.prototype.js = function (done) {
+    gulp.src(['**/*.js'], {
+        base: this.src
+    })
+    .pipe(plumber(err => {
+        debug('task js出错 第%d行: %s', err.lineNumber, err.message);
+        this.emit('end', err);
+    }))
+    .pipe(this.ignoreList)
+    .pipe(uglify())
+    .pipe(rev())
+    .pipe(gulp.dest(this.destStatic))
+    .pipe(rev.manifest())
+    .pipe(through2.obj(this.updateManifestHelper.bind(this), cb => {
+        cb();
+        done();
+    }));
 };
 
 function replaceHelper(doc, file) {
@@ -351,9 +317,7 @@ Production.prototype.getGroup = function(group) {
 Production.prototype.replaceHref = function(attrs, match, file) {
 	var p = this;
 	
-	var href = attrs.filter(function(item){
-		return /^href=/i.test(item);
-	})[0];
+	var href = attrs.filter(item => /^href=/i.test(item))[0];
 
 	if(!href) {
 		return match;
@@ -365,24 +329,18 @@ Production.prototype.replaceHref = function(attrs, match, file) {
     }
     hrefValue = url.parse(hrefValue).pathname;
 
-	var inline = attrs.filter(function(item) {
-		return /^_inline=?$/i.test(item);
-	})[0];
+	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
 
 	if(inline) {
 		if(p._singleDone) {
-			var compress = attrs.filter(function(item){
-				return /^_compress=?$/i.test(item);
-			})[0];
+			var compress = attrs.filter(item => /^_compress=?$/i.test(item))[0];
 			return p.styleInline(hrefValue, compress);
 		}
 
 		return match;
 	}
 
-	var group = attrs.filter(function(item) {
-		return /^_group=/i.test(item);
-	})[0];
+	var group = attrs.filter( item => /^_group=/i.test(item))[0];
 
 	if(group) {
 		var groupValue = p.getGroup(group);
@@ -401,7 +359,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		
         // 替换_group
 		var relative = getRelative(file);
-		var findIt = _.find(p.manifest, function(item) {
+		var findIt = _.find(p.manifest, item => {
 			var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
 			var groupName = match[1];
 			return (groupName === groupValue) && _.contains(item.rel, relative);
@@ -430,7 +388,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, function(item) {
+		var doc = _.find(p.manifest, item => {
 			return item.src[0] == subPath;
 		});
 		if(!doc) {
@@ -465,9 +423,7 @@ Production.prototype.styleInline = function(cssPath, compress) {
 	var fullPath;
 
 	if(compress) {
-		var findIt = _.find(p.manifest, function(item) {
-			return _.isEqual(item.src, [cssPath]);
-		});
+		var findIt = _.find(p.manifest, item => _.isEqual(item.src, [cssPath]));
 		if(findIt) {
 			var minCssPath = findIt.dest.slice(p.publicPath.length);
 			var destRoot = common.getCwd(p.project.repo, 'production');
@@ -501,9 +457,7 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 	var fullPath;
 
 	if(compress) {
-		var findIt = _.find(p.manifest, function(item) {
-			return _.isEqual(item.src, [jsPath]);
-		});
+		var findIt = _.find(p.manifest, item => _.isEqual(item.src, [jsPath]));
 		if(findIt) {
 			var minJsPath = findIt.dest.slice(p.publicPath.length);
 			var destRoot = common.getCwd(p.project.repo, 'production');
@@ -527,9 +481,7 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 Production.prototype.replaceSrc = function(attrs, match, file) {
 	var p = this;
 
-	var src = attrs.filter(function(item){
-		return /^src=/i.test(item);
-	})[0];
+	var src = attrs.filter(item => /^src=/i.test(item))[0];
 
 	if(!src) {
 		return match;
@@ -541,26 +493,20 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
     }
     srcValue = url.parse(srcValue).pathname;
 
-	var inline = attrs.filter(function(item) {
-		return /^_inline=?$/i.test(item);
-	})[0];
+	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
 
 	var isScript = /^<script\s/i.test(match);
 
 	if(isScript && inline) {
 		if(p._singleDone) {
-			var compress = attrs.filter(function(item){
-				return /^_compress=?$/i.test(item);
-			})[0];
+			var compress = attrs.filter(item => /^_compress=?$/i.test(item))[0];
 			return p.scriptInline(srcValue, compress);
 		}
 
 		return match;
 	}
 
-	var group = attrs.filter(function(item) {
-		return /^_group=/i.test(item);
-	})[0];
+	var group = attrs.filter(item => /^_group=/i.test(item))[0];
 
 	if(isScript && group) {
 		var groupValue = p.getGroup(group);
@@ -579,7 +525,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 
 		// 替换_group
 		var relative = getRelative(file);
-		var findIt = _.find(p.manifest, function(item) {
+		var findIt = _.find(p.manifest, item => {
 			var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
 			var groupName = match[1];
 			return (groupName === groupValue) && _.contains(item.rel, relative);
@@ -608,9 +554,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, function(item) {
-			return item.src[0] == subPath;
-		});
+		var doc = _.find(p.manifest, item => item.src[0] == subPath);
 		if(!doc) {
 			return match;
 		}
@@ -634,9 +578,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 
 Production.prototype.replaceData = function(attrs, match, file) {
 	var p = this;
-	var data = attrs.filter(function(item){
-		return /^data=/i.test(item);
-	})[0];
+	var data = attrs.filter(item => /^data=/i.test(item))[0];
 
 	function replacement(match, sub) {
         var protocol = url.parse(sub).protocol;
@@ -648,9 +590,7 @@ Production.prototype.replaceData = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, function(item) {
-			return item.src[0] == subPath;
-		});
+		var doc = _.find(p.manifest, item => item.src[0] == subPath);
 		if(!doc) {
 			return match;
 		}
@@ -673,7 +613,7 @@ Production.prototype.replaceData = function(attrs, match, file) {
 Production.prototype.replaceSrcset = function(match, srcList, file) {
     var p = this;
 
-    srcList.forEach(function(src) {
+    srcList.forEach(src => {
         var isDataURI = src.slice(0, 5) === 'data:';
         var protocol = url.parse(src).protocol;
         var isAbsolutePath = src[0] === '/';
@@ -683,9 +623,7 @@ Production.prototype.replaceSrcset = function(match, srcList, file) {
         }
 
         var srcPath = util.relPath(file, src);
-        var doc = _.find(p.manifest, function(item) {
-            return item.src[0] == srcPath;
-        });
+        var doc = _.find(p.manifest, item => item.src[0] == srcPath);
         if(!doc) {
             return match;
         }
@@ -709,9 +647,7 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 
     sub = url.parse(sub.trim()).pathname;
 	var subPath = util.relPath(file, sub);
-	var doc = _.find(p.manifest, function(item) {
-		return item.src[0] == subPath;
-	});
+	var doc = _.find(p.manifest, item => item.src[0] == subPath);
 	if(!doc) {
 		return match;
 	}
@@ -747,7 +683,7 @@ Production.prototype.compileVmFiles = function(callback) {
             this.emit('end', err);
         }))
         .pipe(gulpFilter(filterList))
-        .pipe(through2.obj(util.replacePath(p, 'production'), function(cb) {
+        .pipe(through2.obj(util.replacePath(p, 'production'), cb => {
             p._singleDone = true;
             p.manifest = p.duplicate(p.manifest);
             
@@ -781,7 +717,7 @@ Production.prototype.compileVmFiles = function(callback) {
 			.pipe(concat(groupPath))
 			.pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
 			.pipe(rev())
-			.pipe(through2.obj(function(_file, enc, _cb) {
+			.pipe(through2.obj((_file, enc, _cb) => {
 				var file = new File(_file);
 
 				if(file.isNull()) {		
@@ -804,9 +740,7 @@ Production.prototype.compileVmFiles = function(callback) {
 			.pipe(gulp.dest(destStatic));            
 		}
 
-		var list = _.filter(p.manifest, function(item) {
-    		return !!item._group;
-    	});
+		var list = _.filter(p.manifest, item => !!item._group);
 
     	async.each(list, doGroup, done);
 	}
@@ -826,7 +760,7 @@ Production.prototype.compileVmFiles = function(callback) {
 		.pipe(gulp.dest(destVm));
 	}
 
-	async.series([single, groupFile, groupAndInline], function(err) {
+	async.series([single, groupFile, groupAndInline], err => {
 		console.log(colors.green('输出模板：' + destVm));
 		callback(err);
 	});
@@ -835,11 +769,8 @@ Production.prototype.compileVmFiles = function(callback) {
 Production.prototype.duplicate = function(manifest) {
 	var list = [];
 
-	manifest.forEach(function(item) {
-		var findIt = _.find(list, function(one) {
-			return _.isEqual(item.src, one.src);
-		});
-
+	manifest.forEach(item => {
+		var findIt = _.find(list, one => _.isEqual(item.src, one.src));
 		if(findIt) {
 			findIt.rel = _.union(findIt.rel, item.rel);
 		} else {
@@ -850,22 +781,12 @@ Production.prototype.duplicate = function(manifest) {
 };
 
 Production.prototype.run = function(commit, callback) {
-	var p = this;
-	
-	function clean(done) {
-		var dist = common.getCwd(p.project.repo, 'production');
-        del(dist, {
-            force: true
-        }).then(function() {
-            done();
-        });
-	}
 
 	var tasks = [
-		clean, 
-		util.getProject.bind(util, p.project, commit),
-		p.compileStaticFiles.bind(p),
-		p.compileVmFiles.bind(p)
+		util.clean(this.destRoot), 
+		util.getProject.bind(util, this.project, commit),
+		this.compileStaticFiles.bind(this),
+		this.compileVmFiles.bind(this)
 	];
 	async.series(tasks, callback);
 };
