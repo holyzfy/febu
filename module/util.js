@@ -14,7 +14,6 @@ var Git = require('./git.js');
 
 var util = {};
 
-// 检出版本库相应的版本
 util.getProject = (project, commit, callback) => {
     var repo = project.repo;
     var git = new Git(repo);

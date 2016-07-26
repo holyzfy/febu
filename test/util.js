@@ -5,12 +5,12 @@ var expect = require('expect.js');
 var sinon = require('sinon');
 var util = require('../module/util.js');
 
-describe(__filename, function(){
+describe(__filename, () => {
 	var project = {
 		repo: 'https://github.com/requirejs/example-multipage'
 	};
 
-	it('resolvePath', function(){
+	it('resolvePath', () => {
 		var from = 'd:/febu/data/src/github.com/test/index.html';
 		var to = 'style/list.css';
 		var base = 'd:/febu/data/src/github.com/test';
@@ -21,21 +21,21 @@ describe(__filename, function(){
 		expect(ret2).to.be(to2);
 	});
 
-	it('hasAMD', function() {
+	it('hasAMD', () => {
 		var project = {
 			repo: 'https://test.com/user/project'
 		};
 		expect(util.hasAMD(project)).to.not.be.ok();
 	});
 
-	it('getAMDBuildPath', function() {
+	it('getAMDBuildPath', () => {
 		var project = {
 			repo: 'https://test.com/user/project'
 		};
 		expect(util.getAMDBuildPath).withArgs(project).to.throwException();
 	});
 
-	it('getAMDConfigPath', function() {
+	it('getAMDConfigPath', () => {
 		var _getAMDBuildPath = util.getAMDBuildPath;
         var buildPath = path.join(__dirname, './testcase/project1/build.js');
         util.getAMDBuildPath = sinon.stub().returns(buildPath);
@@ -45,7 +45,7 @@ describe(__filename, function(){
         expect(actual).to.be(path.join(__dirname, './testcase/project1/js/config.js'));
     });
 
-    it('getAMDOutputPath', function() {
+    it('getAMDOutputPath', () => {
     	var _getAMDBuildPath = util.getAMDBuildPath;
         var buildPath = path.join(__dirname, './testcase/project1/build.js');
         util.getAMDBuildPath = sinon.stub().returns(buildPath);
@@ -55,7 +55,7 @@ describe(__filename, function(){
         expect(actual).to.be(path.resolve('/absoulte/path/to/output'));
     });
 
-    it('fixAMDPathKey', function() {
+    it('fixAMDPathKey', () => {
     	var jqueryDest = 'http://static.f2e.example.com/assets/test_project/lib/jquery';
     	var paths = {
     		jquery: 'lib/jquery',
@@ -65,7 +65,7 @@ describe(__filename, function(){
     	expect(newPaths.jquery).to.be(jqueryDest);
     });
 
-	it('replaceConfigPaths: require.config(...)', function() {
+	it('replaceConfigPaths: require.config(...)', () => {
 		var contents = "  require.config({baseUrl: 'js', paths: {'jquery': 'lib/jquery', 'bower': '../bower_components'}, shim: {'highcharts': ['jquery'] } }); ";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
@@ -77,7 +77,7 @@ describe(__filename, function(){
 		expect(newContents).to.contain('bower');
 	});
 
-	it('replaceConfigPaths: var require = ...', function() {
+	it('replaceConfigPaths: var require = ...', () => {
 		var contents = "var require = {waitSeconds: 0, paths: {'jquery': 'lib/jquery'}}";
 		var newPaths = {
 			jquery: '//code.jquery.com/jquery-1.11.3.min'
@@ -87,7 +87,7 @@ describe(__filename, function(){
 		expect(newContents).to.contain('//code.jquery.com/jquery-1.11.3.min');
 	});
 	
-	it('relPath', function() {
+	it('relPath', () => {
 		var css = new File({
 			base: '/febu/data_temp/test_project',
 			path: '/febu/data_temp/test_project/style/sub_xxx/login.css'
@@ -116,12 +116,12 @@ describe(__filename, function(){
 		expect(htmlRet2).to.equal(htmlExpected2);
 	});
 
-	it('getIgnore: empty', function() {
+	it('getIgnore: empty', () => {
 		var testRet = util.getIgnore('./');
 		expect(testRet).to.eql([]);
 	});
 
-	it('getIgnore: has febu.json', function() {
+	it('getIgnore: has febu.json', () => {
 		var data = {
 		    "ignore": [
 		        "mock",

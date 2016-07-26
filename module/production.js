@@ -2,7 +2,6 @@ var path = require('path');
 var fs = require('fs-extra');
 var async = require('async');
 var debug = require('debug')('febu:production.js');
-var gulpFilter = require('gulp-filter');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-clean-css');
@@ -28,9 +27,9 @@ function Production(project) {
     this.src = common.getCwd(project.repo, 'src');
     this.destRoot = common.getCwd(project.repo, 'production');
     this.destStatic = path.join(this.destRoot, 'static');
+    this.destVm = path.join(this.destRoot, 'vm');
     this.build = common.getCwd(project.repo, 'build');
     this.ignoreList = util.getIgnore(this.src);
-    this.filterList = util.getStaticFileType().concat(this.ignoreList);
 }
 
 /**
@@ -40,17 +39,16 @@ function Production(project) {
  * @return {Production}
  */
 Production.prototype.updateManifest = function(doc) {
-	var p = this;
 	var findIt;
 
 	doc.src = [].concat(doc.src);
 
 	if(doc._group) {
-		findIt = _.find(p.manifest, item => {
+		findIt = _.find(this.manifest, item => {
 			return (item._group === doc._group) && (item._type === doc._type) && _.isEqual(item.rel, doc.rel);
 		});
 	} else {
-		findIt = _.find(p.manifest, item => _.isEqual(item.src, doc.src));
+		findIt = _.find(this.manifest, item => _.isEqual(item.src, doc.src));
 	}
 	
 	if(findIt) {
@@ -61,14 +59,13 @@ Production.prototype.updateManifest = function(doc) {
 		doc.src = _.union(findIt.src, doc.src);
 		_.extend(findIt, doc);
 	} else {
-		p.manifest.push(doc);
+		this.manifest.push(doc);
 	}
 
-	return p;
+	return this;
 };
 
 Production.prototype.updateManifestHelper = function (file, enc, cb) {
-	var p = this;
     var manifest;
 
 	file = new File(file);
@@ -89,13 +86,13 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	var docs = []; // 方便做单元测试
 	_.mapObject(manifest, (value, key) => {
-		var dest = url.resolve(p.publicPath, value);
+		var dest = url.resolve(this.publicPath, value);
 		var doc = {
 			src: key,
 			dest: dest
 		};
 		docs.push(doc);
-		p.updateManifest(doc);
+		this.updateManifest(doc);
 	});
 	cb && cb(null, file);
 	return docs;
@@ -124,16 +121,15 @@ Production.prototype.compileStaticFiles = function(callback) {
  */
 Production.prototype.img = function (done) {
     debug('img');
-    var imgFilterList = _.filter(this.filterList, item => (item !== '**/*.css') && (item !== '**/*.js'));
-
-    gulp.src(['**/*'], {
+    var staticList = util.getStaticFileType().concat(this.ignoreList);
+    var files = _.filter(staticList, item => (item !== '**/*.css') && (item !== '**/*.js'));
+    gulp.src(files, {
         base: this.src
     })
-    .pipe(plumber(err => {
+    .pipe(plumber(function (err) {
         debug('task img出错: %s', err.message);
         this.emit('end', err);
     }))
-    .pipe(gulpFilter(imgFilterList))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
@@ -150,18 +146,17 @@ Production.prototype.img = function (done) {
  */
 Production.prototype.css = function (callback) {
     debug('css');
-    var cssFilterList = ['**/*.css'].concat(this.ignoreList);
 
     var output2build = done => {
-        gulp.src(['**/*'], {
+        var files = ['**/*.css'].concat(this.ignoreList);
+        gulp.src(files, {
             base: this.src
         })
         .on('end', done)
-        .pipe(plumber(err => {
+        .pipe(plumber(function (err) {
             debug('task build出错: %s', err.message);
             this.emit('end', err);
         }))
-        .pipe(gulpFilter(cssFilterList))
         .pipe(through2.obj(util.replacePath(this, 'production'))) // 替换静态资源链接
         .pipe(gulp.dest(this.build));
     };
@@ -171,11 +166,10 @@ Production.prototype.css = function (callback) {
             base: this.build,
             cwd: this.build
         })
-        .pipe(plumber(err => {
+        .pipe(plumber(function (err) {
             debug('task css出错: %s', err.message);
             this.emit('end', err);
         }))
-        .pipe(gulpFilter(cssFilterList))
         .pipe(minifyCss())
         .pipe(rev())
         .pipe(gulp.dest(this.destStatic))
@@ -191,6 +185,7 @@ Production.prototype.css = function (callback) {
 
 // 使用AMD规范的项目
 Production.prototype.amd = function (done) {
+    debug('amd');
     var tasks = [
         amd.optimize.bind(this),
         amd.copy.bind(this),
@@ -216,14 +211,14 @@ amd.optimize = function (done) {
 };
 
 amd.copy = function (done) {
-    gulp.src('**/*.js', {
+    var files = ['**/*.js'].concat(this.ignoreList);
+    gulp.src(files, {
         cwd: path.join(this.src, config.amd.build)
     })
     .pipe(plumber(function (err) {
         debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end', err);
     }))
-    .pipe(gulpFilter(this.filterList))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
@@ -281,14 +276,15 @@ amd.updateConfig = function (done) {
 
 // 未使用AMD规范的项目
 Production.prototype.js = function (done) {
-    gulp.src(['**/*.js'], {
+    debug('js');
+    var files = ['**/*.js'].concat(this.ignoreList);
+    gulp.src(files, {
         base: this.src
     })
-    .pipe(plumber(err => {
+    .pipe(plumber(function (err) {
         debug('task js出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end', err);
     }))
-    .pipe(this.ignoreList)
     .pipe(uglify())
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
@@ -314,9 +310,7 @@ Production.prototype.getGroup = function(group) {
 	return group.match(/^_group='?"?([^'"]+)'?"?$/i)[1];
 };
 
-Production.prototype.replaceHref = function(attrs, match, file) {
-	var p = this;
-	
+Production.prototype.replaceHref = function(attrs, match, file) {	
 	var href = attrs.filter(item => /^href=/i.test(item))[0];
 
 	if(!href) {
@@ -332,9 +326,9 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
 
 	if(inline) {
-		if(p._singleDone) {
+		if(this._singleDone) {
 			var compress = attrs.filter(item => /^_compress=?$/i.test(item))[0];
-			return p.styleInline(hrefValue, compress);
+			return this.styleInline(hrefValue, compress);
 		}
 
 		return match;
@@ -343,9 +337,9 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 	var group = attrs.filter( item => /^_group=/i.test(item))[0];
 
 	if(group) {
-		var groupValue = p.getGroup(group);
+		var groupValue = this.getGroup(group);
 
-		if(!p._singleDone) {
+		if(!this._singleDone) {
 			// 收集_group信息
 			var doc = {
 				src: hrefValue,
@@ -353,13 +347,13 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 				_type: 'css'
 			};
 			replaceHelper(doc, file);
-			p.updateManifest(doc);
+			this.updateManifest(doc);
 			return match;
 		}
 		
         // 替换_group
 		var relative = getRelative(file);
-		var findIt = _.find(p.manifest, item => {
+		var findIt = _.find(this.manifest, item => {
 			var match = item.dest.match(/\/(\w+)-\w+\.group\.css$/) || [];
 			var groupName = match[1];
 			return (groupName === groupValue) && _.contains(item.rel, relative);
@@ -380,7 +374,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return link;
 	}
 
-	function replacement(match, sub) {
+	var replacement = (match, sub) => {
 		var protocol = url.parse(sub).protocol;
 		if(protocol) {
 			return match;
@@ -388,7 +382,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, item => {
+		var doc = _.find(this.manifest, item => {
 			return item.src[0] == subPath;
 		});
 		if(!doc) {
@@ -396,9 +390,8 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		}
 		
 		replaceHelper(doc, file);
-		var newHref = doc.dest;
-		return 'href="' + newHref + '"';
-	}
+		return 'href="' + doc.dest + '"';
+	};
 
 	if(/^href="/i.test(href)) {
 		match = match.replace(/\bhref="([^"]+)"/i, replacement);
@@ -417,22 +410,20 @@ Production.prototype.replaceHref = function(attrs, match, file) {
  * @return 返回替换后的内容（含style标签）
  */
 Production.prototype.styleInline = function(cssPath, compress) {
-	var p = this;
-	var src = common.getCwd(p.project.repo, 'src');
-	var base = src;
+	var src = common.getCwd(this.project.repo, 'src');
 	var fullPath;
 
 	if(compress) {
-		var findIt = _.find(p.manifest, item => _.isEqual(item.src, [cssPath]));
+		var findIt = _.find(this.manifest, item => _.isEqual(item.src, [cssPath]));
 		if(findIt) {
-			var minCssPath = findIt.dest.slice(p.publicPath.length);
-			var destRoot = common.getCwd(p.project.repo, 'production');
+			var minCssPath = findIt.dest.slice(this.publicPath.length);
+			var destRoot = common.getCwd(this.project.repo, 'production');
 			fullPath = path.join(destRoot, 'static', minCssPath);
 		} else {
 			console.error('出错：未找到%s对应的压缩文件', cssPath);
 		}
 	} else {
-		fullPath = path.join(base, cssPath);
+		fullPath = path.join(src, cssPath);
 	}
 
 	var content = '';
@@ -451,16 +442,15 @@ Production.prototype.styleInline = function(cssPath, compress) {
  * @return 返回替换后的内容（含script标签）
  */
 Production.prototype.scriptInline = function(jsPath, compress) {
-	var p = this;
-	var src = common.getCwd(p.project.repo, 'src');
+	var src = common.getCwd(this.project.repo, 'src');
 	var base = src;
 	var fullPath;
 
 	if(compress) {
-		var findIt = _.find(p.manifest, item => _.isEqual(item.src, [jsPath]));
+		var findIt = _.find(this.manifest, item => _.isEqual(item.src, [jsPath]));
 		if(findIt) {
-			var minJsPath = findIt.dest.slice(p.publicPath.length);
-			var destRoot = common.getCwd(p.project.repo, 'production');
+			var minJsPath = findIt.dest.slice(this.publicPath.length);
+			var destRoot = common.getCwd(this.project.repo, 'production');
 			fullPath = path.join(destRoot, 'static', minJsPath);
 		} else {
 			console.error('出错：未找到%s对应的压缩文件', jsPath);
@@ -479,8 +469,6 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 };
 
 Production.prototype.replaceSrc = function(attrs, match, file) {
-	var p = this;
-
 	var src = attrs.filter(item => /^src=/i.test(item))[0];
 
 	if(!src) {
@@ -498,9 +486,9 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 	var isScript = /^<script\s/i.test(match);
 
 	if(isScript && inline) {
-		if(p._singleDone) {
+		if(this._singleDone) {
 			var compress = attrs.filter(item => /^_compress=?$/i.test(item))[0];
-			return p.scriptInline(srcValue, compress);
+			return this.scriptInline(srcValue, compress);
 		}
 
 		return match;
@@ -509,9 +497,9 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 	var group = attrs.filter(item => /^_group=/i.test(item))[0];
 
 	if(isScript && group) {
-		var groupValue = p.getGroup(group);
+		var groupValue = this.getGroup(group);
 
-		if(!p._singleDone) {
+		if(!this._singleDone) {
 			// 收集_group信息
 			var doc = {
 				src: srcValue,
@@ -519,13 +507,13 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 				_type: 'js'
 			};
 			replaceHelper(doc, file);
-			p.updateManifest(doc);
+			this.updateManifest(doc);
 			return match;
 		}
 
 		// 替换_group
 		var relative = getRelative(file);
-		var findIt = _.find(p.manifest, item => {
+		var findIt = _.find(this.manifest, item => {
 			var match = item.dest.match(/\/(\w+)-\w+\.group\.js$/) || [];
 			var groupName = match[1];
 			return (groupName === groupValue) && _.contains(item.rel, relative);
@@ -542,11 +530,10 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		}
 
 		findIt._groupDone[relative] = true; // 标记为已替换
-		var script = '<script src="' + findIt.dest + '"></script>';
-		return script;
+		return '<script src="' + findIt.dest + '"></script>';
 	}
 
-	function replacement(match, sub) {
+	var replacement = (match, sub) => {
 		var protocol = url.parse(sub).protocol;
 		if(protocol) {
 			return match;
@@ -554,16 +541,14 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, item => item.src[0] == subPath);
+		var doc = _.find(this.manifest, item => item.src[0] == subPath);
 		if(!doc) {
 			return match;
 		}
 
 		replaceHelper(doc, file);
-
-		var newSrc = doc.dest;
-		return 'src="' + newSrc + '"';
-	}
+		return 'src="' + doc.dest + '"';
+	};
 
 	if(/^src="/i.test(src)) {
 		match = match.replace(/\bsrc="([^"]+)"/i, replacement);
@@ -577,10 +562,9 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 };
 
 Production.prototype.replaceData = function(attrs, match, file) {
-	var p = this;
 	var data = attrs.filter(item => /^data=/i.test(item))[0];
 
-	function replacement(match, sub) {
+	var replacement = (match, sub) => {
         var protocol = url.parse(sub).protocol;
         var isAbsolutePath = sub[0] === '/';
         var isVmVar = /[$<{]/.test(sub[0]);
@@ -590,15 +574,14 @@ Production.prototype.replaceData = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(p.manifest, item => item.src[0] == subPath);
+		var doc = _.find(this.manifest, item => item.src[0] == subPath);
 		if(!doc) {
 			return match;
 		}
 
 		replaceHelper(doc, file);
-		var newData = doc.dest;
-		return 'data="' + newData + '"';
-	}
+		return 'data="' + doc.dest + '"';
+	};
 
 	if(/^data="/i.test(data)) {
 		match = match.replace(/\bdata="([^"]+)"/i, replacement);
@@ -611,8 +594,6 @@ Production.prototype.replaceData = function(attrs, match, file) {
 };
 
 Production.prototype.replaceSrcset = function(match, srcList, file) {
-    var p = this;
-
     srcList.forEach(src => {
         var isDataURI = src.slice(0, 5) === 'data:';
         var protocol = url.parse(src).protocol;
@@ -623,7 +604,7 @@ Production.prototype.replaceSrcset = function(match, srcList, file) {
         }
 
         var srcPath = util.relPath(file, src);
-        var doc = _.find(p.manifest, item => item.src[0] == srcPath);
+        var doc = _.find(this.manifest, item => item.src[0] == srcPath);
         if(!doc) {
             return match;
         }
@@ -635,7 +616,6 @@ Production.prototype.replaceSrcset = function(match, srcList, file) {
 };
 
 Production.prototype.replaceUrl = function(match, sub, file) {
-	var p = this;
 	sub = sub.trim();
 	var isDataURI = sub.slice(0, 5) === 'data:';
 	var protocol = url.parse(sub).protocol;
@@ -647,7 +627,7 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 
     sub = url.parse(sub.trim()).pathname;
 	var subPath = util.relPath(file, sub);
-	var doc = _.find(p.manifest, item => item.src[0] == subPath);
+	var doc = _.find(this.manifest, item => item.src[0] == subPath);
 	if(!doc) {
 		return match;
 	}
@@ -661,109 +641,107 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 // 处理模板文件
 Production.prototype.compileVmFiles = function(callback) {
 	debug('处理模板文件');
-	var p = this;
-	
-	var files = ['**/*'];
-	var src = common.getCwd(p.project.repo, 'src');
-    var build = common.getCwd(p.project.repo, 'build');
-	var destRoot = common.getCwd(p.project.repo, 'production');
-	var destStatic = path.join(destRoot, 'static');
-	var destVm = path.join(destRoot, 'vm');
-	var ignoreList = util.getIgnore(src);
-	var filterList = util.getVmFileType().concat(ignoreList);
-
-	// 处理单个静态外链
-	function single(done) {
-        gulp.src(files, {
-			base: src
-		})
-		.on('end', done)
-        .pipe(plumber(function (err) {
-            debug('task single出错: %s', err.message);
-            this.emit('end', err);
-        }))
-        .pipe(gulpFilter(filterList))
-        .pipe(through2.obj(util.replacePath(p, 'production'), cb => {
-            p._singleDone = true;
-            p.manifest = p.duplicate(p.manifest);
-            
-            // debug('完成收集manifest=\n', p.manifest);
-            cb();
-        }))
-        .pipe(gulp.dest(destVm));
-	}
-
-	// 生成group文件
-	function groupFile(done) {
-		function doGroup(item, cb) {
-			var groupPath;
-            var pathRoot = src;
-			if(item._type === 'css') {
-				groupPath = path.join('style', item._group + '.css');
-                pathRoot = build;
-			} else if(item._type === 'js') {
-				groupPath = path.join('js', item._group + '.js');
-			}
-
-		    gulp.src(item.src, {
-				base: pathRoot,
-				cwd: pathRoot
-			})
-            .on('end', cb)
-			.pipe(plumber(function (err) {
-	            debug('task group出错: %s', err.message);
-	            this.emit('end', err);
-	        }))
-			.pipe(concat(groupPath))
-			.pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
-			.pipe(rev())
-			.pipe(through2.obj((_file, enc, _cb) => {
-				var file = new File(_file);
-
-				if(file.isNull()) {		
-			        return _cb(null, file);		
-			    }
-
-			    if(item._type === 'css') {
-			    	file.extname = '.group.css';
-			    } else if(item._type === 'js') {
-				    file.extname = '.group.js';
-			    }
-			    
-			    var doc = {
-			    	src: item.src,
-			    	dest: url.resolve(p.publicPath, file.relative)
-			    };
-			    p.updateManifest(doc);
-			    _cb(null, file);
-			}))
-			.pipe(gulp.dest(destStatic));            
-		}
-
-		var list = _.filter(p.manifest, item => !!item._group);
-
-    	async.each(list, doGroup, done);
-	}
-
-	// 处理_group和_inline
-	function groupAndInline(done) {
-        gulp.src(files, {
-			base: src
-		})
-        .on('end', done)
-		.pipe(plumber(function (err) {
-            debug('task groupReplace出错: %s', err.message);
-            this.emit('end', err);
-        }))
-        .pipe(gulpFilter(filterList))
-        .pipe(through2.obj(util.replacePath(p, 'production')))
-		.pipe(gulp.dest(destVm));
-	}
-
-	async.series([single, groupFile, groupAndInline], err => {
-		console.log(colors.green('输出模板：' + destVm));
+    var tasks = [
+        vm.single.bind(this),
+        vm.group.bind(this),
+        vm.groupAndInline.bind(this)
+    ];
+	async.series(tasks, err => {
+		console.log(colors.green('输出模板：' + this.destVm));
 		callback(err);
 	});
+};
+
+var vm = {};
+
+// 处理单个静态外链
+vm.single = function (done) {
+    debug('single');
+    var vmList = util.getVmFileType().concat(this.ignoreList);
+    gulp.src(vmList, {
+        base: this.src
+    })
+    .on('end', done)
+    .pipe(plumber(function (err) {
+        debug('task single出错: %s', err.message);
+        this.emit('end', err);
+    }))
+    .pipe(through2.obj(util.replacePath(this, 'production'), cb => {
+        this._singleDone = true;
+        this.manifest = this.duplicate(this.manifest);
+        
+        // debug('完成收集manifest=\n', this.manifest);
+        cb();
+    }))
+    .pipe(gulp.dest(this.destVm));
+};
+
+// 生成group文件
+vm.group = function (done) {
+    debug('group');
+    var doGroup = (item, cb) => {
+        var groupPath;
+        var pathRoot = this.src;
+        if(item._type === 'css') {
+            groupPath = path.join('style', item._group + '.css');
+            pathRoot = this.build;
+        } else if(item._type === 'js') {
+            groupPath = path.join('js', item._group + '.js');
+        }
+
+        gulp.src(item.src, {
+            base: pathRoot,
+            cwd: pathRoot
+        })
+        .on('end', cb)
+        .pipe(plumber(function (err) {
+            debug('task group出错: %s', err.message);
+            this.emit('end', err);
+        }))
+        .pipe(concat(groupPath))
+        .pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
+        .pipe(rev())
+        .pipe(through2.obj((_file, enc, _cb) => {
+            var file = new File(_file);
+
+            if(file.isNull()) {     
+                return _cb(null, file);     
+            }
+
+            if(item._type === 'css') {
+                file.extname = '.group.css';
+            } else if(item._type === 'js') {
+                file.extname = '.group.js';
+            }
+            
+            var doc = {
+                src: item.src,
+                dest: url.resolve(this.publicPath, file.relative)
+            };
+            this.updateManifest(doc);
+            _cb(null, file);
+        }))
+        .pipe(gulp.dest(this.destStatic));            
+    };
+
+    var list = _.filter(this.manifest, item => !!item._group);
+    async.each(list, doGroup, done);
+};
+
+// 处理_group和_inline
+vm.groupAndInline = function (done) {
+    debug('groupAndInline');
+    var vmList = util.getVmFileType().concat(this.ignoreList);
+    gulp.src(vmList, {
+        base: this.src
+    })
+    .on('end', done)
+    .pipe(plumber(function (err) {
+        debug('task groupReplace出错: %s', err.message);
+        this.emit('end', err);
+    }))
+    .pipe(through2.obj(util.replacePath(this, 'production')))
+    .pipe(gulp.dest(this.destVm));
 };
 
 Production.prototype.duplicate = function(manifest) {
@@ -781,7 +759,6 @@ Production.prototype.duplicate = function(manifest) {
 };
 
 Production.prototype.run = function(commit, callback) {
-
 	var tasks = [
 		util.clean(this.destRoot), 
 		util.getProject.bind(util, this.project, commit),
