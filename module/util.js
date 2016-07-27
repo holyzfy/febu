@@ -326,7 +326,7 @@ util.taskDone = done => {
     return through2.obj(function (data, enc, cb) {
         cb();
     },
-    function gulpTask(cb) {
+    function (cb) {
         cb();
         done();
     });

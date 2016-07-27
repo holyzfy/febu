@@ -124,7 +124,7 @@ Production.prototype.img = function (done) {
     var staticList = util.getStaticFileType().concat(this.ignoreList);
     var files = _.filter(staticList, item => (item !== '**/*.css') && (item !== '**/*.js'));
     gulp.src(files, {
-        base: this.src
+        cwd: this.src
     })
     .pipe(plumber(function (err) {
         debug('task img出错: %s', err.message);
@@ -150,7 +150,7 @@ Production.prototype.css = function (callback) {
     var output2build = done => {
         var files = ['**/*.css'].concat(this.ignoreList);
         gulp.src(files, {
-            base: this.src
+            cwd: this.src
         })
         .pipe(plumber(function (err) {
             debug('task build出错: %s', err.message);
@@ -163,7 +163,6 @@ Production.prototype.css = function (callback) {
 
     var style = done => {
         gulp.src('**/*.css', {
-            base: this.build,
             cwd: this.build
         })
         .pipe(plumber(function (err) {
@@ -246,7 +245,8 @@ amd.updateConfig = function (done) {
     });
 
     gulp.src(util.getAMDConfigPath(this.project), {
-        base: this.src
+        base: this.src,
+        cwd: this.src
     })
     .pipe(plumber(function (err) {
         debug('task updateConfig出错 第%d行: %s', err.lineNumber, err.message);
@@ -279,7 +279,7 @@ Production.prototype.js = function (done) {
     debug('js');
     var files = ['**/*.js'].concat(this.ignoreList);
     gulp.src(files, {
-        base: this.src
+        cwd: this.src
     })
     .pipe(plumber(function (err) {
         debug('task js出错 第%d行: %s', err.lineNumber, err.message);
@@ -443,7 +443,6 @@ Production.prototype.styleInline = function(cssPath, compress) {
  */
 Production.prototype.scriptInline = function(jsPath, compress) {
 	var src = common.getCwd(this.project.repo, 'src');
-	var base = src;
 	var fullPath;
 
 	if(compress) {
@@ -456,7 +455,7 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 			console.error('出错：未找到%s对应的压缩文件', jsPath);
 		}
 	} else {
-		fullPath = path.join(base, jsPath);
+		fullPath = path.join(src, jsPath);
 	}
 
 	var content = '';
@@ -659,9 +658,8 @@ vm.single = function (done) {
     debug('single');
     var vmList = util.getVmFileType().concat(this.ignoreList);
     gulp.src(vmList, {
-        base: this.src
+        cwd: this.src
     })
-    .on('end', done)
     .pipe(plumber(function (err) {
         debug('task single出错: %s', err.message);
         this.emit('end', err);
@@ -673,7 +671,8 @@ vm.single = function (done) {
         // debug('完成收集manifest=\n', this.manifest);
         cb();
     }))
-    .pipe(gulp.dest(this.destVm));
+    .pipe(gulp.dest(this.destVm))
+    .pipe(util.taskDone(done));
 };
 
 // 生成group文件
@@ -693,7 +692,6 @@ vm.group = function (done) {
             base: pathRoot,
             cwd: pathRoot
         })
-        .on('end', cb)
         .pipe(plumber(function (err) {
             debug('task group出错: %s', err.message);
             this.emit('end', err);
@@ -721,7 +719,8 @@ vm.group = function (done) {
             this.updateManifest(doc);
             _cb(null, file);
         }))
-        .pipe(gulp.dest(this.destStatic));            
+        .pipe(gulp.dest(this.destStatic))
+        .pipe(util.taskDone(cb));         
     };
 
     var list = _.filter(this.manifest, item => !!item._group);
@@ -733,15 +732,15 @@ vm.groupAndInline = function (done) {
     debug('groupAndInline');
     var vmList = util.getVmFileType().concat(this.ignoreList);
     gulp.src(vmList, {
-        base: this.src
+        cwd: this.src
     })
-    .on('end', done)
     .pipe(plumber(function (err) {
         debug('task groupReplace出错: %s', err.message);
         this.emit('end', err);
     }))
     .pipe(through2.obj(util.replacePath(this, 'production')))
-    .pipe(gulp.dest(this.destVm));
+    .pipe(gulp.dest(this.destVm))
+    .pipe(util.taskDone(done));
 };
 
 Production.prototype.duplicate = function(manifest) {

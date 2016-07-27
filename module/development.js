@@ -25,19 +25,19 @@ function Dev(project) {
 }
 
 // 收集静态资源
-Dev.prototype.resource = function (callback) {
+Dev.prototype.resource = function (done) {
 	var filterList = util.getStaticFileType().concat(this.ignoreList);
 	console.log(colors.green('输出静态资源：' + this.destStatic));
-	gulp.src(['**/*'], {
-		base: this.src
+	gulp.src('**/*', {
+		cwd: this.src
 	})
-	.on('end', callback)
 	.pipe(plumber(function (err) {
         debug('出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end');
     }))
 	.pipe(gulpFilter(this.filterList))
-	.pipe(gulp.dest(this.destStatic));
+	.pipe(gulp.dest(this.destStatic))
+	.pipe(util.taskDone(done));
 };
 
 Dev.prototype.replaceHref = function(attrs, match, file) {
@@ -194,18 +194,16 @@ amd.optimize = function optimize(callback) {
 };
 
 amd.copy = function () {
-	var callback = arguments[arguments.length - 1];
+	var done = arguments[arguments.length - 1];
 	var newPaths = {};
 	var output = util.getAMDOutputPath(this.project);
 	var configPathRelative = path.relative(this.src, util.getAMDConfigPath(this.project));
 	var configDir = path.dirname(path.join(output, configPathRelative));
     var publicPath = util.getProjectPublicPath(this.project, 'development');
 
-	gulp.src(['**/*.js'], {
-		base: output,
+	gulp.src('**/*.js', {
 		cwd: output
 	})
-	.on('end', () => callback(null, newPaths))
 	.pipe(plumber(function (err) {
         debug('出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end');
@@ -225,14 +223,15 @@ amd.copy = function () {
 		newPaths[key] = dest;
 		cb(null, file);
 	}))
-	.pipe(gulp.dest(this.destStatic));
+	.pipe(gulp.dest(this.destStatic))
+	.pipe(util.taskDone(() => done(null, newPaths)));
 };
 
-amd.updateConfig = function (newPaths, callback) {
+amd.updateConfig = function (newPaths, done) {
 	gulp.src(util.getAMDConfigPath(this.project), {
-		base: this.src
+		base: this.src,
+		cwd: this.src
 	})
-	.on('end', callback)
 	.pipe(plumber(function (err) {
         debug('出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end');
@@ -249,10 +248,11 @@ amd.updateConfig = function (newPaths, callback) {
 		file.contents = new Buffer(result);
 		cb(null, file);
 	}))
-	.pipe(gulp.dest(this.destStatic));
+	.pipe(gulp.dest(this.destStatic))
+	.pipe(util.taskDone(done));
 };
 
-Dev.prototype.html = function(callback) {
+Dev.prototype.html = function(done) {
 	debug('html');
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
@@ -262,14 +262,13 @@ Dev.prototype.html = function(callback) {
 	var filterList = util.getVmFileType().concat(ignoreList);
 	
 	console.log(colors.green('输出html：' + dest));
-	gulp.src(['**/*'], {
-		base: src
+	gulp.src('**/*', {
+		cwd: src
 	})
-	.on('end', callback)
-	.on('error', callback)
 	.pipe(gulpFilter(filterList))
 	.pipe(through2.obj(util.replacePath(dev, 'development'))) // 替换静态资源链接
-	.pipe(gulp.dest(dest));
+	.pipe(gulp.dest(dest))
+	.pipe(util.taskDone(done));
 };
 
 Dev.prototype.run = function(commit, callback) {
