@@ -4,7 +4,7 @@ var path = require('path');
 var debug = require('debug')('febu:' + __filename);
 var common = {};
 
-common.getPathname = function(repo) {
+common.getPathname = repo => {
     var urlMap = url.parse(repo);
     var pathname = urlMap.pathname.match(/^\/?(.*)$/)[1].replace('/', '_');
     return ('.git' === pathname.slice(-4)) ? pathname.slice(0, -4) : pathname;
@@ -16,7 +16,7 @@ common.getPathname = function(repo) {
  * @param type 有效值src, build, development, production
  * @return {String}
  */
-common.getCwd = function(repo, type) {
+common.getCwd = (repo, type) => {
     var dataPath = path.resolve(__dirname, '..', config.dataPath);
     return path.resolve(dataPath, type, url.parse(repo).hostname, common.getPathname(repo));
 };

@@ -9,6 +9,7 @@ var frep = require('frep');
 var File = require('vinyl');
 var config = require('config');
 var del = require('del');
+var through2 = require('through2');
 var common = require('./common.js');
 var Git = require('./git.js');
 
@@ -319,6 +320,16 @@ util.clean = (dir, done) => {
     return done => {
         del(dir, { force: true }).then(() => done());   
     };
+};
+
+util.taskDone = done => {
+    return through2.obj(function (data, enc, cb) {
+        cb();
+    },
+    function gulpTask(cb) {
+        cb();
+        done();
+    });
 };
 
 module.exports = util;

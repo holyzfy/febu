@@ -152,13 +152,13 @@ Production.prototype.css = function (callback) {
         gulp.src(files, {
             base: this.src
         })
-        .on('end', done)
         .pipe(plumber(function (err) {
             debug('task build出错: %s', err.message);
             this.emit('end', err);
         }))
         .pipe(through2.obj(util.replacePath(this, 'production'))) // 替换静态资源链接
-        .pipe(gulp.dest(this.build));
+        .pipe(gulp.dest(this.build))
+        .pipe(util.taskDone(done));
     };
 
     var style = done => {
@@ -180,7 +180,7 @@ Production.prototype.css = function (callback) {
         }));
     };
 
-    async.series([util.clean(this.build), output2build, style], callback);
+    async.series([output2build, style], callback);
 };
 
 // 使用AMD规范的项目
@@ -760,7 +760,8 @@ Production.prototype.duplicate = function(manifest) {
 
 Production.prototype.run = function(commit, callback) {
 	var tasks = [
-		util.clean(this.destRoot), 
+        util.clean(this.build),
+		util.clean(this.destRoot),
 		util.getProject.bind(util, this.project, commit),
 		this.compileStaticFiles.bind(this),
 		this.compileVmFiles.bind(this)
