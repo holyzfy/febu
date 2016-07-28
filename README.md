@@ -21,6 +21,7 @@
     - [_inline和_compress示例](#_inline%E5%92%8C_compress%E7%A4%BA%E4%BE%8B)
   - [febu.json](#febujson)
 - [测试](#%E6%B5%8B%E8%AF%95)
+- [示例项目](#%E7%A4%BA%E4%BE%8B%E9%A1%B9%E7%9B%AE)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -129,3 +130,8 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 
 0. 安装依赖 `npm install -g mocha`
 0. 运行 `npm test`
+
+## 示例项目
+
+- 常规的写法 https://github.com/holyzfy/trygit
+- 使用了AMD规范 https://github.com/holyzfy/amd_demo
