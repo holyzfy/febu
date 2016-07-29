@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/holyzfy/febu",
   "scripts": {
+    "preinstall": "npm ls -g eslint || npm install -g eslint; npm ls -g gulp-cli || npm install -g gulp-cli",
     "eslint": "files=`git diff --staged --name-only --diff-filter=ACMRTU | grep -ie '\\.js$'`; if [ \"${files:=empty}\" != \"empty\" ]; then eslint -c .eslintrc.json $files; fi",
     "test": "mocha test"
   },
@@ -25,7 +26,6 @@
       "pre-commit": "npm run eslint"
     }
   },
-  "preinstall": "npm ls -g eslint || npm install -g eslint; npm ls -g gulp-cli || npm install -g gulp-cli",
   "dependencies": {
     "async": "^2.0.0-rc.4",
     "colors": "^1.1.2",
