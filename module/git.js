@@ -34,10 +34,9 @@ Git.prototype.exec = function(command, args, callback) {
     
     var _command = [this.binary, command].concat(args).join(' ');
     debug('git command=', _command);
-    shell.exec(_command, {silent: true}, (code, output) => {
-        var err = code === 0 ? null : output;
-        console.log(colors.grey(output));
-        callback(err, output);
+    shell.exec(_command, {silent: true}, (code, stdout, stderr) => {
+        var err = code === 0 ? null : stderr;
+        callback(err, stdout);
     });
 };
 
@@ -54,15 +53,6 @@ Git.prototype.clone = function(callback) {
         }
         this.exec('clone', [this.url, local], callback);
     });
-};
-
-/**
- * 从远程仓库拉取当前分支
- * @param {Array}   args
- * @param callback(err)
- */
-Git.prototype.fetch = function(args, callback){
-    this.exec('fetch', args, callback);
 };
 
 /**

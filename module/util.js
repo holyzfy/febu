@@ -16,30 +16,13 @@ var Git = require('./git.js');
 var util = {};
 
 util.getProject = (project, commit, callback) => {
-    var repo = project.repo;
-    var git = new Git(repo);
-    var tasks = [
-        cb => {
-            debug('clone');
-            git.clone(function ignoreError() {
-                cb();
-            });
-        },
-        cb => {
-            var args = ['origin', project.branch + ':' + project.branch];
-            debug('git fetch %s', args.join(' '));
-            git.fetch(args, cb);
-        },
-        cb => {
-            debug('git checkout %s', commit);
-            if('HEAD' === commit.toUpperCase()) {
-                cb();
-            } else {
-                git.checkout(commit, cb);
-            }
-        }
-    ];
-    async.series(tasks, callback);
+    debug('git checkout %s', commit);
+    if('HEAD' === commit.toUpperCase()) {
+        callback();
+    } else {
+        var git = new Git(project.repo);
+        git.checkout(commit, callback);
+    }
 };
 
 util.resolvePath = (from, to, base) => {

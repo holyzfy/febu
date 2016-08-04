@@ -55,17 +55,6 @@ describe(__filename, () => {
 		git.clone(done);
 	});
 
-	it('fetch', done => {
-		Git.prototype.exec = sinon.stub().callsArg(1).returnsThis();
-		git.fetch(done);
-	});
-
-	it('fetch with args', done => {
-		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
-		var args = ['origin', 'rbranch:lbranch'];
-		git.fetch(args, done);
-	});
-
 	it('checkout', done => {
 		Git.prototype.exec = sinon.stub().callsArg(2).returnsThis();
 		git.checkout('master', done);

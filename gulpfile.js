@@ -26,16 +26,15 @@ gulp.task('before', done => {
 	var git = new Git(argv.repo);
 
 	function clone(cb) {
-		git.clone(function ignoreError() {
-			cb();
+		git.clone(function (err) {
+			err.includes('not an empty directory') ? cb() : cb(err);
 		});
 	}
 
 	var tasks = [
 		clone,
-		git.fetch.bind(git, ['origin', project.branch]),
-		git.checkout.bind(git, project.branch),
-		git.exec.bind(git, 'merge', 'origin/' + project.branch)
+		git.exec.bind(git, ['pull']),
+		git.checkout.bind(git, project.branch)
 	];
 	async.series(tasks, err => {
 		clearTimeout(timer);
