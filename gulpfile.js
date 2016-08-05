@@ -1,11 +1,16 @@
 var gulp = require('gulp');
 var argv = require('yargs').argv;
 var async = require('async');
+var colors = require('colors');
 var common = require('./module/common.js');
 var Git = require('./module/git.js');
 var Development = require('./module/development.js');
 var Production = require('./module/production.js');
 var util = require('./module/util.js');
+
+process.on('exit', code => {
+	code !== 0 && console.error(colors.red('发布失败'));
+});
 
 function getProject() {
 	return {
@@ -38,6 +43,7 @@ gulp.task('before', done => {
 	];
 	async.series(tasks, err => {
 		clearTimeout(timer);
+		err && console.error(colors.red(err));
 		done(err);
 	});
 

@@ -36,6 +36,7 @@ Git.prototype.exec = function(command, args, callback) {
     debug('git command=', _command);
     shell.exec(_command, {silent: true}, (code, stdout, stderr) => {
         var err = code === 0 ? null : stderr;
+        console.log(colors.gray(stdout));
         callback(err, stdout);
     });
 };
