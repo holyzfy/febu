@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "前端部署系统",
   "repository": {
     "type": "git",
@@ -43,7 +43,7 @@
     "gulp-if": "^2.0.1",
     "gulp-plumber": "^1.1.0",
     "gulp-rev": "^7.0.0",
-    "gulp-uglify": "^1.5.3",
+    "gulp-uglify": "^2.0.0",
     "proxyquire": "^1.7.7",
     "requirejs": "^2.2.0",
     "shelljs": "^0.7.0",
