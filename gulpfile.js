@@ -2,6 +2,8 @@ var gulp = require('gulp');
 var argv = require('yargs').argv;
 var async = require('async');
 var colors = require('colors');
+var fs = require('fs-extra');
+var path = require('path');
 var common = require('./module/common.js');
 var Git = require('./module/git.js');
 var Development = require('./module/development.js');
@@ -26,14 +28,17 @@ gulp.task('before', done => {
 	}
 
 	var timer;
-	var src = common.getCwd(argv.repo, 'src');
 	var project = getProject();
 	var git = new Git(argv.repo);
 
 	function clone(cb) {
-		git.clone(function (err) {
-			err.includes('not an empty directory') ? cb() : cb(err);
-		});
+		var src = common.getCwd(argv.repo, 'src');
+		try {
+		    fs.accessSync(path.join(src, '.git'));
+		    cb();
+		} catch (err) {
+			git.clone(cb);
+		}
 	}
 
 	var tasks = [
