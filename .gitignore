@@ -33,3 +33,6 @@ local.json
 test.js
 nohup.out
 data
+
+.DS_Store
+Thumbs.db
