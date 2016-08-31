@@ -28,7 +28,8 @@
 ## 安装
 
 0. 命令行窗口需要能执行`git`命令
-0. 编辑`config/default.js`并另存为`config/local.js` （可选步骤）
+0. [配置node.js](https://github.com/holyzfy/frontend_guidelines/issues/7)（可选步骤）
+0. 编辑`config/default.js`并另存为`config/local.js`（可选步骤）
 0. 安装依赖`npm install`
 
 安装时可能遇到的问题 :point_right: https://github.com/holyzfy/febu/issues/6
