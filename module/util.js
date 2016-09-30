@@ -10,6 +10,7 @@ var File = require('vinyl');
 var config = require('config');
 var del = require('del');
 var through2 = require('through2');
+var colors = require('colors');
 var common = require('./common.js');
 var Git = require('./git.js');
 
@@ -306,13 +307,29 @@ util.clean = (dir, done) => {
 };
 
 util.taskDone = done => {
-    return through2.obj(function (data, enc, cb) {
-        cb();
-    },
-    function (cb) {
+    return through2.obj((data, enc, cb) => cb(), cb => {
         cb();
         done();
     });
+};
+
+util.jsnext = function (project, callback) {
+    var src = common.getCwd(project.repo, 'src');
+    var config = util.getProjectConfig(project, 'jsnext');
+    if(!config) {
+        return callback();
+    }
+
+    var command = `npm install; \
+        rm -rf ${config.output};cp -rf ${config.src} ${config.output}; \
+        ${path.join(src, 'node_modules/.bin/babel')} ${config.src} \
+            -d ${config.output} \
+            --ignore ${config.ignore.join(',')} \
+            --source-maps inline`;
+    debug('jsnext:', command);
+    var babel = exec(command, {cwd: src}, callback);
+    babel.stdout.on('data', data => console.log(colors.gray(data)));
+    babel.stderr.on('data', data => console.error(colors.red(data)));
 };
 
 module.exports = util;

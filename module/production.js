@@ -86,7 +86,7 @@ Production.prototype.updateManifestHelper = function (file, enc, cb) {
 
 	var docs = []; // 方便做单元测试
 	_.mapObject(manifest, (value, key) => {
-		var dest = url.resolve(this.publicPath, value);
+		var dest = decodeURI(url.resolve(this.publicPath, value));
 		var doc = {
 			src: key,
 			dest: dest
@@ -107,6 +107,7 @@ Production.prototype.compileStaticFiles = function(callback) {
     var tasks = [
         this.img.bind(this),
         this.css.bind(this),
+        util.jsnext.bind(null, this.project),
         util.hasAMD(this.project) ? this.amd.bind(this) : this.js.bind(this)
     ];
     async.series(tasks, err => {
@@ -714,7 +715,7 @@ vm.group = function (done) {
             
             var doc = {
                 src: item.src,
-                dest: url.resolve(this.publicPath, file.relative)
+                dest: decodeURI(url.resolve(this.publicPath, file.relative))
             };
             this.updateManifest(doc);
             _cb(null, file);

@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.9.4",
+  "version": "0.10.1",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -51,6 +51,6 @@
     "through2": "^2.0.1",
     "underscore": "^1.8.3",
     "vinyl": "^2.0.0",
-    "yargs": "^5.0.0"
+    "yargs": "^6.0.0"
   }
 }

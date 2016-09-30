@@ -279,6 +279,7 @@ Dev.prototype.run = function(commit, callback) {
 	var compile = done => {
 		var tasks = [
 			this.resource.bind(this),
+            util.jsnext.bind(null, this.project),
 			this.js.bind(this),
 			this.html.bind(this)
 		];
