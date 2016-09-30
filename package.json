@@ -1,7 +1,7 @@
 {
   "name": "febu",
   "version": "0.9.4",
-  "description": "前端部署系统",
+  "description": "前端构建工具",
   "repository": {
     "type": "git",
     "url": "https://github.com/holyzfy/febu.git"
