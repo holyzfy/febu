@@ -118,7 +118,7 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
         "build.js",
         "test"
     ],
-    "jsnext": {            // es6配置项，目前支持 "presets": ["es2015", "stage-2"]
+    "jsnext": {            // es6配置项，示例项目 https://github.com/holyzfy/amd_demo/tree/jsnext
         "src": "jsnext",   // js源代码目录
         "output": "js",    // 输出目录
         "ignore": ["jsnext/lib", "jsnext/config.js"] // 编译时忽略的文件或目录
