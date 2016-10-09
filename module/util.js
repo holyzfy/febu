@@ -327,9 +327,9 @@ util.jsnext = function (project, callback) {
             --ignore ${config.ignore.join(',')} \
             --source-maps inline`;
     debug('jsnext:', command);
-    var babel = exec(command, {cwd: src}, callback);
-    babel.stdout.on('data', data => console.log(colors.gray(data)));
-    babel.stderr.on('data', data => console.error(colors.red(data)));
+    var result = exec(command, {cwd: src}, callback);
+    result.stdout.on('data', data => console.log(colors.gray(data)));
+    result.stderr.on('data', data => console.error(colors.red(data)));
 };
 
 module.exports = util;

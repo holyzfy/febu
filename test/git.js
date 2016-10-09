@@ -3,14 +3,17 @@ var fs = require('fs-extra');
 var expect = require('expect.js');
 var sinon = require('sinon');
 var proxyquire = require('proxyquire');
+var EventEmitter = require('events');
 var Git = proxyquire('../module/git.js', {
-	shelljs: {
-		cd: sinon.spy(),
+	child_process: {
 		exec: sinon.stub()
 				.withArgs(sinon.match.string, sinon.match.any, sinon.match.fn)
 				.callsArg(1)
 				.callsArg(2)
-				.returnsThis()
+				.returns({
+                    stdout: new EventEmitter(),
+                    stderr: new EventEmitter()
+                })
 	},
 	'fs-extra': {
 		mkdirs: sinon.stub().callsArg(1)

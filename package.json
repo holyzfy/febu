@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -46,7 +46,6 @@
     "gulp-uglify": "^2.0.0",
     "proxyquire": "^1.7.7",
     "requirejs": "^2.2.0",
-    "shelljs": "^0.7.0",
     "sinon": "^1.17.4",
     "through2": "^2.0.1",
     "underscore": "^1.8.3",

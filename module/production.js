@@ -16,7 +16,6 @@ var File = require('vinyl');
 var exec = require('child_process').exec;
 var config = require('config');
 var colors = require('colors');
-var shell = require('shelljs');
 var util = require('./util.js');
 var common = require('./common.js');
 
@@ -207,7 +206,9 @@ amd.optimize = function (done) {
             util.getAMDBuildPath(this.project), 
             'inlineText=true', 'optimize=uglify', 'optimizeCss=none'
         ].join(' ');
-    shell.exec(command, { cwd: this.src }, done);
+    var result = exec(command, {cwd: this.src}, done);
+    result.stdout.on('data', data => console.log(colors.gray(data)));
+    result.stderr.on('data', data => console.error(colors.red(data)));
 };
 
 amd.copy = function (done) {

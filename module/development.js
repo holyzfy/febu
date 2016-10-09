@@ -53,7 +53,7 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
 		var publicPath = util.getProjectPublicPath(this.project, 'development');
-		var newHref = url.resolve(publicPath, subPath);
+		var newHref = decodeURI(url.resolve(publicPath, subPath));
 		return 'href="' + newHref + '"';
 	};
 
@@ -79,14 +79,15 @@ Dev.prototype.resolvePath = function(file, src) {
 	var newSrc = path.join(relativeDir, src);
 	newSrc = url.parse(newSrc).pathname || src; // 去掉查询参数和hash部分
 	try {
-		fs.accessSync(newSrc);
+        var fullPath = path.join(common.getCwd(this.project.repo, 'src'), newSrc);
+		fs.accessSync(fullPath);
 	} catch(err) {
 		var message = nodeUtil.format('File not found: %s (see: %s)', src, file.relative);
 		console.warn(colors.yellow(message));
 		publicPath = '';
 	}
 
-	return url.resolve(publicPath, newSrc);
+	return decodeURI(url.resolve(publicPath, newSrc));
 };
 
 Dev.prototype.replaceSrc = function(attrs, match, file) {
@@ -190,7 +191,9 @@ amd.optimize = function optimize(callback) {
 					util.getAMDBuildPath(this.project), 
 					'inlineText=true', 'optimize=none', 'optimizeCss=none'
 				].join(' ');
-    exec(command, {cwd: this.src}, callback);
+    var result = exec(command, {cwd: this.src}, callback);
+    result.stdout.on('data', data => console.log(colors.gray(data)));
+    result.stderr.on('data', data => console.error(colors.red(data)));
 };
 
 amd.copy = function () {
@@ -217,7 +220,7 @@ amd.copy = function () {
         }
 
 		var filePath = path.relative(configDir, file.path);
-		var newFilePath = url.resolve(publicPath, file.relative);
+		var newFilePath = decodeURI(url.resolve(publicPath, file.relative));
 		var key = filePath.endsWith('.js') ? filePath.slice(0, -3) : filePath;
 		var dest = newFilePath.slice(0, -3);
 		newPaths[key] = dest;

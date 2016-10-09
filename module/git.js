@@ -1,6 +1,6 @@
 var debug = require('debug')('febu:git.js');
 var fs = require('fs-extra');
-var shell = require('shelljs');
+var exec = require('child_process').exec;
 var colors = require('colors');
 var common = require('./common.js');
 
@@ -29,16 +29,12 @@ Git.prototype.exec = function(command, args, callback) {
     if (arguments.length < 3) {
         args = [];
     }
-
-    shell.cd(this.options.cwd);
     
     var _command = [this.binary, command].concat(args).join(' ');
     debug('git command=', _command);
-    shell.exec(_command, {silent: true}, (code, stdout, stderr) => {
-        var err = code === 0 ? null : stderr;
-        console.log(colors.gray(stdout));
-        callback(err, stdout);
-    });
+    var result = exec(_command, {cwd: this.options.cwd}, callback);
+    result.stdout.on('data', data => console.log(colors.gray(data)));
+    result.stderr.on('data', data => console.error(colors.red(data)));
 };
 
 /**
