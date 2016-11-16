@@ -3,7 +3,10 @@ var path = require('path');
 var File = require('vinyl');
 var expect = require('expect.js');
 var sinon = require('sinon');
-var util = require('../module/util.js');
+var proxyquire = require('proxyquire');
+var util = proxyquire('../module/util.js', {
+    'parse-gitignore': sinon.stub().returns(['node_modules', 'node_modules/**'])
+});
 
 describe(__filename, () => {
 	var project = {
@@ -116,12 +119,7 @@ describe(__filename, () => {
 		expect(htmlRet2).to.equal(htmlExpected2);
 	});
 
-	it('getIgnore: empty', () => {
-		var testRet = util.getIgnore('./');
-		expect(testRet).to.eql([]);
-	});
-
-	it('getIgnore: has febu.json', () => {
+	it('getIgnore', () => {
 		var data = {
 		    "ignore": [
 		        "mock",
@@ -131,6 +129,8 @@ describe(__filename, () => {
 		    ]
 		};
 		var expected = [
+            "!node_modules",
+            "!node_modules/**",
 	        "!mock/**/*",
 	        "!mock",
 	        "!selenium/**/*",
