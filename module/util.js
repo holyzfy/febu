@@ -11,6 +11,7 @@ var config = require('config');
 var del = require('del');
 var through2 = require('through2');
 var colors = require('colors');
+var gitignore = require('parse-gitignore');
 var common = require('./common.js');
 var Git = require('./git.js');
 
@@ -247,7 +248,7 @@ util.relPath = (fromFile, filepath) => {
 };
 
 /**
- * 取得忽略列表：读取febu.json的ignore字段
+ * 取得忽略列表：读取febu.json的ignore字段 + .gitignore内容
  * @param src 项目根目录
  */
 util.getIgnore = src => {
@@ -263,7 +264,7 @@ util.getIgnore = src => {
         console.error('配置文件%s格式错误%s：', configFile, err.message);
     }
 
-    var ret = [];
+    var ret = gitignore('.gitignore').map(item => '!' + item);
     ignoreList.forEach(item => {
         item = '/' === item.slice(-1) ? item.slice(0, -1): item;
         ret.push('!' + item + '/**/*');
