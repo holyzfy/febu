@@ -259,7 +259,6 @@ Dev.prototype.html = function(done) {
 	debug('html');
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
-	// var destRoot = common.getCwd(dev.project.repo, 'development');
 	var dest = path.join(this.destRoot, 'vm');
 	var ignoreList = util.getIgnore(src);
 	var filterList = util.getVmFileType().concat(ignoreList);
