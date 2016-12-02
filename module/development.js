@@ -18,7 +18,7 @@ var common = require('./common.js');
 function Dev(project) {
 	this.project = project;
 	this.src = common.getCwd(project.repo, 'src');
-	this.destRoot = common.getCwd(project.repo, 'development');
+	this.destRoot = project.dist || common.getCwd(project.repo, 'development');
 	this.destStatic = path.join(this.destRoot, 'static');
 	this.ignoreList = util.getIgnore(this.src);
 	this.filterList = util.getStaticFileType().concat(this.ignoreList);
@@ -259,8 +259,7 @@ Dev.prototype.html = function(done) {
 	debug('html');
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
-	var destRoot = common.getCwd(dev.project.repo, 'development');
-	var dest = path.join(destRoot, 'vm');
+	var dest = path.join(this.destRoot, 'vm');
 	var ignoreList = util.getIgnore(src);
 	var filterList = util.getVmFileType().concat(ignoreList);
 	
