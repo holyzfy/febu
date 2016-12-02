@@ -24,7 +24,7 @@ function Production(project) {
     this.publicPath = util.getProjectPublicPath(project, 'production');
     this.manifest = [];
     this.src = common.getCwd(project.repo, 'src');
-    this.destRoot = common.getCwd(project.repo, 'production');
+    this.destRoot = project.dist || common.getCwd(project.repo, 'production');
     this.destStatic = path.join(this.destRoot, 'static');
     this.destVm = path.join(this.destRoot, 'vm');
     this.build = common.getCwd(project.repo, 'build');
@@ -419,8 +419,8 @@ Production.prototype.styleInline = function(cssPath, compress) {
 		var findIt = _.find(this.manifest, item => _.isEqual(item.src, [cssPath]));
 		if(findIt) {
 			var minCssPath = findIt.dest.slice(this.publicPath.length);
-			var destRoot = common.getCwd(this.project.repo, 'production');
-			fullPath = path.join(destRoot, 'static', minCssPath);
+			// var destRoot = common.getCwd(this.project.repo, 'production');
+			fullPath = path.join(this.destRoot, 'static', minCssPath);
 		} else {
 			console.error('出错：未找到%s对应的压缩文件', cssPath);
 		}
@@ -451,8 +451,8 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 		var findIt = _.find(this.manifest, item => _.isEqual(item.src, [jsPath]));
 		if(findIt) {
 			var minJsPath = findIt.dest.slice(this.publicPath.length);
-			var destRoot = common.getCwd(this.project.repo, 'production');
-			fullPath = path.join(destRoot, 'static', minJsPath);
+			// var destRoot = common.getCwd(this.project.repo, 'production');
+			fullPath = path.join(this.destRoot, 'static', minJsPath);
 		} else {
 			console.error('出错：未找到%s对应的压缩文件', jsPath);
 		}

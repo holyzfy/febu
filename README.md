@@ -43,10 +43,11 @@
 - **branch** 分支，默认是`master`
 - **commit** 版本号，默认是`HEAD`
 - **publicPath** 静态资源前缀，默认从项目的`febu.json`里取
+- **dist** 指定静态资源输出的路径
 
 ### 发布到测试环境
 
-	gulp development --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath]
+	gulp development --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath] [--dist distPath]
 
 例如发布项目[amd_demo](https://github.com/holyzfy/amd_demo)的`master`分支的最新代码
 
@@ -54,7 +55,7 @@
 
 ### 发布到生产环境
 
-	gulp production --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath]
+	gulp production --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath] [--dist distPath]
 
 ## 约定规则
 

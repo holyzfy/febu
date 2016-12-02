@@ -18,6 +18,7 @@ function getProject() {
 	return {
 		repo: argv.repo,
 		branch: argv.branch || 'master',
+        dist: argv.dist,
 		publicPath: argv.publicPath
 	};
 }
