@@ -1,6 +1,6 @@
 var fs = require('fs-extra');
 var path = require('path');
-var expect = require('expect.js');
+var tape = require('tape');
 var proxyquire = require('proxyquire');
 var sinon = require('sinon');
 var util = proxyquire('../module/util.js', {
@@ -11,12 +11,10 @@ var util = proxyquire('../module/util.js', {
     }
 });
 
-describe(__filename, () => {
-    it('getProject', done => {
-        var project = {
-            repo: 'https://test.com/user/project'
-        };
-        var commit = 'HEAD';
-        util.getProject(project, commit, done);
-    });
+tape('getProject', test => {
+    var project = {
+        repo: 'https://test.com/user/project'
+    };
+    var commit = 'HEAD';
+    util.getProject(project, commit, test.end);
 });

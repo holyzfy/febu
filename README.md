@@ -135,8 +135,7 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 
 ## 测试
 
-0. 安装依赖 `npm install -g mocha`
-0. 运行 `npm test`
+```npm test```
 
 ## 示例项目
 

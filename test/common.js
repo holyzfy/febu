@@ -1,24 +1,25 @@
 var path = require('path');
-var expect = require('expect.js');
+var tape = require('tape');
 var common = require('../module/common.js');
 
-describe(__filename, () => {
-	var repo = 'https://test.com/user/project';
+var repo = 'https://test.com/user/project';
 
-	it('getPathname', () => {
-		var pathname = common.getPathname(repo);
-		expect(pathname).to.be('user_project');
-	});
+tape('getPathname', test => {
+	var pathname = common.getPathname(repo);
+	test.equal(pathname, 'user_project');
+	test.end();
+});
 
-	it('getPathname2', () => {
-		var repo = 'https://test.com/user/project.git';
-		var pathname = common.getPathname(repo);
-		expect(pathname).to.be('user_project');
-	});
+tape('getPathname2', test => {
+	var repo = 'https://test.com/user/project.git';
+	var pathname = common.getPathname(repo);
+	test.equal(pathname, 'user_project');
+	test.end();
+});
 
-	it('getCwd', () => {
-		var local = common.getCwd(repo, 'src');
-		var expected = path.join(__dirname, '../data/src/test.com/user_project');
-		expect(local).to.be(expected);
-	});
+tape('getCwd', test => {
+	var local = common.getCwd(repo, 'src');
+	var expected = path.join(__dirname, '../data/src/test.com/user_project');
+	test.equal(local, expected);
+	test.end();
 });

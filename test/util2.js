@@ -1,5 +1,5 @@
 var path = require('path');
-var expect = require('expect.js');
+var tape = require('tape');
 var proxyquire = require('proxyquire');
 var sinon = require('sinon');
 var util = proxyquire('../module/util.js', {
@@ -10,8 +10,7 @@ var util = proxyquire('../module/util.js', {
     }
 });
 
-describe(__filename, function(){
-    it('hasAMD', () => {
-        expect(util.hasAMD({})).to.be.ok();
-    });
+tape('hasAMD', test => {
+    test.ok(util.hasAMD({}));
+    test.end();
 });

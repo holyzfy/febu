@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -17,9 +17,9 @@
   },
   "homepage": "https://github.com/holyzfy/febu",
   "scripts": {
-    "preinstall": "npm ls -g eslint || npm install -g eslint; npm ls -g gulp-cli || npm install -g gulp-cli",
-    "eslint": "files=`git diff --staged --name-only --diff-filter=ACMRTU | grep -ie '\\.js$'`; if [ \"${files:=empty}\" != \"empty\" ]; then eslint -c .eslintrc.json $files; fi",
-    "test": "mocha test"
+    "preinstall": "npm ls -g gulp-cli || npm install -g gulp-cli",
+    "eslint": "files=`git diff --staged --name-only --diff-filter=ACMRTU | grep -ie '\\.js$'`; if [ \"${files:=empty}\" != \"empty\" ]; then ./node_modules/.bin/eslint -c .eslintrc.json $files; fi",
+    "test": "./node_modules/.bin/tape 'test/*.js' | ./node_modules/.bin/tap-spec"
   },
   "config": {
     "ghooks": {
@@ -27,30 +27,32 @@
     }
   },
   "dependencies": {
-    "async": "^2.0.0-rc.4",
-    "colors": "^1.1.2",
-    "config": "^1.20.1",
-    "debug": "^2.2.0",
-    "del": "^2.2.0",
-    "expect.js": "^0.3.1",
-    "frep": "^0.2.3",
-    "fs-extra": "^1.0.0",
-    "ghooks": "^1.3.2",
+    "async": "~2.1.4",
+    "colors": "~1.1.2",
+    "config": "~1.24.0",
+    "debug": "~2.3.3",
+    "del": "~2.2.2",
+    "eslint": "~3.11.1",
+    "frep": "~0.2.3",
+    "fs-extra": "~1.0.0",
+    "ghooks": "~1.3.2",
     "gulp": "github:gulpjs/gulp#4.0",
-    "gulp-clean-css": "^2.0.11",
-    "gulp-concat": "^2.6.0",
-    "gulp-filter": "^4.0.0",
-    "gulp-if": "^2.0.1",
-    "gulp-plumber": "^1.1.0",
-    "gulp-rev": "^7.0.0",
-    "gulp-uglify": "^2.0.0",
-    "parse-gitignore": "^0.3.1",
-    "proxyquire": "^1.7.7",
-    "requirejs": "^2.2.0",
-    "sinon": "^1.17.4",
-    "through2": "^2.0.1",
-    "underscore": "^1.8.3",
-    "vinyl": "^2.0.0",
-    "yargs": "^6.0.0"
+    "gulp-clean-css": "~2.0.13",
+    "gulp-concat": "~2.6.1",
+    "gulp-filter": "~4.0.0",
+    "gulp-if": "~2.0.2",
+    "gulp-plumber": "~1.1.0",
+    "gulp-rev": "~7.1.2",
+    "gulp-uglify": "~2.0.0",
+    "parse-gitignore": "~0.3.1",
+    "proxyquire": "~1.7.10",
+    "requirejs": "~2.3.2",
+    "sinon": "~1.17.6",
+    "tap-spec": "~4.1.1",
+    "tape": "~4.6.3",
+    "through2": "~2.0.3",
+    "underscore": "~1.8.3",
+    "vinyl": "~2.0.1",
+    "yargs": "~6.5.0"
   }
 }

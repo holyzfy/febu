@@ -1,5 +1,5 @@
 var path = require('path');
-var expect = require('expect.js');
+var tape = require('tape');
 var sinon = require('sinon');
 var proxyquire = require('proxyquire');
 var util = proxyquire('../module/util.js', {
@@ -10,29 +10,31 @@ var util = proxyquire('../module/util.js', {
     }
 });
 
-describe(__filename, () => {
-    var project = {};
-    it('getProjectConfig', () => {
-        var devPublicPath = util.getProjectConfig(project, 'development.publicPath');
-        expect(devPublicPath).to.be("//static.f2e.example.com/assets/myproject");        
-    });
+var project = {};
+tape('getProjectConfig', test => {
+    var devPublicPath = util.getProjectConfig(project, 'development.publicPath');
+    test.equal(devPublicPath, '//static.f2e.example.com/assets/myproject');        
+    test.end();
+});
 
-    it('getProjectConfig2', () => {
-        var ignore = util.getProjectConfig(project, 'ignore');
-        expect(ignore).to.eql(['node_modules/']);
-    });
+tape('getProjectConfig2', test => {
+    var ignore = util.getProjectConfig(project, 'ignore');
+    test.deepEqual(ignore, ['node_modules/']);
+    test.end();
+});
 
-    it('getProjectPublicPath', () => {
-        var publicPath = 'http://static.example.com/project';
-        util.getProjectConfig = sinon.stub().returns(publicPath);
-        var ret = util.getProjectPublicPath({}, 'development');
-        expect(ret).to.be(publicPath + '/');
-    });
+tape('getProjectPublicPath', test => {
+    var publicPath = 'http://static.example.com/project';
+    util.getProjectConfig = sinon.stub().returns(publicPath);
+    var ret = util.getProjectPublicPath({}, 'development');
+    test.equal(ret, publicPath + '/');
+    test.end();
+});
 
-    it('getProjectPublicPath2', () => {
-        var publicPath = 'http://static.example.com/project/';
-        util.getProjectConfig = sinon.stub().returns(publicPath);
-        var ret = util.getProjectPublicPath({}, 'development');
-        expect(ret).to.be(publicPath);
-    });
+tape('getProjectPublicPath2', test => {
+    var publicPath = 'http://static.example.com/project/';
+    util.getProjectConfig = sinon.stub().returns(publicPath);
+    var ret = util.getProjectPublicPath({}, 'development');
+    test.equal(ret, publicPath);
+    test.end();
 });
