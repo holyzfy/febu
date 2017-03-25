@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "async": "~2.1.4",
+    "async": "~2.2.0",
     "colors": "~1.1.2",
     "config": "~1.24.0",
     "debug": "~2.3.3",
