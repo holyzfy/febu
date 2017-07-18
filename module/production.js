@@ -19,6 +19,18 @@ var colors = require('colors');
 var util = require('./util.js');
 var common = require('./common.js');
 
+var uglifyOptions = {
+    compress: {
+        ie8: true
+    },
+    mangle: {
+        ie8: true  
+    },
+    output: {
+        ie8: true
+    }
+};
+
 function Production(project) {
     this.project = project;
     this.publicPath = util.getProjectPublicPath(project, 'production');
@@ -204,7 +216,7 @@ amd.optimize = function (done) {
     }
     var command = ['node', optimizerPath, '-o', 
             util.getAMDBuildPath(this.project), 
-            'inlineText=true', 'optimize=uglify', 'optimizeCss=none'
+            'inlineText=true', 'optimize=none', 'optimizeCss=none'
         ].join(' ');
     var result = exec(command, {cwd: this.src}, done);
     result.stdout.on('data', data => console.log(colors.gray(data)));
@@ -220,6 +232,7 @@ amd.copy = function (done) {
         debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end', err);
     }))
+    .pipe(uglify(uglifyOptions))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
@@ -266,7 +279,7 @@ amd.updateConfig = function (done) {
         file.contents = new Buffer(result);
         cb(null, file);
     }))
-    .pipe(uglify())
+    .pipe(uglify(uglifyOptions))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
@@ -287,7 +300,7 @@ Production.prototype.js = function (done) {
         debug('task js出错 第%d行: %s', err.lineNumber, err.message);
         this.emit('end', err);
     }))
-    .pipe(uglify())
+    .pipe(uglify(uglifyOptions))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
@@ -697,7 +710,7 @@ vm.group = function (done) {
             this.emit('end', err);
         }))
         .pipe(concat(groupPath))
-        .pipe(gulpif(item._type === 'js', uglify(), minifyCss()))
+        .pipe(gulpif(item._type === 'js', uglify(uglifyOptions), minifyCss()))
         .pipe(rev())
         .pipe(through2.obj((_file, enc, _cb) => {
             var file = new File(_file);
