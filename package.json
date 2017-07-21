@@ -28,7 +28,7 @@
     "config": "~1.26.1",
     "debug": "~2.6.8",
     "del": "~3.0.0",
-    "eslint": "~4.2.0",
+    "eslint": "~4.3.0",
     "frep": "~0.2.3",
     "fs-extra": "~4.0.0",
     "gulp": "github:gulpjs/gulp#4.0",
