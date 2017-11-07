@@ -23,7 +23,7 @@
     "test": "./node_modules/.bin/tape 'test/*.js' | ./node_modules/.bin/tap-spec"
   },
   "dependencies": {
-    "async": "~2.5.0",
+    "async": "~2.6.0",
     "colors": "~1.1.2",
     "config": "~1.26.1",
     "debug": "~2.6.8",
