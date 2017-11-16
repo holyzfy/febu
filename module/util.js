@@ -116,11 +116,11 @@ util.replaceConfigPaths = (contents, newPaths) => {
 };
 
 util.regex = {
-    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]*)*(?:<\/script>|$)/mgi, // 带src属性的script标签
-    link: /<link\b[^<]*>/mgi,
-    media: /<(?:img|video|audio|source|embed)\b[^<]*>/mgi,
-    object: /<object\b[^<]*>/mgi,
-    srcset: /\bsrcset='?"?([^'"]*)'?"?\b/mi,
+    script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]+)*(?:<\/script>|$)/mgi, // 带src属性的script标签
+    link: /<link\b[^<]+>/mgi,
+    media: /<(?:img|video|audio|source|embed)\b[^<]+>/mgi,
+    object: /<object\b[^<]+>/mgi,
+    srcset: /\bsrcset='?"?([^'"]+)'?"?\b/mi,
     url: /[:,]?\burl\('?"?([^"'()]+\.\w+)\??[^"'()]*'?"?\)/mgi // 样式表里url(xxx)
 };
 
