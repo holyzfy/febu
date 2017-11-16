@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -23,32 +23,32 @@
     "test": "./node_modules/.bin/tape 'test/*.js' | ./node_modules/.bin/tap-spec"
   },
   "dependencies": {
-    "async": "~2.5.0",
+    "async": "^2.6.0",
     "colors": "~1.1.2",
-    "config": "~1.26.1",
-    "debug": "~2.6.8",
+    "config": "^1.28.1",
+    "debug": "^3.1.0",
     "del": "~3.0.0",
-    "eslint": "~4.2.0",
+    "eslint": "^4.11.0",
     "frep": "~0.2.3",
-    "fs-extra": "~4.0.0",
+    "fs-extra": "^4.0.2",
     "gulp": "github:gulpjs/gulp#4.0",
-    "gulp-clean-css": "~3.7.0",
+    "gulp-clean-css": "^3.9.0",
     "gulp-concat": "~2.6.1",
-    "gulp-filter": "~5.0.0",
+    "gulp-filter": "^5.0.1",
     "gulp-if": "~2.0.2",
     "gulp-plumber": "~1.1.0",
-    "gulp-rev": "~7.1.2",
+    "gulp-rev": "^8.1.0",
     "gulp-uglify": "~3.0.0",
     "husky": "~0.14.3",
     "parse-gitignore": "~0.4.0",
     "proxyquire": "~1.8.0",
-    "requirejs": "~2.3.2",
-    "sinon": "~2.3.8",
+    "requirejs": "^2.3.5",
+    "sinon": "^4.1.2",
     "tap-spec": "~4.1.1",
-    "tape": "~4.7.0",
+    "tape": "^4.8.0",
     "through2": "~2.0.3",
     "underscore": "~1.8.3",
     "vinyl": "~2.1.0",
-    "yargs": "~8.0.2"
+    "yargs": "^10.0.3"
   }
 }
