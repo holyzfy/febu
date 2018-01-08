@@ -16,6 +16,7 @@ var File = require('vinyl');
 var exec = require('child_process').exec;
 var config = require('config');
 var colors = require('colors');
+var imagemin = require('gulp-imagemin');
 var util = require('./util.js');
 var common = require('./common.js');
 
@@ -142,6 +143,7 @@ Production.prototype.img = function (done) {
         debug('task img出错: %s', err.message);
         this.emit('end', err);
     }))
+    .pipe(imagemin({verbose: true}))
     .pipe(rev())
     .pipe(gulp.dest(this.destStatic))
     .pipe(rev.manifest())
