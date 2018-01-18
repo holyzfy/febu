@@ -140,7 +140,7 @@ util.getReplacements = (obj, env, file) => {
                     return match;
                 }
 
-                var attrs = (match.match(/<link\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<link\b([^\>]+)\/?>/i)[1] || '').trim().split(/\s+/);
                 
                 var css = attrs.some(item => (item === 'rel="stylesheet"' || item === "rel='stylesheet'"));
                 if(!css) {
@@ -170,7 +170,7 @@ util.getReplacements = (obj, env, file) => {
                 if(!obj.replaceSrc) {
                     return match;
                 }
-                var attrs = (match.match(/<(?:img|video|audio|source|embed)\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
+                var attrs = (match.match(/<(?:img|video|audio|source|embed)\b([^\>]+?)\/?>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceSrc(attrs, match, file);
             }
         },
