@@ -230,7 +230,13 @@ util.replacePath = (obj, env) => {
  * 约定：不处理inc目录
  */
 util.relPath = (fromFile, filepath) => {
-    var fromFilePath = fromFile.path.replace(new RegExp('\\' + path.sep, 'g'), '/');
+    if(filepath[0] === '/' && filepath[1] !== '/') {
+        // 约定/开头的静态资源路径是相对项目根目录
+        return filepath.slice(1);
+    }
+
+    var fromFilePath = fromFile.path.replace(new RegExp('\\' + path.sep, 'g'), '/');  
+
     var inc = '/inc/';
     var hasInc = fromFilePath.lastIndexOf(inc) > 0;
 
@@ -331,6 +337,10 @@ util.jsnext = function (project, callback) {
     var result = exec(command, {cwd: src}, callback);
     result.stdout.on('data', data => console.log(colors.gray(data)));
     result.stderr.on('data', data => console.error(colors.red(data)));
+};
+
+util.isAbsolutePath = function (path) {
+    return path.slice(0, 2) === '//';
 };
 
 module.exports = util;

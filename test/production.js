@@ -182,9 +182,10 @@ tape('replaceHref', test => {
 });
 
 tape('replaceHref: absolute path', test => {
-    var link = '<link rel="stylesheet" _group="all" href="/css/common.css">';
-    var linkActual = replace.strWithArr(link, patterns);
-    test.equal(linkActual, link);
+    var link = '<link rel="stylesheet" href="/style/common.css">';
+    var actual = replace.strWithArr(link, patterns);
+    var expected = '<link rel="stylesheet" href="//img1.cache.test.com/f2e/test_project/style/common-3j7x0f1d2n.css">';
+    test.equal(actual, expected);
     test.end();
 });
 
@@ -211,6 +212,14 @@ tape('replaceSrc script', test => {
     var script5Actual = replace.strWithArr(script5, patterns);
     test.equal(script5Actual, script5Expected);
 
+    test.end();
+});
+
+tape('replaceSrc script absolute path', test => {
+    var script = '<script src="/js/help.js"></script>';
+    var actual = replace.strWithArr(script, patterns);
+    var expected = '<script src="//img1.cache.test.com/f2e/test_project/js/help-0ff25a49f4.js"></script>';
+    test.equal(actual, expected);
     test.end();
 });
 
@@ -257,6 +266,14 @@ tape('replaceUrl:background-image', test => {
     test.end();
 });
 
+tape('replaceUrl:background-image absolute path', test => {
+    var style = '<style>.nav {background-image:url(images/p_logo.png);}</style>';
+    var expected = '<style>.nav {background-image:url(//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png);}</style>';
+    var actual = replace.strWithArr(style, patterns);
+    test.equal(actual, expected);
+    test.end();
+});
+
 tape('replaceUrl:background', test => {
     var style = '<style>.nav {background: url("images/p_logo.png");}</style>';
     var expected = '<style>.nav {background: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
@@ -267,6 +284,14 @@ tape('replaceUrl:background', test => {
 
 tape('replaceUrl:border-image', test => {
     var style = '<style>.nav {border-image: url("images/p_logo.png");}</style>';
+    var expected = '<style>.nav {border-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
+    var actual = replace.strWithArr(style, patterns);
+    test.equal(actual, expected);
+    test.end();
+});
+
+tape('replaceUrl:border-image absolute path', test => {
+    var style = '<style>.nav {border-image: url("/images/p_logo.png");}</style>';
     var expected = '<style>.nav {border-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png");}</style>';
     var actual = replace.strWithArr(style, patterns);
     test.equal(actual, expected);

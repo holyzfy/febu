@@ -32,7 +32,7 @@ Dev.prototype.resource = function (done) {
 		cwd: this.src
 	})
 	.pipe(plumber(function (err) {
-        debug('出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end');
     }))
 	.pipe(gulpFilter(this.filterList))
@@ -44,17 +44,16 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
 	var href = attrs.filter(item => /^href=/i.test(item))[0];
 
 	var replacement = (match, sub) => {
-		var protocol = url.parse(sub).protocol;
-		var isAbsolutePath = sub[0] === '/';
+		var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
 		var isVmVar = /[$<{]/.test(sub[0]);
-		if(protocol || isAbsolutePath || isVmVar) {
-			return match;
-		}
+        if(protocol || isVmVar) {
+            return match;
+        }
 
-		var subPath = util.relPath(file, sub);
-		var publicPath = util.getProjectPublicPath(this.project, 'development');
-		var newHref = decodeURI(url.resolve(publicPath, subPath));
-		return 'href="' + newHref + '"';
+        var subPath = util.relPath(file, sub);
+        var publicPath = util.getProjectPublicPath(this.project, 'development');
+        var newHref = decodeURI(url.resolve(publicPath, subPath));
+        return `href="${newHref}"`;
 	};
 
 	if(/^href="/i.test(href)) {
@@ -96,14 +95,16 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 	var replacement = (match, sub) => {
 		sub = sub.trim();
 		var isDataURI = sub.slice(0, 5) === 'data:';
-		var protocol = url.parse(sub).protocol;
-		var isAbsolutePath = sub[0] === '/';
+		var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
 		var isVmVar = /[$<{]/.test(sub[0]);
-		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+		if(isDataURI || protocol || isVmVar) {
 			return match;
 		}
 
-		return 'src="' + this.resolvePath(file, sub) + '"';
+        var subPath = util.relPath(file, sub);
+        var publicPath = util.getProjectPublicPath(this.project, 'development');
+        var newSrc = decodeURI(url.resolve(publicPath, subPath));
+        return `src="${newSrc}"`;
 	};
 
 	if(/^src="/i.test(src)) {
@@ -122,7 +123,7 @@ Dev.prototype.replaceData = function(attrs, match, file) {
 	var replacement = (match, sub) => {
 		var protocol = url.parse(sub).protocol;
 		if(protocol === null) {
-			return 'data="' + this.resolvePath(file, sub) + '"';
+            return `data="${this.resolvePath(file, sub)}"`;
 		}
 
 		return match;
@@ -141,13 +142,15 @@ Dev.prototype.replaceData = function(attrs, match, file) {
 Dev.prototype.replaceSrcset = function(match, srcList, file) {
 	srcList.forEach(src => {
 		var isDataURI = src.slice(0, 5) === 'data:';
-		var protocol = url.parse(src).protocol;
-		var isAbsolutePath = src[0] === '/';
+		var protocol = url.parse(src).protocol || util.isAbsolutePath(src);
 		var isVmVar = /[$<{]/.test(src[0]);
-		if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+		if(isDataURI || protocol || isVmVar) {
 			return;
 		}
-		match = match.replace(src, this.resolvePath(file, src));		
+        var subPath = util.relPath(file, src);
+        var publicPath = util.getProjectPublicPath(this.project, 'development');
+        var newSrc = decodeURI(url.resolve(publicPath, subPath));
+		match = match.replace(src, newSrc);		
 	});
 	return match;
 };
@@ -155,14 +158,16 @@ Dev.prototype.replaceSrcset = function(match, srcList, file) {
 Dev.prototype.replaceUrl = function(match, sub, file) {
 	sub = sub.trim();
 	var isDataURI = sub.slice(0, 5) === 'data:';
-	var protocol = url.parse(sub).protocol;
-	var isAbsolutePath = sub[0] === '/';
+	var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
 	var isVmVar = /[$<{]/.test(sub[0]);
-	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+	if(isDataURI || protocol || isVmVar) {
 		return match;
 	}
 
-	return match.replace(sub, this.resolvePath(file, sub));
+    var subPath = util.relPath(file, sub);
+    var publicPath = util.getProjectPublicPath(this.project, 'development');
+    var newUrl = decodeURI(url.resolve(publicPath, subPath));
+	return match.replace(sub, newUrl);
 };
 
 Dev.prototype.js = function(callback) {
@@ -208,7 +213,7 @@ amd.copy = function () {
 		cwd: output
 	})
 	.pipe(plumber(function (err) {
-        debug('出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end');
     }))
     .pipe(gulpFilter(this.filterList))
@@ -236,7 +241,7 @@ amd.updateConfig = function (newPaths, done) {
 		cwd: this.src
 	})
 	.pipe(plumber(function (err) {
-        debug('出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end');
     }))
 	.pipe(through2.obj((file, enc, cb) => {

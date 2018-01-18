@@ -99,7 +99,8 @@ tape('replaceHref', test => {
 
 	var link10 = '<link rel="stylesheet" _group="all" href="/css/common.css">';
 	var link10Actual = replace.strWithArr(link10, patterns);
-	test.equal(link10Actual, link10);
+    var link10Expected = '<link rel="stylesheet" _group="all" href="//qa.developer.test.com/f2e/test_project/css/common.css">';
+	test.equal(link10Actual, link10Expected);
 
 	test.end();
 });
@@ -131,7 +132,8 @@ tape('replaceSrc script', test => {
 
 	var script6 = '<script src="/path/to/test.js"></script>';
 	var script6Actual = replace.strWithArr(script6, patterns);
-	test.equal(script6Actual, script6);
+    var script6Expected = '<script src="//qa.developer.test.com/f2e/test_project/path/to/test.js"></script>';
+	test.equal(script6Actual, script6Expected);
 
 	var script7 = '<script src="$path/to/test.js"></script>';
 	var script7Actual = replace.strWithArr(script7, patterns);
@@ -167,7 +169,8 @@ tape('replaceSrc media', test => {
 
 	var img6 = '<img src="/images/logo.jpg"/>';
 	var img6Actual = replace.strWithArr(img6, patterns);
-	test.equal(img6Actual, img6);
+    var img6Expected = '<img src="//qa.developer.test.com/f2e/test_project/images/logo.jpg"/>';
+	test.equal(img6Actual, img6Expected);
 
 	var img7 = '<img src="$images/logo.jpg"/>';
 	var img7Actual = replace.strWithArr(img7, patterns);
@@ -231,7 +234,8 @@ tape('replaceUrl:background-image', test => {
 tape('replaceUrl:background-image (absolute path)', test => {
 	var style = '<style>.nav {background-image: url("/images/nav.png");}</style>';
 	var actual = replace.strWithArr(style, patterns);
-	test.equal(actual, style);
+    var expected = '<style>.nav {background-image: url("//qa.developer.test.com/f2e/test_project/images/nav.png");}</style>';
+	test.equal(actual, expected);
 	test.end();
 });
 

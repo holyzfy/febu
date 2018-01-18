@@ -140,7 +140,7 @@ Production.prototype.img = function (done) {
         cwd: this.src
     })
     .pipe(plumber(function (err) {
-        debug('task img出错: %s', err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(imagemin({verbose: true}))
@@ -167,7 +167,7 @@ Production.prototype.css = function (callback) {
             cwd: this.src
         })
         .pipe(plumber(function (err) {
-            debug('task build出错: %s', err.message);
+            console.error(colors.red(`${err}`));
             this.emit('end', err);
         }))
         .pipe(through2.obj(util.replacePath(this, 'production'))) // 替换静态资源链接
@@ -180,7 +180,7 @@ Production.prototype.css = function (callback) {
             cwd: this.build
         })
         .pipe(plumber(function (err) {
-            debug('task css出错: %s', err.message);
+            console.error(colors.red(`${err}`));
             this.emit('end', err);
         }))
         .pipe(minifyCss())
@@ -231,7 +231,7 @@ amd.copy = function (done) {
         cwd: path.join(this.src, config.amd.build)
     })
     .pipe(plumber(function (err) {
-        debug('task copy出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(uglify(uglifyOptions))
@@ -266,7 +266,7 @@ amd.updateConfig = function (done) {
         cwd: this.src
     })
     .pipe(plumber(function (err) {
-        debug('task updateConfig出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(through2.obj((file, enc, cb) => {
@@ -299,7 +299,7 @@ Production.prototype.js = function (done) {
         cwd: this.src
     })
     .pipe(plumber(function (err) {
-        debug('task js出错 第%d行: %s', err.lineNumber, err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(uglify(uglifyOptions))
@@ -334,7 +334,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		return match;
 	}
 
-    var hrefValue = (href.match(/^href='?"?(?![/$<{])([^'"]+)'?"?$/i) || '')[1];
+    var hrefValue = (href.match(/^href='?"?(?![$<{])([^'"]+)'?"?$/i) || '')[1];
     if(!hrefValue) {
         return match;
     }
@@ -387,7 +387,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 		}
 
 		findIt._groupDone[relative] = true; // 标记为已替换
-		var link = '<link rel="stylesheet" href="' + findIt.dest + '" />';
+		var link = `<link rel="stylesheet" href="${findIt.dest}" />`;
 		return link;
 	}
 
@@ -399,15 +399,13 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(this.manifest, item => {
-			return item.src[0] == subPath;
-		});
+		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
 			return match;
 		}
 		
 		replaceHelper(doc, file);
-		return 'href="' + doc.dest + '"';
+		return `href="${doc.dest}"`;
 	};
 
 	if(/^href="/i.test(href)) {
@@ -448,7 +446,7 @@ Production.prototype.styleInline = function(cssPath, compress) {
 	} catch(err) {
 		console.error('处理<link>样式表的_inline和_compress标记出错：', err.message);
 	}
-	return '<style>' + content + '</style>';
+	return `<style>${content}</style>`;
 };
 
 /**
@@ -479,7 +477,7 @@ Production.prototype.scriptInline = function(jsPath, compress) {
 	} catch(err) {
 		console.error('处理脚本_inline和_compress标记出错：', err.message);
 	}
-	return '<script>' + content + '</script>';
+	return `<script>${content}</script>`;
 };
 
 Production.prototype.replaceSrc = function(attrs, match, file) {
@@ -489,7 +487,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		return match;
 	}
 
-    var srcValue = (src.match(/^src='?"?(?![/$<{])([^'"]+)'?"?$/i) || '')[1];
+    var srcValue = (src.match(/^src='?"?(?![$<{])([^'"]+)'?"?$/i) || '')[1];
     if(!srcValue) {
         return match;
     }
@@ -544,24 +542,24 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 		}
 
 		findIt._groupDone[relative] = true; // 标记为已替换
-		return '<script src="' + findIt.dest + '"></script>';
+		return `<script src="${findIt.dest}"></script>`;
 	}
 
 	var replacement = (match, sub) => {
-		var protocol = url.parse(sub).protocol;
+		var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
 		if(protocol) {
 			return match;
 		}
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(this.manifest, item => item.src[0] == subPath);
+		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
 			return match;
 		}
 
 		replaceHelper(doc, file);
-		return 'src="' + doc.dest + '"';
+		return `src="${doc.dest}"`;
 	};
 
 	if(/^src="/i.test(src)) {
@@ -579,22 +577,21 @@ Production.prototype.replaceData = function(attrs, match, file) {
 	var data = attrs.filter(item => /^data=/i.test(item))[0];
 
 	var replacement = (match, sub) => {
-        var protocol = url.parse(sub).protocol;
-        var isAbsolutePath = sub[0] === '/';
+        var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
         var isVmVar = /[$<{]/.test(sub[0]);
-		if(protocol || isAbsolutePath || isVmVar) {
+		if(protocol || isVmVar) {
 			return match;
 		}
 
 		var subPath = util.relPath(file, sub);
         subPath = url.parse(subPath).pathname;
-		var doc = _.find(this.manifest, item => item.src[0] == subPath);
+		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
 			return match;
 		}
 
 		replaceHelper(doc, file);
-		return 'data="' + doc.dest + '"';
+		return `data="${doc.dest}"`;
 	};
 
 	if(/^data="/i.test(data)) {
@@ -610,15 +607,14 @@ Production.prototype.replaceData = function(attrs, match, file) {
 Production.prototype.replaceSrcset = function(match, srcList, file) {
     srcList.forEach(src => {
         var isDataURI = src.slice(0, 5) === 'data:';
-        var protocol = url.parse(src).protocol;
-        var isAbsolutePath = src[0] === '/';
+        var protocol = url.parse(src).protocol || util.isAbsolutePath(src);
         var isVmVar = /[$<{]/.test(src[0]);
-        if(isDataURI || protocol || isAbsolutePath || isVmVar) {
+        if(isDataURI || protocol || isVmVar) {
             return;
         }
 
         var srcPath = util.relPath(file, src);
-        var doc = _.find(this.manifest, item => item.src[0] == srcPath);
+        var doc = _.find(this.manifest, item => item.src.includes(srcPath));
         if(!doc) {
             return match;
         }
@@ -632,16 +628,15 @@ Production.prototype.replaceSrcset = function(match, srcList, file) {
 Production.prototype.replaceUrl = function(match, sub, file) {
 	sub = sub.trim();
 	var isDataURI = sub.slice(0, 5) === 'data:';
-	var protocol = url.parse(sub).protocol;
-    var isAbsolutePath = sub[0] === '/';
+	var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
     var isVmVar = /[$<{]/.test(sub[0]);
-	if(isDataURI || protocol || isAbsolutePath || isVmVar) {
-		return match;
-	}
+    if(isDataURI || protocol || isVmVar) {
+        return match;
+    }
 
     sub = url.parse(sub.trim()).pathname;
 	var subPath = util.relPath(file, sub);
-	var doc = _.find(this.manifest, item => item.src[0] == subPath);
+	var doc = _.find(this.manifest, item => item.src.includes(subPath));
 	if(!doc) {
 		return match;
 	}
@@ -676,7 +671,7 @@ vm.single = function (done) {
         cwd: this.src
     })
     .pipe(plumber(function (err) {
-        debug('task single出错: %s', err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(through2.obj(util.replacePath(this, 'production'), cb => {
@@ -708,7 +703,7 @@ vm.group = function (done) {
             cwd: pathRoot
         })
         .pipe(plumber(function (err) {
-            debug('task group出错: %s', err.message);
+            console.error(colors.red(`${err}`));
             this.emit('end', err);
         }))
         .pipe(concat(groupPath))
@@ -750,7 +745,7 @@ vm.groupAndInline = function (done) {
         cwd: this.src
     })
     .pipe(plumber(function (err) {
-        debug('task groupReplace出错: %s', err.message);
+        console.error(colors.red(`${err}`));
         this.emit('end', err);
     }))
     .pipe(through2.obj(util.replacePath(this, 'production')))

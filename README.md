@@ -15,6 +15,7 @@
   - [发布到测试环境](#%E5%8F%91%E5%B8%83%E5%88%B0%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83)
   - [发布到生产环境](#%E5%8F%91%E5%B8%83%E5%88%B0%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83)
 - [约定规则](#%E7%BA%A6%E5%AE%9A%E8%A7%84%E5%88%99)
+  - [静态资源路径](#%E9%9D%99%E6%80%81%E8%B5%84%E6%BA%90%E8%B7%AF%E5%BE%84)
   - [inc](#inc)
   - [html](#html)
     - [_group示例](#_group%E7%A4%BA%E4%BE%8B)
@@ -58,6 +59,26 @@
 	gulp production --repo repo [--branch branch] [--commit commitid] [--publicPath publicPath] [--dist distPath]
 
 ## 约定规则
+
+### 静态资源路径
+
+如果静态资源路径以`/`开头，约定`/`表示项目根目录，例如：
+
+```html
+<img src="/images/logo.png">
+```
+
+```css
+.logo {
+    background-image: url(/images/logo.png);
+}
+```
+
+`//`开头的路径不处理，例如：
+
+```html
+<img src="//www.example.com/path/to/images/logo.png">
+```
 
 ### inc
 
@@ -113,10 +134,11 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 ```javascript
 {
     "build": "./build.js", // requirejs的构建脚本，示例 https://github.com/holyzfy/amd_demo/blob/master/build.js
-    "ignore": [             // 忽略的文件或目录
+    "ignore": [             // 忽略的文件或目录，支持minimatch语法 (https://www.npmjs.com/package/minimatch)
         "node_modules",
         "build",
         "build.js",
+        "mock/**/*.js"
         "test"
     ],
     "jsnext": {            // es6配置项，示例项目 https://github.com/holyzfy/amd_demo/tree/jsnext
