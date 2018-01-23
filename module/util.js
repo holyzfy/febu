@@ -141,12 +141,6 @@ util.getReplacements = (obj, env, file) => {
                 }
 
                 var attrs = (match.match(/<link\b([^\>]+)\/?>/i)[1] || '').trim().split(/\s+/);
-                
-                var css = attrs.some(item => (item === 'rel="stylesheet"' || item === "rel='stylesheet'"));
-                if(!css) {
-                    return match;
-                }
-
                 return obj.replaceHref(attrs, match, file);
             }
         },

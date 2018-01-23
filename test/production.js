@@ -181,6 +181,14 @@ tape('replaceHref', test => {
     test.end();
 });
 
+tape('replaceHref: img', test => {
+    var link = '<link rel="shortcut icon" href="images/logo.png" type="image/x-icon" ／>';
+    var actual = replace.strWithArr(link, patterns);
+    var expected = '<link rel="shortcut icon" href="//img1.cache.test.com/f2e/test_project/images/logo-4x6r2q7t9j.png" type="image/x-icon" ／>';
+    test.equal(actual, expected);
+    test.end();
+});
+
 tape('replaceHref: absolute path', test => {
     var link = '<link rel="stylesheet" href="/style/common.css">';
     var actual = replace.strWithArr(link, patterns);
