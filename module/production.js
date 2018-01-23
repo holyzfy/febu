@@ -338,6 +338,8 @@ Production.prototype.replaceHref = function(attrs, match, file) {
     if(!hrefValue) {
         return match;
     }
+
+    hrefValue = util.relPath(file, hrefValue);
     hrefValue = url.parse(hrefValue).pathname;
 
 	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
@@ -491,6 +493,8 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
     if(!srcValue) {
         return match;
     }
+
+    srcValue = util.relPath(file, srcValue);
     srcValue = url.parse(srcValue).pathname;
 
 	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
@@ -689,6 +693,7 @@ vm.single = function (done) {
 vm.group = function (done) {
     debug('group');
     var doGroup = (item, cb) => {
+        debug(item);
         var groupPath;
         var pathRoot = this.src;
         if(item._type === 'css') {
