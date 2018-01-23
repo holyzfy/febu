@@ -41,7 +41,7 @@
 
 ### 参数
 - **repo** git仓库地址
-- **branch** 分支，默认是`master`
+- **branch** 分支或标签，默认是`master`
 - **commit** 版本号，默认是`HEAD`
 - **publicPath** 静态资源前缀，默认从项目的`febu.json`里取
 - **dist** 构建结果的输出目录，请填写绝对路径
