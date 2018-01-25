@@ -54,7 +54,7 @@ gulp.task('before', done => {
 		done(err);
 	});
 
-	timer = setTimeout(() => done('发布超时，请稍后重试'), 240000);
+	timer = setTimeout(() => done('发布超时，请稍后重试'), 30 * 60 * 1000);
 });
 
 gulp.task('clean', done => {
