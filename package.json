@@ -46,7 +46,7 @@
     "requirejs": "~2.3.5",
     "sinon": "~4.2.0",
     "tap-spec": "~4.1.1",
-    "tape": "~4.8.0",
+    "tape": "~4.9.0",
     "through2": "~2.0.3",
     "underscore": "~1.8.3",
     "vinyl": "~2.1.0",
