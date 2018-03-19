@@ -119,6 +119,7 @@ util.regex = {
     script: /<script\b[^<]*\bsrc=[^<]*(?:(?!<\/script>)<[^<]+)*(?:<\/script>|$)/mgi, // 带src属性的script标签
     link: /<link\b[^<]+>/mgi,
     media: /<(?:img|video|audio|source|embed)\b[^<]+>/mgi,
+    video: /<video\b[^<]+>/mgi,
     object: /<object\b[^<]+>/mgi,
     srcset: /\bsrcset='?"?([^'"]+)'?"?\b/mi,
     url: /[:,]?\burl\('?"?([^"'()]+\.\w+)\??[^"'()]*'?"?\)/mgi // 样式表里url(xxx)
@@ -158,7 +159,7 @@ util.getReplacements = (obj, env, file) => {
         },
         {
 
-            // media
+            // media:src
             pattern: util.regex.media,
             replacement: match => {
                 if(!obj.replaceSrc) {
@@ -166,6 +167,18 @@ util.getReplacements = (obj, env, file) => {
                 }
                 var attrs = (match.match(/<(?:img|video|audio|source|embed)\b([^\>]+?)\/?>/i)[1] || '').trim().split(/\s+/);
                 return obj.replaceSrc(attrs, match, file);
+            }
+        },
+        {
+
+            // video:poster
+            pattern: util.regex.video,
+            replacement: match => {
+                if(!obj.replacePoster) {
+                    return match;
+                }
+                var attrs = (match.match(/<video\b([^\>]+)>/i)[1] || '').trim().split(/\s+/);
+                return obj.replacePoster(attrs, match, file);
             }
         },
         {

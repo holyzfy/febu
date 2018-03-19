@@ -266,6 +266,32 @@ tape('replaceSrcset', test => {
     test.end();
 });
 
+tape('replaceSrc:img', test => {
+    p.updateManifest({
+        src: 'images/img-123.png',
+        dest: '//img1.cahce.febucdn.com/xxx/images/img-123-a4dd4ud.png',
+        rel: ['test.html']
+    });
+    var img = '<img src="images/img-123.png" alt="" />';
+    var actual = replace.strWithArr(img, patterns);
+    var expected = '<img src="//img1.cahce.febucdn.com/xxx/images/img-123-a4dd4ud.png" alt="" />';
+    test.equal(actual, expected);
+    test.end();
+});
+
+tape('replaceSrc:video', test => {
+    p.updateManifest({
+        src: 'media/demo.mp4',
+        dest: '//img1.cahce.febucdn.com/xxx/media/demo-3t4i8d9.mp4',
+        rel: ['test.html']
+    });
+    var video = '<video src="media/demo.mp4"></video>';
+    var actual = replace.strWithArr(video, patterns);
+    var expected = '<video src="//img1.cahce.febucdn.com/xxx/media/demo-3t4i8d9.mp4"></video>';
+    test.equal(actual, expected);
+    test.end();
+});
+
 tape('replaceUrl:background-image', test => {
     var style = '<style>.nav {background-image: url("images/p_logo.png?ver=123");}</style>';
     var expected = '<style>.nav {background-image: url("//img1.cahce.febucdn.com/xxx/p_logo.a4b5c6e7e8.png?ver=123");}</style>';
@@ -365,6 +391,18 @@ tape('replaceUrl:font', test => {
     var style = '@font-face {src: url("../font/fontawesome-webfont.eot?#iefix&v=4.6.2") format("embedded-opentype"), url("../font/fontawesome-webfont.woff?v=4.6.2") format("woff")}';
     var expected = '@font-face {src: url("//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-a247f4358b.eot?#iefix&v=4.6.2") format("embedded-opentype"), url("//img1.cahce.febucdn.com/xxx/font/fontawesome-webfont-f84ffa8dd9.woff?v=4.6.2") format("woff")}';
     var actual = replace.strWithArr(style, patterns);
+    test.equal(actual, expected);
+    test.end();
+});
+
+tape('replacePoster', test => {
+    p.updateManifest({
+        src: 'images/v-poster.png',
+        dest: '//img1.cahce.febucdn.com/xxx/images/v-poster-3er7445f7.png'
+    });
+    var video = '<video src="images/v-test.mp4" poster="images/v-poster.png"></video>';
+    var actual = replace.strWithArr(video, patterns);
+    var expected = '<video src="images/v-test.mp4" poster="//img1.cahce.febucdn.com/xxx/images/v-poster-3er7445f7.png"></video>';
     test.equal(actual, expected);
     test.end();
 });

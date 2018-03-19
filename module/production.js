@@ -651,6 +651,37 @@ Production.prototype.replaceUrl = function(match, sub, file) {
 	return match.replace(sub, doc.dest);
 };
 
+Production.prototype.replacePoster = function(attrs, match, file) {
+    var poster = attrs.filter(item => /^poster=/i.test(item))[0];
+
+    var replacement = (match, sub) => {
+        var protocol = url.parse(sub).protocol || util.isAbsolutePath(sub);
+        var isVmVar = /[$<{]/.test(sub[0]);
+        if(protocol || isVmVar) {
+            return match;
+        }
+
+        var subPath = util.relPath(file, sub);
+        subPath = url.parse(subPath).pathname;
+        var doc = _.find(this.manifest, item => item.src.includes(subPath));
+        if(!doc) {
+            return match;
+        }
+
+        replaceHelper(doc, file);
+        return `poster="${doc.dest}"`;
+    };
+
+    if(/^poster="/i.test(poster)) {
+        match = match.replace(/\bposter="([^"]+)"/i, replacement);
+    } else if(/^poster='/i.test(poster)) {
+        match = match.replace(/\bposter='([^']+)'/i, replacement);
+    } else if(/^poster=(?!["'])/i.test(poster)) {
+        match = match.replace(/\bposter=([^\s\\>]+)/i, replacement);
+    }
+    return match;
+};
+
 // 处理模板文件
 Production.prototype.compileVmFiles = function(callback) {
 	debug('处理模板文件');
