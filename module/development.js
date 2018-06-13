@@ -265,8 +265,7 @@ Dev.prototype.html = function(done) {
 	var dev = this;
 	var src = common.getCwd(dev.project.repo, 'src');
 	var dest = path.join(this.destRoot, 'vm');
-	var ignoreList = util.getIgnore(src);
-	var filterList = util.getVmFileType().concat(ignoreList);
+	var filterList = util.getVmFileType().concat(dev.ignoreList);
 	
 	console.log(colors.green('输出html：' + dest));
 	gulp.src('**/*', {

@@ -75,11 +75,17 @@ var getAMDConfigFieldPath = (project, key) => {
     var buildPath = util.getAMDBuildPath(project);
     var content = fs.readFileSync(buildPath, 'utf8');
     var data = eval("(" + content + ")");
-    return path.resolve(path.dirname(buildPath), data[key]);
+    if(!data[key]) {
+        return '';
+    }
+    if(key === 'bundlesConfigOutFile') {
+        return path.resolve(path.dirname(buildPath), data.dir || '', data[key]);
+    }
+    return path.resolve(path.dirname(buildPath), data[key] || '');
 };
 
 util.getAMDConfigPath = project => {
-    return getAMDConfigFieldPath(project, 'mainConfigFile');
+    return getAMDConfigFieldPath(project, 'mainConfigFile') || getAMDConfigFieldPath(project, 'bundlesConfigOutFile');
 };
 
 util.getAMDOutputPath = project => {
@@ -107,7 +113,7 @@ util.replaceConfigPaths = (contents, newPaths) => {
 
     var cfg = eval("(" + configText + ")");
     delete cfg.baseUrl;
-    Object.assign(cfg.paths, newPaths);
+    Object.assign(cfg.paths || cfg.bundles, newPaths);
     cfg.paths = util.fixAMDPathKey(cfg.paths);
     var newContents = contents.replace(pattern, (match, sub) => {
         return match.replace(sub, JSON.stringify(cfg, null, 4));
@@ -277,7 +283,7 @@ util.getIgnore = src => {
         console.error('配置文件%s格式错误%s：', configFile, err.message);
     }
 
-    var ret = gitignore('.gitignore').map(item => '!' + item);
+    var ret = gitignore(path.join(src, '.gitignore')).map(item => '!' + item);
     ignoreList.forEach(item => {
         item = '/' === item.slice(-1) ? item.slice(0, -1): item;
         ret.push('!' + item + '/**/*');
@@ -333,13 +339,22 @@ util.jsnext = function (project, callback) {
     if(!config) {
         return callback();
     }
-
+    var defaults = {
+        src: 'jsnext',
+        output: 'js',
+        ignore: []
+    };
+    config = Object.assign(defaults, config);
+    console.log('安装依赖...');
     var command = `npm install; \
         rm -rf ${config.output};cp -rf ${config.src} ${config.output}; \
-        ${path.join(src, 'node_modules/.bin/babel')} ${config.src} \
+        cd ${src}; \
+        node_modules/.bin/babel ${config.src} \
             -d ${config.output} \
-            --ignore ${config.ignore.join(',')} \
             --source-maps inline`;
+    if(config.ignore && config.ignore.length) {
+        command += ` --ignore ${config.ignore.join(',')}`;
+    }
     debug('jsnext:', command);
     var result = exec(command, {cwd: src}, callback);
     result.stdout.on('data', data => console.log(colors.gray(data)));
