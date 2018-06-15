@@ -112,8 +112,9 @@ util.replaceConfigPaths = (contents, newPaths) => {
     }
 
     var cfg = eval("(" + configText + ")");
+    cfg.paths = cfg.paths || {};
     delete cfg.baseUrl;
-    Object.assign(cfg.paths || cfg.bundles, newPaths);
+    Object.assign(cfg.paths, newPaths);
     cfg.paths = util.fixAMDPathKey(cfg.paths);
     var newContents = contents.replace(pattern, (match, sub) => {
         return match.replace(sub, JSON.stringify(cfg, null, 4));
