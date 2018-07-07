@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -23,16 +23,16 @@
     "test": "./node_modules/.bin/tape 'test/*.js' | ./node_modules/.bin/tap-spec"
   },
   "dependencies": {
-    "async": "~2.6.0",
+    "async": "~2.6.1",
     "colors": "~1.3.0",
     "config": "~1.30.0",
     "debug": "~3.1.0",
     "del": "~3.0.0",
-    "eslint": "~4.19.0",
+    "eslint": "~5.0.1",
     "frep": "~0.2.3",
     "fs-extra": "~6.0.1",
     "gulp": "github:gulpjs/gulp#4.0",
-    "gulp-clean-css": "~3.9.3",
+    "gulp-clean-css": "~3.9.4",
     "gulp-concat": "~2.6.1",
     "gulp-filter": "~5.1.0",
     "gulp-if": "~2.0.2",
@@ -42,14 +42,14 @@
     "gulp-uglify": "~3.0.0",
     "husky": "~0.14.3",
     "parse-gitignore": "~0.5.1",
-    "proxyquire": "~2.0.0",
+    "proxyquire": "~2.0.1",
     "requirejs": "~2.3.5",
-    "sinon": "~6.0.0",
+    "sinon": "~6.1.2",
     "tap-spec": "~5.0.0",
-    "tape": "~4.9.0",
+    "tape": "~4.9.1",
     "through2": "~2.0.3",
     "underscore": "~1.9.1",
-    "vinyl": "~2.1.0",
-    "yargs": "~11.0.0"
+    "vinyl": "~2.2.0",
+    "yargs": "~12.0.1"
   }
 }
