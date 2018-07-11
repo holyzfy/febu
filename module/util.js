@@ -36,7 +36,7 @@ util.getStaticFileType = () => {
     var list = [
         'css',
         'js',
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'ico',
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'ico', 'pdf',
         'mp3', 'aac', 'mpeg', 'flv', 'f4v', 'swf', 'ogg', 'mp4', 'm4v', 'webm', 'wav', 'ogv', 'mov', 'm3u8',
         'ttf', 'otf', 'eot', 'woff', 'woff2', 'svg',
         'vml', 'htc'
