@@ -45,8 +45,7 @@ gulp.task('before', done => {
 	var tasks = [
 		clone,
         git.checkout.bind(git, '.'), // 确保本地仓库是干净的
-        git.checkout.bind(git, 'master'), // 确保本地代码在branch上，如果是一个tag，git pull会报错
-		git.exec.bind(git, ['pull']),
+        git.exec.bind(git, 'fetch', ['--all']),
 		git.checkout.bind(git, project.branch)
 	];
 	async.series(tasks, err => {
