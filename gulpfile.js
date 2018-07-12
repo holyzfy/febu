@@ -46,7 +46,8 @@ gulp.task('before', done => {
 		clone,
         git.checkout.bind(git, '.'), // 确保本地仓库是干净的
         git.exec.bind(git, 'fetch', ['--all']),
-		git.checkout.bind(git, project.branch)
+		git.checkout.bind(git, project.branch),
+        git.exec.bind(git, 'pull')
 	];
 	async.series(tasks, err => {
 		clearTimeout(timer);
