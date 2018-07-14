@@ -811,8 +811,34 @@ Production.prototype.run = function(commit, callback) {
 		this.compileStaticFiles.bind(this),
 		this.compileVmFiles.bind(this)
 	];
-	async.series(tasks, callback);
+	async.series(tasks, () => {
+        outputManifest(this, this.manifest);
+        callback();
+    });
 };
+
+function outputManifest(context, manifest) {
+    var ret = {
+      js: {},
+      style: {},
+      others: {}
+    };
+    manifest.forEach(item => {
+      item.src.forEach(one => {
+          var map = {
+                js: 'js',
+                css: 'style'
+          };
+          var extname = one.slice(one.lastIndexOf('.') + 1);
+          var type = map[extname] || 'others';
+          ret[type][one] = item.dest;
+      });
+    });
+    for(var key in ret) {
+        var filepath = path.join(context.destRoot, key) + '.json';
+        fs.writeFileSync(filepath, JSON.stringify(ret[key], null, 4));
+    }
+}
 
 Production._debug = {
 	getRelative: getRelative
