@@ -41,7 +41,7 @@
     "gulp-rev": "~8.1.1",
     "gulp-uglify": "~3.0.0",
     "gulp-uglify-es": "~1.0.4",
-    "husky": "~0.14.3",
+    "husky": "~1.0.0",
     "parse-gitignore": "~0.5.1",
     "proxyquire": "~2.0.1",
     "requirejs": "~2.3.5",
