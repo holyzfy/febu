@@ -1,6 +1,6 @@
 {
   "name": "febu",
-  "version": "0.18.2",
+  "version": "0.18.3",
   "description": "前端构建工具",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "eslint": "~5.9.0",
     "frep": "~0.2.3",
     "fs-extra": "~7.0.1",
-    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp": "~4.0.0",
     "gulp-clean-css": "~4.0.0",
     "gulp-concat": "~2.6.1",
     "gulp-filter": "~5.1.0",
@@ -41,7 +41,7 @@
     "gulp-uglify": "~3.0.0",
     "gulp-uglify-es": "~1.0.4",
     "husky": "~1.2.0",
-    "parse-gitignore": "~1.0.1",
+    "parse-gitignore": "0.5.1",
     "proxyquire": "~2.1.0",
     "requirejs": "~2.3.5",
     "sinon": "~7.1.1",
