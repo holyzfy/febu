@@ -347,10 +347,10 @@ util.jsnext = function (project, callback) {
     };
     config = Object.assign(defaults, config);
     console.log('安装依赖...');
-    var command = `npm install; \
-        rm -rf ${config.output};cp -rf ${config.src} ${config.output}; \
-        cd ${src}; \
-        node_modules/.bin/babel ${config.src} \
+    var command = `npm install && \
+        rm -rf ${config.output} && cp -rf ${config.src} ${config.output} && \
+        cd ${src} && \
+        ${path.join(src, 'node_modules/.bin/babel')} ${config.src} \
             -d ${config.output} \
             --source-maps inline`;
     if(config.ignore && config.ignore.length) {
