@@ -44,7 +44,7 @@
     "parse-gitignore": "0.5.1",
     "proxyquire": "~2.1.0",
     "requirejs": "~2.3.5",
-    "sinon": "~7.1.1",
+    "sinon": "~7.2.4",
     "tap-spec": "~5.0.0",
     "tape": "~4.9.1",
     "through2": "~3.0.0",
