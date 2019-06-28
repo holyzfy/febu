@@ -29,7 +29,7 @@
     "del": "~3.0.0",
     "eslint": "~5.9.0",
     "frep": "~0.2.3",
-    "fs-extra": "~7.0.1",
+    "fs-extra": "~8.1.0",
     "gulp": "~4.0.0",
     "gulp-clean-css": "~4.0.0",
     "gulp-concat": "~2.6.1",
