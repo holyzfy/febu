@@ -39,7 +39,7 @@
     "gulp-plumber": "~1.2.0",
     "gulp-rev": "~9.0.0",
     "gulp-uglify": "~3.0.0",
-    "gulp-uglify-es": "~1.0.4",
+    "gulp-uglify-es": "~2.0.0",
     "husky": "~1.2.0",
     "parse-gitignore": "0.5.1",
     "proxyquire": "~2.1.0",
