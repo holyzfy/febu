@@ -243,10 +243,11 @@ util.replacePath = (obj, env) => {
  * 求filepath的相对路径（相对于fromFile.base）
  * 约定：不处理inc目录
  */
-util.relPath = (fromFile, filepath) => {
+util.relPath = (project, fromFile, filepath) => {
     if(filepath[0] === '/' && filepath[1] !== '/') {
-        // 约定/开头的静态资源路径是相对项目根目录
-        return filepath.slice(1);
+        // 处理以/开头的静态资源路径
+        const docRootPrefix = util.getProjectConfig(project, 'docRootPrefix') || '/';
+        return filepath.slice(docRootPrefix.length);
     }
 
     var fromFilePath = fromFile.path.replace(new RegExp('\\' + path.sep, 'g'), '/');  

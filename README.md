@@ -133,6 +133,7 @@ require.config({waitSeconds:0,shim:{highcharts:["jquery"],highcharts_more:["high
 
 ```javascript
 {
+    "docRootPrefx": "/",
     "build": "./build.js", // requirejs的构建脚本，示例 https://github.com/holyzfy/amd_demo/blob/master/build.js
     "ignore": [             // 忽略的文件或目录，支持minimatch语法 (https://www.npmjs.com/package/minimatch)
         "node_modules",

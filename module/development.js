@@ -50,7 +50,7 @@ Dev.prototype.replaceHref = function(attrs, match, file) {
             return match;
         }
 
-        var subPath = util.relPath(file, sub);
+        var subPath = util.relPath(this.project, file, sub);
         var publicPath = util.getProjectPublicPath(this.project, 'development');
         var newHref = decodeURI(url.resolve(publicPath, subPath));
         return `href="${newHref}"`;
@@ -101,7 +101,7 @@ Dev.prototype.replaceSrc = function(attrs, match, file) {
 			return match;
 		}
 
-        var subPath = util.relPath(file, sub);
+        var subPath = util.relPath(this.project, file, sub);
         var publicPath = util.getProjectPublicPath(this.project, 'development');
         var newSrc = decodeURI(url.resolve(publicPath, subPath));
         return `src="${newSrc}"`;
@@ -147,7 +147,7 @@ Dev.prototype.replaceSrcset = function(match, srcList, file) {
 		if(isDataURI || protocol || isVmVar) {
 			return;
 		}
-        var subPath = util.relPath(file, src);
+        var subPath = util.relPath(this.project, file, src);
         var publicPath = util.getProjectPublicPath(this.project, 'development');
         var newSrc = decodeURI(url.resolve(publicPath, subPath));
 		match = match.replace(src, newSrc);		
@@ -164,7 +164,7 @@ Dev.prototype.replaceUrl = function(match, sub, file) {
 		return match;
 	}
 
-    var subPath = util.relPath(file, sub);
+    var subPath = util.relPath(this.project, file, sub);
     var publicPath = util.getProjectPublicPath(this.project, 'development');
     var newUrl = decodeURI(url.resolve(publicPath, subPath));
 	return match.replace(sub, newUrl);

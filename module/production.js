@@ -34,7 +34,9 @@ var uglifyOptions = {
 
 function Production(project) {
     this.project = project;
-    this.publicPath = util.getProjectPublicPath(project, 'production');
+    let publicPath = util.getProjectPublicPath(project, 'production');
+    const docRootPrefix = util.getProjectConfig(project, 'docRootPrefix') || '/';
+    this.publicPath = path.join(publicPath, docRootPrefix);
     this.manifest = [];
     this.src = common.getCwd(project.repo, 'src');
     this.destRoot = project.dist || common.getCwd(project.repo, 'production');
@@ -339,7 +341,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
         return match;
     }
 
-    hrefValue = util.relPath(file, hrefValue);
+    hrefValue = util.relPath(this.project, file, hrefValue);
     hrefValue = url.parse(hrefValue).pathname;
 
 	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
@@ -399,7 +401,7 @@ Production.prototype.replaceHref = function(attrs, match, file) {
 			return match;
 		}
 
-		var subPath = util.relPath(file, sub);
+		var subPath = util.relPath(this.project, file, sub);
         subPath = url.parse(subPath).pathname;
 		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
@@ -494,7 +496,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
         return match;
     }
 
-    srcValue = util.relPath(file, srcValue);
+    srcValue = util.relPath(this.project, file, srcValue);
     srcValue = url.parse(srcValue).pathname;
 
 	var inline = attrs.filter(item => /^_inline=?$/i.test(item))[0];
@@ -555,7 +557,7 @@ Production.prototype.replaceSrc = function(attrs, match, file) {
 			return match;
 		}
 
-		var subPath = util.relPath(file, sub);
+		var subPath = util.relPath(this.project, file, sub);
         subPath = url.parse(subPath).pathname;
 		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
@@ -587,7 +589,7 @@ Production.prototype.replaceData = function(attrs, match, file) {
 			return match;
 		}
 
-		var subPath = util.relPath(file, sub);
+		var subPath = util.relPath(this.project, file, sub);
         subPath = url.parse(subPath).pathname;
 		var doc = _.find(this.manifest, item => item.src.includes(subPath));
 		if(!doc) {
@@ -617,7 +619,7 @@ Production.prototype.replaceSrcset = function(match, srcList, file) {
             return;
         }
 
-        var srcPath = util.relPath(file, src);
+        var srcPath = util.relPath(this.project, file, src);
         var doc = _.find(this.manifest, item => item.src.includes(srcPath));
         if(!doc) {
             return match;
@@ -639,7 +641,7 @@ Production.prototype.replaceUrl = function(match, sub, file) {
     }
 
     sub = url.parse(sub.trim()).pathname;
-	var subPath = util.relPath(file, sub);
+	var subPath = util.relPath(this.project, file, sub);
 	var doc = _.find(this.manifest, item => item.src.includes(subPath));
 	if(!doc) {
 		return match;
@@ -661,7 +663,7 @@ Production.prototype.replacePoster = function(attrs, match, file) {
             return match;
         }
 
-        var subPath = util.relPath(file, sub);
+        var subPath = util.relPath(this.project, file, sub);
         subPath = url.parse(subPath).pathname;
         var doc = _.find(this.manifest, item => item.src.includes(subPath));
         if(!doc) {
